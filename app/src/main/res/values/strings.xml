@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Register</string>
+    <string name="app_logo">This is app logo</string>
+    <string name="splash_text">All your organization\'s needs in one place</string>
+    <string name="first_name">First name</string>
+    <string name="last_name">Last name</string>
+    <string name="email">Email address</string>
+    <string name="welcome">Welcome</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="no_account">Don\'t have an accout?</string>
+    <string name="account_exit">Already have an accout?</string>
+    <string name="signin_instead">Sign in instead</string>
+    <string name="signup">Sign up</string>
+    <string name="fill_info">First things first, fill in your info and lets get started!</string>
 </resources>
