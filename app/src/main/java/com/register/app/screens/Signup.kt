@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -55,7 +56,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.register.app.R
-import com.register.app.ui.theme.Background
 import com.register.app.viewmodel.AuthViewModel
 
 @Composable
@@ -70,7 +70,26 @@ fun Signup(authViewModel: AuthViewModel, navController: NavController) {
         ConstraintLayout(
             modifier = Modifier.fillMaxSize(),
         ) {
-            val (header, inputSection, alternate) = createRefs()
+            val (backBtn, header, inputSection, alternate) = createRefs()
+
+            Surface(
+                modifier = Modifier
+                    .size(40.dp)
+                    .constrainAs(backBtn) {
+                        start.linkTo(parent.start, margin = 16.dp)
+                        top.linkTo(parent.top, margin = 12.dp)
+                    },
+                shape = MaterialTheme.shapes.extraLarge,
+                shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBackIosNew,
+                    contentDescription = "",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -82,7 +101,9 @@ fun Signup(authViewModel: AuthViewModel, navController: NavController) {
                 Image(painter = painterResource(
                     id = R.drawable.splash),
                     contentDescription = "",
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .size(72.dp),
                     contentScale = ContentScale.Fit,
                 )
                 Text(text = stringResource(
@@ -95,7 +116,7 @@ fun Signup(authViewModel: AuthViewModel, navController: NavController) {
                 Text(
                     text = stringResource(id = R.string.fill_info),
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = 8.dp, top = 8.dp),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -129,7 +150,7 @@ fun AlternateAction(navController: NavController) {
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier
                 .padding(end = 8.dp)
-                .clickable { },
+                .clickable { navController.navigate("signin") },
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -347,7 +368,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
 
         Button(
             onClick = {
-                val response = authViewModel.submitRequest(firstName, lastName, email, password, rePassword)
+                val response = authViewModel.signUp(firstName, lastName, email, password, rePassword)
                       if (error?.isNotBlank() == true) {
                           Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                       } },
@@ -358,6 +379,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
             shape = MaterialTheme.shapes.large,
             modifier = Modifier
                 .width(screenWidth.dp)
+                .height(50.dp)
                 .padding(bottom = 4.dp)
                 .constrainAs(signupBtn) {
                     centerHorizontallyTo(parent)

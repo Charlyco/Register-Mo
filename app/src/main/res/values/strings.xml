@@ -13,4 +13,11 @@
     <string name="signin_instead">Sign in instead</string>
     <string name="signup">Sign up</string>
     <string name="fill_info">First things first, fill in your info and lets get started!</string>
+    <string name="otp_header">We will send a one time password to this phone number</string>
+    <string name="get_otp">Get OTP</string>
+    <string name="verify_otp_header">Enter the 6 digit OTP sent your phone number</string>
+    <string name="change_number">Change your phone number</string>
+    <string name="resend">Resend OTP</string>
+    <string name="next">Next</string>
+    <string name="signin">Sign in</string>
 </resources>

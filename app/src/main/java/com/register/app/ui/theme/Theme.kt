@@ -29,7 +29,8 @@ private val LightColorScheme = lightColorScheme(
     background = Background,
     surface = Surface,
     onPrimary = Color.White,
-    onBackground = Color.Black
+    onBackground = Color.Black,
+    onError = Color.Red
 
     /* Other default colors to override
 

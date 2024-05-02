@@ -32,7 +32,7 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
     ) {
         LaunchedEffect(key1 = SPLASH_SCREEN_KEY) {
             delay(3000)
-            navController.navigate("signup")
+            navController.navigate("otp")
         }
 
         ConstraintLayout(

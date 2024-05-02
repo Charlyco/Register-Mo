@@ -1,0 +1,293 @@
+package com.register.app.screens
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
+import com.register.app.R
+import com.register.app.model.CountryCode
+import com.register.app.util.CircularIndicator
+import com.register.app.util.CountryCodeSaver
+import com.register.app.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
+
+@Composable
+fun SendOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.primary
+    ) {
+        ConstraintLayout(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val (lowerSection, image, text) = createRefs()
+            
+            Image(
+                painter = painterResource(id = R.drawable.otp_image),
+                contentDescription = "",
+                modifier = Modifier
+                    .constrainAs(image) {
+                        centerHorizontallyTo(parent)
+                        top.linkTo(parent.top, margin = 32.dp)
+                    }
+                    .size(160.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            Text(
+                text = stringResource(id = R.string.otp_header),
+                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(text) {
+                    centerHorizontallyTo(parent)
+                    top.linkTo(image.bottom, margin = 24.dp)
+                }
+                )
+
+            Surface(
+                modifier = Modifier
+                    .constrainAs(lowerSection) {
+                        centerHorizontallyTo(parent)
+                        bottom.linkTo(parent.bottom)
+                        //top.linkTo(parent.top, margin = 320.dp)
+                    }
+                    //.height(600.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 0.dp,
+                            topEnd = 48.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                    )
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+            ) {
+                LowerSection(authViewModel, navController)
+            }
+
+
+        }
+    }
+}
+
+@Composable
+fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
+    val screenWidth = LocalConfiguration.current.screenWidthDp - 32
+    var showIndicator = false
+    val coroutineScope = rememberCoroutineScope()
+    var countryCode by rememberSaveable { mutableStateOf("") }
+    val countryList = listOf(
+        CountryCode("Afghanistan", "+93"),
+        CountryCode("Albania", "+355"),
+        CountryCode("Algeria", "+213"),
+        CountryCode("American Samoa", "+1-684")
+    )
+    ConstraintLayout {
+        val (spinner, phoneBox, otpBtn, indicator) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .constrainAs(spinner) {
+                    bottom.linkTo(phoneBox.top, margin = 32.dp)
+                    top.linkTo(parent.top, 48.dp)
+                    centerHorizontallyTo(parent)
+                },
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.small,
+            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+        ) {
+            SelectCountry(countryList) {
+                countryCode = it.code
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .constrainAs(phoneBox) {
+                    bottom.linkTo(otpBtn.top, margin = 72.dp)
+                    centerHorizontallyTo(parent)
+                },
+            color = MaterialTheme.colorScheme.background,
+            shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+            shape = MaterialTheme.shapes.small
+        ) {
+            TextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedIndicatorColor = Color.Transparent
+                )
+            )
+        }
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    showIndicator = true
+                    val isOtpSent = authViewModel.sendOtp(phoneNumber)
+                    if (isOtpSent) {
+                        showIndicator = false
+                        navController.navigate("otp_verify") {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            },
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .height(56.dp)
+                .constrainAs(otpBtn) {
+                    centerHorizontallyTo(parent)
+                    bottom.linkTo(parent.bottom, margin = 120.dp)
+                },
+            shape = MaterialTheme.shapes.large,
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = dimensionResource(id = R.dimen.default_elevation),
+                pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+            ),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+            ) {
+            Text(text = stringResource(id = R.string.get_otp))
+        }
+
+        if (showIndicator) {
+            Surface(
+                modifier = Modifier.constrainAs(indicator) {
+                    centerHorizontallyTo(parent)
+                    centerVerticallyTo(parent)
+                }
+            ) {
+                CircularIndicator()
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectCountry(
+    countryList: List<CountryCode>,
+    countryCode: (CountryCode) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedOptionText by rememberSaveable (
+        stateSaver = CountryCodeSaver,
+        key = "name",
+        init = { mutableStateOf(countryList[0]) }
+    )
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+
+    Box(
+        modifier = Modifier
+            .width((screenWidth - 32).dp)
+            .height(50.dp),
+        contentAlignment = Alignment.Center
+    ) {
+       ConstraintLayout(modifier = Modifier
+           .clickable { expanded = !expanded }
+           .fillMaxSize()
+           .padding(8.dp)
+           ) {
+           val (text, icon, menu) = createRefs()
+
+           Text(
+               text = "${selectedOptionText.name} ${selectedOptionText.code}",
+               fontSize = TextUnit(14.0f, TextUnitType.Sp),
+               color = MaterialTheme.colorScheme.onBackground,
+               modifier = Modifier
+                   .padding(8.dp)
+                   .constrainAs(text) {
+                       start.linkTo(parent.start, margin = 4.dp)
+                       centerVerticallyTo(parent)
+                   }
+           )
+
+           Icon(
+               imageVector = Icons.Default.ArrowDropDown,
+               contentDescription = "",
+               modifier = Modifier.constrainAs(icon) {
+                   end.linkTo(parent.end, margin = 2.dp)
+                   centerVerticallyTo(parent)
+               }
+           )
+
+           DropdownMenu(
+               expanded = expanded,
+               onDismissRequest = { expanded = false },
+               modifier = Modifier
+                   .constrainAs(menu) { end.linkTo(icon.start) }
+                   .width((screenWidth - 40).dp)
+               ) {
+               countryList.forEach {
+                   DropdownMenuItem(
+                       text = { Text(text = "${it.name} ${it.code}") },
+                       onClick = {
+                           expanded = false
+                           selectedOptionText = it
+                           countryCode(it)
+                       }
+                   )
+               }
+           }
+       }
+    }
+}
+
