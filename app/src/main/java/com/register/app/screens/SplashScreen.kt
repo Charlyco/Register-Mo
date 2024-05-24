@@ -2,6 +2,7 @@ package com.register.app.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,9 +42,11 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
            val (logo, text) = createRefs()
 
            Image(
-               painter = painterResource(id = R.drawable.splash),
+               painter = painterResource(id = R.drawable.logo_white_bg),
                contentDescription = stringResource(id = R.string.app_logo),
-               modifier = Modifier.constrainAs(logo) {
+               modifier = Modifier
+                   .size(120.dp)
+                   .constrainAs(logo) {
                    centerHorizontallyTo(parent)
                    centerVerticallyTo(parent)
                }
@@ -61,10 +64,4 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun PreviewSplash() {
-    SplashScreen(authViewModel = AuthViewModel(), rememberNavController())
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -123,7 +124,7 @@ fun SendOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
 fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
     var phoneNumber by rememberSaveable { mutableStateOf("") }
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
-    var showIndicator = false
+    var showIndicator by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var countryCode by rememberSaveable { mutableStateOf("") }
     val countryList = listOf(
@@ -133,11 +134,12 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
         CountryCode("American Samoa", "+1-684")
     )
     ConstraintLayout {
-        val (spinner, phoneBox, otpBtn, indicator) = createRefs()
+        val (spinner, phoneBox, otpBtn, indicator, loginInstead) = createRefs()
 
         Surface(
             modifier = Modifier
                 .width(screenWidth.dp)
+                .height(50.dp)
                 .constrainAs(spinner) {
                     bottom.linkTo(phoneBox.top, margin = 32.dp)
                     top.linkTo(parent.top, 48.dp)
@@ -155,6 +157,7 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
         Surface(
             modifier = Modifier
                 .width(screenWidth.dp)
+                .height(50.dp)
                 .constrainAs(phoneBox) {
                     bottom.linkTo(otpBtn.top, margin = 72.dp)
                     centerHorizontallyTo(parent)
@@ -191,7 +194,7 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
             },
             modifier = Modifier
                 .width(screenWidth.dp)
-                .height(56.dp)
+                .height(48.dp)
                 .constrainAs(otpBtn) {
                     centerHorizontallyTo(parent)
                     bottom.linkTo(parent.bottom, margin = 120.dp)
@@ -211,6 +214,7 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
 
         if (showIndicator) {
             Surface(
+                color = Color.Transparent,
                 modifier = Modifier.constrainAs(indicator) {
                     centerHorizontallyTo(parent)
                     centerVerticallyTo(parent)
@@ -218,6 +222,29 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
             ) {
                 CircularIndicator()
             }
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.constrainAs(loginInstead) {
+                centerHorizontallyTo(parent)
+                bottom.linkTo(parent.bottom, margin = 32.dp)
+            }
+        ){
+            Text(
+                text = stringResource(id = R.string.account_exit),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.padding(end = 8.dp),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = stringResource(id = R.string.signin_instead),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .clickable { navController.navigate("signin") },
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

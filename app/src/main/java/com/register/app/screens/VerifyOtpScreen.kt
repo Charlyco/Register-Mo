@@ -2,9 +2,11 @@ package com.register.app.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,7 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -146,12 +152,12 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
     val timer = authViewModel.otpTimer?.observeAsState()?.value
     val enableResendButton =authViewModel.shouldResendOtp.observeAsState().value!!
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
-    var showIndicator = false
+    var showIndicator by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val isOtPVerified = authViewModel.isOtpVerified.observeAsState().value
 
     ConstraintLayout {
-        val (otpBox, nextButton, indicator, timerText, checkMark) = createRefs()
+        val (otpBox, nextButton, indicator, timerText, checkMark, loginInstead) = createRefs()
 
         Surface(
                 color = Color.Transparent,
@@ -241,12 +247,37 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                 modifier = Modifier.constrainAs(indicator) {
                     centerHorizontallyTo(parent)
                     centerVerticallyTo(parent)
-                }
+                },
+                color = Color.Transparent
             ) {
                 CircularIndicator()
             }
         }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.constrainAs(loginInstead) {
+                centerHorizontallyTo(parent)
+                bottom.linkTo(parent.bottom, margin = 32.dp)
+            }
+        ){
+            Text(
+                text = stringResource(id = R.string.account_exit),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.padding(end = 8.dp),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = stringResource(id = R.string.signin_instead),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .clickable { navController.navigate("signin") },
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
+
 }
 
 @Composable

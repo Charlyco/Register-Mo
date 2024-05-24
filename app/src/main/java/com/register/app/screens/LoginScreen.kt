@@ -6,13 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Email
@@ -32,10 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
@@ -57,10 +59,17 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.register.app.R
+import com.register.app.util.CircularIndicator
+import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
+fun LoginScreen(
+    authViewModel: AuthViewModel,
+    navController: NavController,
+    dataStoreManager: DataStoreManager
+) {
     val signInBrush = Brush.linearGradient(
         listOf(MaterialTheme.colorScheme.primary,
             MaterialTheme.colorScheme.surface,
@@ -73,6 +82,8 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     val context = LocalContext.current
     val error = authViewModel.errorLiveData.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
+    var showIndicator by rememberSaveable { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
@@ -83,7 +94,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
         ConstraintLayout(
             modifier = Modifier.fillMaxSize()
         ) {
-            val (backBtn, header, emailBox, passwordBox, loginBtn, alternate) = createRefs()
+            val (backBtn, header, emailBox, passwordBox, loginBtn, alternate, indicator) = createRefs()
 
             Surface(
                 modifier = Modifier
@@ -111,14 +122,27 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                     top.linkTo(parent.top, margin = 72.dp)
                 }
             ) {
-                Image(painter = painterResource(
-                    id = R.drawable.splash),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .size(72.dp),
-                    contentScale = ContentScale.Fit,
-                )
+                Surface(Modifier
+                    .padding(vertical = 16.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topEnd = 8.dp,
+                            topStart = 8.dp,
+                            bottomEnd = 8.dp,
+                            bottomStart = 8.dp
+                        ))
+                    .size(80.dp),
+                    color = Color.White
+                ) {
+                    Image(painter = painterResource(
+                        id = R.drawable.app_icon),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                    )
+                }
                 Text(text = stringResource(
                     id = R.string.welcome),
                     fontFamily = FontFamily.SansSerif,
@@ -144,7 +168,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                     },
                 color = MaterialTheme.colorScheme.background,
                 shape = MaterialTheme.shapes.small,
-                shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+                shadowElevation = dimensionResource(id = R.dimen.low_elevation)
 
             ) {
                 TextField(
@@ -173,7 +197,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                     },
                 color = MaterialTheme.colorScheme.background,
                 shape = MaterialTheme.shapes.small,
-                shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+                shadowElevation = dimensionResource(id = R.dimen.low_elevation)
 
             ) {
                 TextField(
@@ -217,10 +241,20 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
             Button(
                 onClick = {
-                    val response = authViewModel.signIn(email, password)
-                    if (error?.isNotBlank() == true) {
-                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    } },
+                    showIndicator = true
+                    coroutineScope.launch {
+                        val response = authViewModel.signIn(email, password)
+                        if (error?.isNotBlank() == true) {
+                            showIndicator = false
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        }
+                        // (response.name != null) {
+                            navController.navigate("home") {
+                                popUpTo("welcome") {inclusive = true}
+                            //}
+                        }
+                    }
+                          },
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = dimensionResource(id = R.dimen.default_elevation),
                     pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
@@ -247,6 +281,18 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
             ) {
                 SignUpInstead(navController)
             }
+
+            if (showIndicator) {
+                Surface(
+                    color = Color.Transparent,
+                    modifier = Modifier.constrainAs(indicator) {
+                        centerHorizontallyTo(parent)
+                        centerVerticallyTo(parent)
+                    }
+                ) {
+                    CircularIndicator()
+                }
+            }
         }
     }
 }
@@ -267,15 +313,8 @@ fun SignUpInstead(navController: NavController) {
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier
                 .padding(end = 8.dp)
-                .clickable { navController.navigate("signup") },
+                .clickable { navController.navigate("otp") },
             color = MaterialTheme.colorScheme.primary
         )
     }
-}
-
-@Preview
-@Composable
-fun PreviewLogin() {
-    LoginScreen(authViewModel = AuthViewModel(),
-        navController = rememberNavController())
 }

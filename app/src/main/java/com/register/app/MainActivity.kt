@@ -11,15 +11,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.register.app.ui.theme.RegisterTheme
+import com.register.app.util.DataStoreManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var dataStoreManager: DataStoreManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             RegisterTheme {
-                RegisterAppNavHost(this)
+                RegisterAppNavHost(this, dataStoreManager)
             }
         }
     }

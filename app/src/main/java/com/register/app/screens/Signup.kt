@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Email
@@ -36,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -56,10 +58,16 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.register.app.R
+import com.register.app.util.CircularIndicator
+import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.AuthViewModel
 
 @Composable
-fun Signup(authViewModel: AuthViewModel, navController: NavController) {
+fun Signup(
+    authViewModel: AuthViewModel,
+    navController: NavController,
+    dataStoreManager: DataStoreManager
+) {
     val signUpBrush = Brush.linearGradient(
         listOf(MaterialTheme.colorScheme.primary,MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.background))
     Surface(color = Color.Transparent,
@@ -95,17 +103,31 @@ fun Signup(authViewModel: AuthViewModel, navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.constrainAs(header) {
                     centerHorizontallyTo(parent)
-                    top.linkTo(parent.top, margin = 72.dp)
+                    bottom.linkTo(inputSection.top, margin = 42.dp)
                 }
             ) {
-                Image(painter = painterResource(
-                    id = R.drawable.splash),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .size(72.dp),
-                    contentScale = ContentScale.Fit,
-                )
+                Surface(Modifier
+                    .padding(vertical = 16.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topEnd = 8.dp,
+                            topStart = 8.dp,
+                            bottomEnd = 8.dp,
+                            bottomStart = 8.dp
+                        )
+                    )
+                    .size(80.dp),
+                    color = Color.White
+                ) {
+                    Image(painter = painterResource(
+                        id = R.drawable.app_icon),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                    )
+                }
                 Text(text = stringResource(
                     id = R.string.welcome),
                     fontFamily = FontFamily.SansSerif,
@@ -169,11 +191,14 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     val error = authViewModel.errorLiveData.observeAsState().value
     val context = LocalContext.current
+    var showIndicator by rememberSaveable { mutableStateOf(false) }
 
     ConstraintLayout(
         modifier = Modifier.fillMaxWidth()
     ) {
-        val (emailBox, firstNameBox, lastNameBox, passwordBox, rePasswordBox, signupBtn, alternate) = createRefs()
+        val (emailBox, firstNameBox, lastNameBox, passwordBox, rePasswordBox, signupBtn, alternate, indicator) = createRefs()
+
+
 
         Surface(
             modifier = Modifier
@@ -383,7 +408,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                 .padding(bottom = 4.dp)
                 .constrainAs(signupBtn) {
                     centerHorizontallyTo(parent)
-                    bottom.linkTo(alternate.top, margin = 64.dp)
+                    bottom.linkTo(alternate.top, margin = 50.dp)
                 }
             ) {
             Text(text = stringResource(id = R.string.signup))
@@ -393,16 +418,22 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
             color = Color.Transparent,
             modifier = Modifier.constrainAs(alternate) {
                 centerHorizontallyTo(parent)
-                bottom.linkTo(parent.bottom, margin = 48.dp)
+                bottom.linkTo(parent.bottom, margin = 24.dp)
             }
         ) {
             AlternateAction(navController)
         }
-    }
-}
 
-@Preview
-@Composable
-fun PreviewSignUp() {
-    Signup(authViewModel = AuthViewModel(), navController = rememberNavController())
+        if (showIndicator) {
+            Surface(
+                color = Color.Transparent,
+                modifier = Modifier.constrainAs(indicator) {
+                    centerHorizontallyTo(parent)
+                    centerVerticallyTo(parent)
+                }
+            ) {
+                CircularIndicator()
+            }
+        }
+    }
 }

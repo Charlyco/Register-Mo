@@ -1,23 +1,32 @@
 package com.register.app.viewmodel
 
-import android.accounts.AccountAuthenticatorResponse
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponse
+import com.register.app.dto.LoginUserModel
+import com.register.app.dto.SignUpModel
+import com.register.app.repository.AuthRepository
+import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.concurrent.timer
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(): ViewModel() {
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val dataStoreManager: DataStoreManager
+): ViewModel() {
     private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData(false)
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
     private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
     val isOtpVerified: LiveData<Boolean> = _isOtpVerified
     private val _otpLiveData: MutableLiveData<String>? = MutableLiveData("")
     val otpTimer: LiveData<String>? = _otpLiveData
+    private val _phoneNumber: MutableLiveData<String> = MutableLiveData("")
+    val phoneNumber: LiveData<String> = _phoneNumber
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData("")
     val errorLiveData: LiveData<String?> = _errorLiveData
 
@@ -39,7 +48,11 @@ class AuthViewModel @Inject constructor(): ViewModel() {
         }else if (rePassword != password) {
             _errorLiveData.value = "Password mismatch"
         } else {
-            //TODO call Repository signup function
+            val signUpModel = SignUpModel("$firstName $lastName", email, password, rePassword, phoneNumber.value)
+            viewModelScope.launch {
+                val authResponse =  authRepository.signUp(signUpModel)
+                dataStoreManager.writeAuthData(authResponse?.member?.emailAddress!!)  //to be modified
+            }
         }
         return true;
     }
@@ -53,7 +66,6 @@ class AuthViewModel @Inject constructor(): ViewModel() {
 
     suspend fun sendOtp(phoneNumber: String): Boolean {
         //this is placeholder implementation
-        delay(3000)
         countDownTimer(3)
         return true
     }
@@ -81,8 +93,12 @@ class AuthViewModel @Inject constructor(): ViewModel() {
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-    fun signIn(email: String, password: String): AuthResponse {
-        TODO("Not yet implemented")
+    fun signIn(email: String, password: String): AuthResponse? {
+        var authResponse: AuthResponse? = null
+       viewModelScope.launch {
+           authResponse = authRepository.login(LoginUserModel(email, password))
+           //dataStoreManager.writeTokenData(authResponse?.authToken!!)
+       }
+        return authResponse
     }
-
 }

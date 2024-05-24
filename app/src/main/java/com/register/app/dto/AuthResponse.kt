@@ -1,3 +1,8 @@
 package com.register.app.dto
 
-data class AuthResponse(val name: String)
+import com.register.app.model.Member
+
+data class AuthResponse(
+    val authToken: String,
+    val member: Member
+)
