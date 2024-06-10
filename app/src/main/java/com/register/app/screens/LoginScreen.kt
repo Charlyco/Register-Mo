@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,8 +73,8 @@ fun LoginScreen(
 ) {
     val signInBrush = Brush.linearGradient(
         listOf(MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.background),
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.onBackground),
         tileMode = TileMode.Repeated)
 
     var email by rememberSaveable { mutableStateOf("") }
@@ -167,16 +168,20 @@ fun LoginScreen(
                         centerVerticallyTo(parent)
                     },
                 color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.small,
-                shadowElevation = dimensionResource(id = R.dimen.low_elevation)
+                shape = MaterialTheme.shapes.large
 
             ) {
                 TextField(
                     value = email,
                     onValueChange = {email = it},
-                    label = { Text(text = stringResource(id = R.string.email)) },
+                    label = { Text(
+                        text = stringResource(id = R.string.email),
+                        color = Color.Gray) },
                     modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "") },
+                    leadingIcon = { Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "",
+                        tint = Color.Gray) },
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -196,22 +201,27 @@ fun LoginScreen(
                         top.linkTo(emailBox.bottom, margin = 32.dp)
                     },
                 color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.small,
-                shadowElevation = dimensionResource(id = R.dimen.low_elevation)
+                shape = MaterialTheme.shapes.large
 
             ) {
                 TextField(
                     value = password,
                     onValueChange = {password = it},
-                    label = { Text(text = stringResource(id = R.string.password)) },
+                    label = { Text(
+                        text = stringResource(id = R.string.password),
+                        color = Color.Gray) },
                     modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "")},
+                    leadingIcon = { Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "",
+                        tint = Color.Gray)},
                     trailingIcon = {
                         if (showPassword) {
                             IconButton(onClick = { showPassword = false }) {
                                 Icon(
                                     imageVector = Icons.Default.VisibilityOff,
-                                    contentDescription = "hide_password"
+                                    contentDescription = "hide_password",
+                                    tint = Color.Gray
                                 )
                             }
                         } else {
@@ -219,7 +229,8 @@ fun LoginScreen(
                                 onClick = { showPassword = true }) {
                                 Icon(
                                     imageVector = Icons.Default.Visibility,
-                                    contentDescription = "hide_password"
+                                    contentDescription = "hide_password",
+                                    tint = Color.Gray
                                 )
                             }
                         }
@@ -255,10 +266,10 @@ fun LoginScreen(
                         }
                     }
                           },
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = dimensionResource(id = R.dimen.default_elevation),
-                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
-                ),
+//                elevation = ButtonDefaults.buttonElevation(
+//                    defaultElevation = dimensionResource(id = R.dimen.default_elevation),
+//                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+//                ),
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .width(screenWidth.dp)
@@ -267,7 +278,8 @@ fun LoginScreen(
                     .constrainAs(loginBtn) {
                         centerHorizontallyTo(parent)
                         top.linkTo(passwordBox.bottom, margin = 64.dp)
-                    }
+                    },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.background)
             ) {
                 Text(text = stringResource(id = R.string.signin))
             }
@@ -306,7 +318,7 @@ fun SignUpInstead(navController: NavController) {
             text = stringResource(id = R.string.no_account),
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier.padding(end = 8.dp),
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.background
         )
         Text(
             text = stringResource(id = R.string.signup),

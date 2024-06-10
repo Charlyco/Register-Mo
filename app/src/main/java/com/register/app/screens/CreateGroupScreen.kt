@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
@@ -261,7 +260,13 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, onDismiss: (showState: Boo
                    color = MaterialTheme.colorScheme.background,
                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
                    ) {
-                   ImageLoader(imageUrl = "", context = context, height = 120, width = 120)
+                   ImageLoader(
+                       imageUrl = "",
+                       context = context,
+                       height = 120,
+                       width = 120,
+                       placeHolder = R.drawable.app_icon
+                   )
                }
 
                Button(

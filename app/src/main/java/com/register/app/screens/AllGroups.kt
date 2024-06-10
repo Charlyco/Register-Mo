@@ -1,6 +1,5 @@
 package com.register.app.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +49,7 @@ import com.register.app.util.BottomNavBar
 import com.register.app.util.DataStoreManager
 import com.register.app.util.DateFormatter.Companion.formatDateTime
 import com.register.app.util.GenericTopBar
+import com.register.app.util.GroupItem
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
 
@@ -156,82 +156,6 @@ fun GroupSearchBox(groupViewModel: GroupViewModel, navController: NavController)
     }
 }
 
-@Composable
-fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
-    val context = LocalContext.current
-    Surface(
-        Modifier
-            .fillMaxWidth()
-            .padding(bottom = 2.dp)
-            .clickable {
-                navController.navigate("group_detail") { launchSingleTop = true }
-                groupViewModel.setSelectedGroupDetail(group)
-                       },
-        shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        ConstraintLayout(
-            Modifier
-                .fillMaxWidth()) {
-            val (logo, name, memberCount, creator, dateCreated) = createRefs()
-
-            Surface(
-                Modifier
-                    .size(120.dp)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start, margin = 16.dp)
-                        centerVerticallyTo(parent)
-                    },
-                shape = MaterialTheme.shapes.extraLarge,
-                color = Color.Transparent
-            ) {
-                ImageLoader(group.logoUrl, context, 120, 120)
-            }
-
-            Text(
-                text = group.groupName,
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(name) {
-                    top.linkTo(parent.top, margin = 4.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(20.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(text = "Created by: ${group.creatorName}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(creator) {
-                    top.linkTo(name.bottom, margin = 8.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "Created on: ${formatDateTime(group.dateCreated)}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(dateCreated) {
-                    top.linkTo(creator.bottom, margin = 8.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "${group.memberList?.size} members",
-                Modifier.constrainAs(memberCount) {
-                    top.linkTo(dateCreated.bottom, margin = 8.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-        }
-    }
-}
-
 @Preview
 @Composable
 fun PreviewGroup() {
@@ -247,7 +171,7 @@ fun PreviewGroup() {
 fun PreviewGroupItem() {
     GroupItem(
         group = Group(1, "IHS-2008", "200d set of Isuikwuato High School",
-            "charlyco@gmail.com", "+234-7037590923", "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles", "", listOf(), listOf(), listOf(), "", "", "" ),
+            "charlyco@gmail.com", "+234-7037590923", "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles", "", listOf(), listOf(), listOf(), "", "", "CLOSED", "" ),
         navController = rememberNavController(),
         groupViewModel = GroupViewModel(DataStoreManager.getInstance(LocalContext.current))
     )

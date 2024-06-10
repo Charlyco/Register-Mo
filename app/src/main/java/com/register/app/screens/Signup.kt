@@ -83,6 +83,11 @@ fun Signup(
             Surface(
                 modifier = Modifier
                     .size(40.dp)
+                    .clickable {
+                        navController.navigate("otp") {
+                            popUpTo("otp") {inclusive = true}
+                        }
+                    }
                     .constrainAs(backBtn) {
                         start.linkTo(parent.start, margin = 16.dp)
                         top.linkTo(parent.top, margin = 12.dp)
@@ -198,8 +203,6 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
     ) {
         val (emailBox, firstNameBox, lastNameBox, passwordBox, rePasswordBox, signupBtn, alternate, indicator) = createRefs()
 
-
-
         Surface(
             modifier = Modifier
                 .width(screenWidth.dp)
@@ -209,16 +212,19 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(lastNameBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-
+            shape = MaterialTheme.shapes.large
         ) {
             TextField(
                 value = firstName,
                 onValueChange = {firstName = it},
-                label = { Text(text = stringResource(id = R.string.first_name)) },
+                label = { Text(
+                    text = stringResource(id = R.string.first_name),
+                    color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "")},
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "",
+                    tint = Color.Gray)},
                 colors = TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -238,16 +244,19 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(emailBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-
+            shape = MaterialTheme.shapes.large
         ) {
             TextField(
                 value = lastName,
                 onValueChange = {lastName = it},
-                label = { Text(text = stringResource(id = R.string.last_name)) },
+                label = { Text(
+                    text = stringResource(id = R.string.last_name),
+                    color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "")},
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "",
+                    tint = Color.Gray)},
                 colors = TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -267,16 +276,19 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(passwordBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-
+            shape = MaterialTheme.shapes.large
         ) {
             TextField(
                 value = email,
                 onValueChange = {email = it},
-                label = { Text(text = stringResource(id = R.string.email)) },
+                label = { Text(
+                    text = stringResource(id = R.string.email),
+                    color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "")},
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "",
+                    tint = Color.Gray)},
                 colors = TextFieldDefaults.colors(
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -296,22 +308,26 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(rePasswordBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-
+            shape = MaterialTheme.shapes.large
         ) {
             TextField(
                 value = password,
                 onValueChange = {password = it},
-                label = { Text(text = stringResource(id = R.string.password)) },
+                label = { Text(
+                    text = stringResource(id = R.string.password),
+                    color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "")},
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "",
+                    tint = Color.Gray)},
                 trailingIcon = {
                     if (showPassword) {
                         IconButton(onClick = { showPassword = false }) {
                             Icon(
                                 imageVector = Icons.Default.VisibilityOff,
-                                contentDescription = "hide_password"
+                                contentDescription = "hide_password",
+                                tint = Color.Gray
                             )
                         }
                     } else {
@@ -319,7 +335,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                             onClick = { showPassword = true }) {
                             Icon(
                                 imageVector = Icons.Default.Visibility,
-                                contentDescription = "hide_password"
+                                contentDescription = "hide_password",
+                                tint = Color.Gray
                             )
                         }
                     }
@@ -348,22 +365,26 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(signupBtn.top, margin = 32.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-
+            shape = MaterialTheme.shapes.large
         ) {
             TextField(
                 value = rePassword,
                 onValueChange = {rePassword = it},
-                label = { Text(text = stringResource(id = R.string.confirm_password)) },
+                label = { Text(
+                    text = stringResource(id = R.string.confirm_password),
+                    color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "")},
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "",
+                    tint = Color.Gray)},
                 trailingIcon = {
                     if (showRePassword) {
                         IconButton(onClick = { showRePassword = false }) {
                             Icon(
                                 imageVector = Icons.Default.VisibilityOff,
-                                contentDescription = "hide_password"
+                                contentDescription = "hide_password",
+                                tint = Color.Gray
                             )
                         }
                     } else {
@@ -371,7 +392,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                             onClick = { showRePassword = true }) {
                             Icon(
                                 imageVector = Icons.Default.Visibility,
-                                contentDescription = "hide_password"
+                                contentDescription = "hide_password",
+                                tint = Color.Gray
                             )
                         }
                     }
@@ -398,7 +420,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                           Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                       } },
             elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = dimensionResource(id = R.dimen.default_elevation),
+                defaultElevation = dimensionResource(id = R.dimen.low_elevation),
                 pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
             ),
             shape = MaterialTheme.shapes.large,

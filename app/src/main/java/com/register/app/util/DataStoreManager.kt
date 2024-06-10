@@ -19,6 +19,7 @@ class DataStoreManager(private val applicationContext: Context) {
         val firebaseToken = stringPreferencesKey("firebase")
         val contactPermission = stringPreferencesKey("contactPermission")
         val deviceId = stringPreferencesKey("deviceId")
+        val userEmail = stringPreferencesKey("email")
     }
 
     // Singleton pattern for DataStoreManager
@@ -29,6 +30,7 @@ class DataStoreManager(private val applicationContext: Context) {
         private val Context.firebaseDataStore: DataStore<Preferences> by preferencesDataStore(name = "firebase_datastore")
         private val Context.contactPermission: DataStore<Preferences> by preferencesDataStore(name = "contact_perm_datastore")
         private val Context.deviceIdDataStore: DataStore<Preferences> by preferencesDataStore(name= "device_id_datastore")
+        private val Context.userEmailDataStore: DataStore<Preferences> by preferencesDataStore(name = "email_datastore")
 
         @Volatile
         private var instance: DataStoreManager? = null
@@ -97,5 +99,15 @@ class DataStoreManager(private val applicationContext: Context) {
 
     suspend fun readDeviceId() : String? {
         return applicationContext.deviceIdDataStore.data.map { it[PreferencesKeys.deviceId] }.firstOrNull()
+    }
+
+    suspend fun writeUserEmailData(email: String) {
+        applicationContext.userEmailDataStore.edit { preferences ->
+            preferences[PreferencesKeys.userEmail] = email
+        }
+    }
+
+    suspend fun readUserEmailData(): String? {
+        return applicationContext.userEmailDataStore.data.map { it[PreferencesKeys.userEmail] }.firstOrNull()
     }
 }

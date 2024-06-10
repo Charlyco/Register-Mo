@@ -86,8 +86,8 @@ private fun CharView(
     }
     Text(text = char,
         modifier = Modifier
-            .paddingFromBaseline(top = 14.dp)
-            .size(50.dp)
+            .paddingFromBaseline(top = 16.dp)
+            .size(48.dp)
             .border(
                 1.dp, when {
                     isFocused -> Color.DarkGray
@@ -103,6 +103,6 @@ private fun CharView(
             Color.DarkGray
         },
         textAlign = TextAlign.Center,
-        fontSize = TextUnit(20.0f, TextUnitType.Sp)
+        fontSize = TextUnit(32.0f, TextUnitType.Sp)
     )
 }

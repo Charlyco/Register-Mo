@@ -33,7 +33,9 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
     ) {
         LaunchedEffect(key1 = SPLASH_SCREEN_KEY) {
             delay(3000)
-            navController.navigate("otp")
+            navController.navigate("auth") {
+                popUpTo("splash") {inclusive = true}
+            }
         }
 
         ConstraintLayout(
@@ -42,7 +44,7 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
            val (logo, text) = createRefs()
 
            Image(
-               painter = painterResource(id = R.drawable.logo_white_bg),
+               painter = painterResource(id = R.drawable.register_logo),
                contentDescription = stringResource(id = R.string.app_logo),
                modifier = Modifier
                    .size(120.dp)

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
+import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,8 +24,8 @@ class AuthViewModel @Inject constructor(
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
     private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
     val isOtpVerified: LiveData<Boolean> = _isOtpVerified
-    private val _otpLiveData: MutableLiveData<String>? = MutableLiveData("")
-    val otpTimer: LiveData<String>? = _otpLiveData
+    private val _otpLiveData: MutableLiveData<String> = MutableLiveData("")
+    val otpTimer: LiveData<String> = _otpLiveData
     private val _phoneNumber: MutableLiveData<String> = MutableLiveData("")
     val phoneNumber: LiveData<String> = _phoneNumber
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData("")
@@ -66,7 +67,7 @@ class AuthViewModel @Inject constructor(
 
     suspend fun sendOtp(phoneNumber: String): Boolean {
         //this is placeholder implementation
-        countDownTimer(3)
+        countDownTimer(1)
         return true
     }
 
@@ -75,12 +76,11 @@ class AuthViewModel @Inject constructor(
         var remainingTime = initialTime
 
         timer(period = 1000) {
-            if (remainingTime >= 0) {
+            if (remainingTime > 0) {
                 val formattedTime = formatTime(remainingTime)
                 _otpLiveData?.postValue(formattedTime)
                 remainingTime--
-                _shouldResendOtp.postValue(false)
-            }else {
+            } else if (remainingTime == 0) {
                 _shouldResendOtp.postValue(true)
                 _otpLiveData?.postValue("Time Elapsed!")
                 cancel()
@@ -98,7 +98,39 @@ class AuthViewModel @Inject constructor(
        viewModelScope.launch {
            authResponse = authRepository.login(LoginUserModel(email, password))
            //dataStoreManager.writeTokenData(authResponse?.authToken!!)
+           //dataStoreManager.writeUserRoleData(authResponse?.member?.memberPost!!)
        }
         return authResponse
+    }
+
+    fun isUserAdmin(): Boolean {
+        var role: String? = ""
+        // Ca
+        return true
+        //return role
+    }
+
+    fun fetchMemberDetailsById(memberId: Int): Member {
+        return Member(1,
+            "Uche Egemba",
+            "+2347037590923",
+            "charlyco835@gmail.com",
+            "", "",
+            "ACTIVE",
+            "Member",
+            0.0, "",
+            "USER", listOf())
+    }
+
+    fun getUserDetails(): Member {
+        return Member(1,
+            "Uche Egemba",
+            "+2347037590923",
+            "charlyco835@gmail.com",
+            "12 Achuzilam Streen, Oppsite Divina Hospital, Nekede Owerri", "",
+            "ACTIVE",
+            "Member",
+            0.0, "",
+            "USER", listOf())
     }
 }

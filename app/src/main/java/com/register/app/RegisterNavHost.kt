@@ -1,24 +1,34 @@
 package com.register.app
 
 import androidx.activity.viewModels
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.register.app.screens.Chatroom
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
+import com.register.app.screens.AuthScreen
 import com.register.app.screens.EvidenceOfPayment
+import com.register.app.screens.Forum
 import com.register.app.screens.GroupDetail
+import com.register.app.screens.GroupUpdateScreen
 import com.register.app.screens.HomeScreen
 import com.register.app.screens.LoginScreen
+import com.register.app.screens.ProfileScreen
 import com.register.app.screens.SendOtpScreen
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.AuthViewModel
+import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 
@@ -27,6 +37,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
     val authViewModel: AuthViewModel by mainActivity.viewModels()
     val homeViewModel: HomeViewModel by mainActivity.viewModels()
     val groupViewModel: GroupViewModel by mainActivity.viewModels()
+    val forumViewModel: ForumViewModel by mainActivity.viewModels()
 
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "splash") {
@@ -46,16 +57,16 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
         composable("home") {
-            HomeScreen(homeViewModel = homeViewModel, navController = navController, dataStoreManager = dataStoreManager)
+            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, dataStoreManager = dataStoreManager)
         }
         composable("chats") {
             Chatroom()
         }
         composable("events") {
-            Events()
+            Events(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("event_detail") {
-            EventDetails(dataStoreManager = dataStoreManager, navController = navController, homeViewModel = homeViewModel)
+            EventDetails(dataStoreManager = dataStoreManager, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("groups") {
             AllGroups(navController = navController, dataStoreManager = dataStoreManager, groupViewModel = groupViewModel)
@@ -64,7 +75,20 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel)
         }
         composable("group_detail") {
-            GroupDetail(navController = navController, groupViewModel = groupViewModel)
+            GroupDetail(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, homeViewModel = homeViewModel)
+        }
+        composable("profile") {
+            ProfileScreen(authViewModel, groupViewModel, navController)
+        }
+        composable("forum") {
+            Forum(forumViewModel = forumViewModel, groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("auth") {
+            AuthScreen(navController = navController, dataStoreManager = dataStoreManager)
+        }
+        composable("update_group") {
+            GroupUpdateScreen(navController = navController, groupViewModel = groupViewModel)
         }
     }
 }
+

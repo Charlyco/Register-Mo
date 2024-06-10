@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -61,9 +62,22 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
         ) {
             val (backBtn, lowerSection, image, text, changeNUmber) = createRefs()
 
+//            Image(
+//                painter = painterResource(id = R.drawable.urban2),
+//                contentDescription = "",
+//                modifier = Modifier
+//                    .constrainAs(image) {
+//                        centerHorizontallyTo(parent)
+//                        top.linkTo(parent.top)
+//                    }
+//                    .fillMaxWidth(),
+//                contentScale = ContentScale.FillBounds
+//            )
+
             Surface(
                 modifier = Modifier
                     .size(40.dp)
+                    .clickable { navController.navigateUp() }
                     .constrainAs(backBtn) {
                         start.linkTo(parent.start, margin = 16.dp)
                         top.linkTo(parent.top, margin = 12.dp)
@@ -79,29 +93,50 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-
-            Image(
-                painter = painterResource(id = R.drawable.verify_image),
-                contentDescription = "",
-                modifier = Modifier
-                    .constrainAs(image) {
+            Surface(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            bottomEnd = 32.dp,
+                            topStart = 32.dp
+                        )
+                    )
+                    .constrainAs(text) {
                         centerHorizontallyTo(parent)
-                        top.linkTo(parent.top, margin = 32.dp)
-                    }
-                    .size(120.dp),
-                contentScale = ContentScale.Fit
-            )
-
+                        bottom.linkTo(lowerSection.top, margin = 32.dp)
+                    },
+                color = MaterialTheme.colorScheme.onTertiary
+            ) {
             Text(
                 text = stringResource(id = R.string.verify_otp_header),
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onPrimary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(text) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(image.bottom, margin = 16.dp)
-                }
-            )
+            )}
+
+            Surface(
+                modifier = Modifier
+                    .constrainAs(lowerSection) {
+                        centerHorizontallyTo(parent)
+                        bottom.linkTo(parent.bottom)
+                    }
+                    //.height(600.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 48.dp,
+                            topEnd = 48.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                    )
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+            ) {
+                LowerVerifySection(authViewModel, navController)
+            }
 
             Text(
                 text = stringResource(id = R.string.change_number),
@@ -117,32 +152,9 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
                     }
                     .constrainAs(changeNUmber) {
                         centerHorizontallyTo(parent)
-                        top.linkTo(text.bottom, margin = 16.dp)
+                        top.linkTo(lowerSection.top, margin = 8.dp)
                     }
             )
-
-            Surface(
-                modifier = Modifier
-                    .constrainAs(lowerSection) {
-                        centerHorizontallyTo(parent)
-                        bottom.linkTo(parent.bottom)
-                    }
-                    //.height(600.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 0.dp,
-                            topEnd = 48.dp,
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp
-                        )
-                    )
-                    .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = dimensionResource(id = R.dimen.default_elevation)
-            ) {
-                LowerVerifySection(authViewModel, navController)
-            }
-
         }
     }
 }
@@ -150,13 +162,15 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
 @Composable
 fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavController) {
     val timer = authViewModel.otpTimer?.observeAsState()?.value
-    val enableResendButton =authViewModel.shouldResendOtp.observeAsState().value!!
+    val enableResendButton =authViewModel.shouldResendOtp.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     var showIndicator by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val isOtPVerified = authViewModel.isOtpVerified.observeAsState().value
 
-    ConstraintLayout {
+    ConstraintLayout(
+        Modifier.height(512.dp)
+    ) {
         val (otpBox, nextButton, indicator, timerText, checkMark, loginInstead) = createRefs()
 
         Surface(
@@ -178,7 +192,7 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
             modifier = Modifier
                 //.width(screenWidth.dp)
                 .constrainAs(otpBox) {
-                    bottom.linkTo(nextButton.top, margin = 160.dp)
+                    top.linkTo(parent.top, margin = 160.dp)
                     centerHorizontallyTo(parent)
                 },
             color = Color.Transparent
@@ -186,7 +200,7 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
             OtpTextField(authViewModel = authViewModel)
         }
 
-        if (enableResendButton) {
+        if (enableResendButton == true) {
             Text(
                 text = stringResource(id = R.string.resend),
                 modifier = Modifier.constrainAs(timerText) {
@@ -205,41 +219,38 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                     top.linkTo(otpBox.bottom, margin = 4.dp)
                     start.linkTo(otpBox.start)
                 },
-                color = MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
             )
         }
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    showIndicator = true
-                    if (isOtPVerified == true) {
-                        showIndicator = false
+        if (isOtPVerified == true) {
+            Button(
+                onClick = {
+                    coroutineScope.launch {
                         navController.navigate("signup") {
                             launchSingleTop = true
                         }
                     }
-                }
-            },
-            modifier = Modifier
-                .width(screenWidth.dp)
-                .height(50.dp)
-                .constrainAs(nextButton) {
-                    centerHorizontallyTo(parent)
-                    bottom.linkTo(parent.bottom, margin = 128.dp)
                 },
-            shape = MaterialTheme.shapes.large,
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = dimensionResource(id = R.dimen.default_elevation),
-                pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
-            ),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Text(text = stringResource(id = R.string.next))
+                modifier = Modifier
+                    .width(screenWidth.dp)
+                    .height(50.dp)
+                    .constrainAs(nextButton) {
+                        centerHorizontallyTo(parent)
+                        bottom.linkTo(parent.bottom, margin = 128.dp)
+                    },
+                shape = MaterialTheme.shapes.large,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = dimensionResource(id = R.dimen.low_elevation),
+                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(text = stringResource(id = R.string.next))
+            }
         }
 
         if (showIndicator) {

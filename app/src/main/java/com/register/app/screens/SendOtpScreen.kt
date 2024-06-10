@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
@@ -65,44 +66,64 @@ fun SendOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
         color = MaterialTheme.colorScheme.primary
     ) {
         ConstraintLayout(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxSize()
         ) {
             val (lowerSection, image, text) = createRefs()
-            
-            Image(
-                painter = painterResource(id = R.drawable.otp_image),
-                contentDescription = "",
+
+            Surface (
                 modifier = Modifier
                     .constrainAs(image) {
                         centerHorizontallyTo(parent)
-                        top.linkTo(parent.top, margin = 32.dp)
-                    }
-                    .size(160.dp),
-                contentScale = ContentScale.Fit
-            )
-
-            Text(
-                text = stringResource(id = R.string.otp_header),
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onPrimary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(text) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(image.bottom, margin = 24.dp)
-                }
+                        top.linkTo(parent.top, margin = 64.dp)
+                    },
+                shape = MaterialTheme.shapes.large
+            ){
+                Image(
+                    painter = painterResource(id = R.drawable.otp_image),
+                    contentDescription = "",
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .width(170.dp)
+                        .height(240.dp)
                 )
+            }
+
+            Surface(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            bottomEnd = 32.dp,
+                            topStart = 32.dp
+                        )
+                    )
+                    .constrainAs(text) {
+                        centerHorizontallyTo(parent)
+                        bottom.linkTo(lowerSection.top, margin = 32.dp)
+                    },
+                color = MaterialTheme.colorScheme.onTertiary
+            ) {
+                Text(
+                    text = stringResource(id = R.string.otp_header),
+                    fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
+                )
+            }
 
             Surface(
                 modifier = Modifier
                     .constrainAs(lowerSection) {
                         centerHorizontallyTo(parent)
                         bottom.linkTo(parent.bottom)
-                        //top.linkTo(parent.top, margin = 320.dp)
+                        //top.linkTo(image.bottom, margin = (-112).dp)
                     }
                     //.height(600.dp)
                     .clip(
                         RoundedCornerShape(
-                            topStart = 0.dp,
+                            topStart = 48.dp,
                             topEnd = 48.dp,
                             bottomStart = 0.dp,
                             bottomEnd = 0.dp
@@ -146,8 +167,8 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
                     centerHorizontallyTo(parent)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.small,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             SelectCountry(countryList) {
                 countryCode = it.code
@@ -163,13 +184,16 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
                     centerHorizontallyTo(parent)
                 },
             color = MaterialTheme.colorScheme.background,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-            shape = MaterialTheme.shapes.small
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                label = { Text(
+                    text = stringResource(id = R.string.phone_number),
+                    color = Color.Gray)},
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.background,
                     unfocusedIndicatorColor = Color.Transparent,
@@ -201,7 +225,7 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
                 },
             shape = MaterialTheme.shapes.large,
             elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = dimensionResource(id = R.dimen.default_elevation),
+                defaultElevation = dimensionResource(id = R.dimen.low_elevation),
                 pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
             ),
             colors = ButtonDefaults.buttonColors(

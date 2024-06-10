@@ -14,6 +14,7 @@ data class Group(
     val adminList: List<String>,
     val logoUrl: String,
     val walletBalance:String?,
+    val groupType: String?,
     val status: String)
 
 data class MembershipDto(val email: String, val membershipId: String)

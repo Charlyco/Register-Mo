@@ -45,13 +45,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.register.app.R
 import com.register.app.dto.CommentReply
 import com.register.app.dto.EventComment
@@ -60,11 +58,11 @@ import com.register.app.dto.ReactionType
 import com.register.app.model.Event
 import com.register.app.util.DataStoreManager
 import com.register.app.util.ImageLoader
-import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.Button
@@ -75,24 +73,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.register.app.model.Member
 import com.register.app.util.DateFormatter
+import com.register.app.viewmodel.AuthViewModel
+import com.register.app.viewmodel.GroupViewModel
 
 @Composable
-fun EventDetails(dataStoreManager: DataStoreManager, navController: NavController, homeViewModel: HomeViewModel) {
-    val selectedEvent = homeViewModel.selectedEvent.observeAsState().value
+fun EventDetails(
+    dataStoreManager: DataStoreManager,
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel) {
+    val selectedEvent = groupViewModel.selectedEvent.observeAsState().value
     Scaffold(
-        topBar = { EventDetailTopBar(navController, homeViewModel, selectedEvent) }
+        topBar = { EventDetailTopBar(navController, groupViewModel, selectedEvent) }
     ) {
-        EventDetailContent(Modifier.padding(it), dataStoreManager, navController, homeViewModel)
+        EventDetailContent(Modifier.padding(it), dataStoreManager, navController, groupViewModel, authViewModel)
     }
 }
 
 @Composable
 fun EventDetailTopBar(
     navController: NavController,
-    homeViewModel: HomeViewModel,
+    groupViewModel: GroupViewModel,
     selectedEvent: Event?
 ) {
-    val topBarWidth = LocalConfiguration.current.screenWidthDp - 64
+    //val topBarWidth = LocalConfiguration.current.screenWidthDp - 32
     Surface(
         Modifier
             .fillMaxWidth()
@@ -112,16 +116,13 @@ fun EventDetailTopBar(
                 imageVector = Icons.Default.ArrowBackIosNew,
                 contentDescription = "",
                 modifier = Modifier
-                    .clickable { 
-                        navController.navigate("home") {
-                            launchSingleTop = true
-                            popUpTo("event_detail") {inclusive = true}
-                        }
+                    .clickable {
+                        navController.navigateUp()
                     }
                     .constrainAs(navBtn) {
-                    start.linkTo(parent.start, margin = 8.dp)
-                    centerVerticallyTo(parent)
-                }
+                        start.linkTo(parent.start, margin = 8.dp)
+                        centerVerticallyTo(parent)
+                    }
             )
 
             Text(
@@ -141,10 +142,11 @@ fun EventDetailContent(
     modifier: Modifier,
     dataStoreManager: DataStoreManager,
     navController: NavController,
-    homeViewModel: HomeViewModel
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel
 ) {
-    val event = homeViewModel.selectedEvent.observeAsState().value
-    val commentList = homeViewModel.eventCommentLiveData.observeAsState().value
+    val event = groupViewModel.selectedEvent.observeAsState().value
+    val commentList = groupViewModel.eventCommentLiveData.observeAsState().value
     val pageState = rememberPagerState(pageCount = { event?.imageUrlList?.size?: 0} )
     var showDetails by rememberSaveable { mutableStateOf(true)}
     val context = LocalContext.current
@@ -165,7 +167,7 @@ fun EventDetailContent(
 
     Surface(
         Modifier
-            .padding(top = 64.dp)
+            .padding(top = 72.dp)
             .fillMaxSize()
             .verticalScroll(state = scrollState, enabled = true, reverseScrolling = false),
         color = MaterialTheme.colorScheme.background
@@ -187,7 +189,13 @@ fun EventDetailContent(
                     }
             ) {
                 event?.imageUrlList?.get(pageState.currentPage)
-                    ?.let { imageUrl  -> ImageLoader(imageUrl, context, 280, screenWidth) }
+                    ?.let { imageUrl  -> ImageLoader(
+                        imageUrl,
+                        context,
+                        280,
+                        screenWidth,
+                        R.drawable.event
+                    ) }
             }
 
             Row(
@@ -229,7 +237,7 @@ fun EventDetailContent(
                         top.linkTo(react.bottom, margin = 8.dp)
                         centerHorizontallyTo(parent)
                     },
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.small
             ) {
                 TabSwitch() {
                     showDetails = it
@@ -246,7 +254,7 @@ fun EventDetailContent(
                         },
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    ViewEventDetails(event, dataStoreManager, homeViewModel, navController)
+                    ViewEventDetails(event, dataStoreManager, authViewModel, groupViewModel, navController)
                 }
             }
             if (!showDetails) {
@@ -270,7 +278,7 @@ fun EventDetailContent(
                           border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
                           shape = MaterialTheme.shapes.medium
                       ) {
-                          CommentBox(homeViewModel, event, dataStoreManager)
+                          CommentBox(groupViewModel, event, dataStoreManager)
                       }
 
                       if (commentList?.isNotEmpty() == true) {
@@ -281,7 +289,7 @@ fun EventDetailContent(
                               verticalArrangement = Arrangement.Top
                           ) {
                               items(commentList) { comment ->
-                                  CommentItem(comment, homeViewModel, dataStoreManager)
+                                  CommentItem(comment, groupViewModel, dataStoreManager)
                               }
                           }
                       }
@@ -334,14 +342,14 @@ fun TabSwitch(switchView: (showDetails: Boolean) -> Unit) {
             Surface(
                 Modifier
                     .width((screenWidth - 24).dp)
-                    .height(30.dp)
+                    .height(40.dp)
                     .padding(vertical = 1.dp)
                     .constrainAs(detailsTop) {
                         start.linkTo(parent.start, margin = 1.dp)
                         centerVerticallyTo(parent)
                     },
                 shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.background
             ) {
                 Text(
@@ -359,14 +367,14 @@ fun TabSwitch(switchView: (showDetails: Boolean) -> Unit) {
             Surface(
                 Modifier
                     .width((screenWidth - 24).dp)
-                    .height(30.dp)
+                    .height(40.dp)
                     .padding(vertical = 1.dp)
                     .constrainAs(commentTop) {
                         end.linkTo(parent.end, margin = 1.dp)
                         centerVerticallyTo(parent)
                     },
                 shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.background
             ) {
                 Text(
@@ -386,11 +394,13 @@ fun TabSwitch(switchView: (showDetails: Boolean) -> Unit) {
 fun ViewEventDetails(
     event: Event?,
     dataStoreManager: DataStoreManager,
-    homeViewModel: HomeViewModel,
+    authViewModel: AuthViewModel,
+    groupViewModel: GroupViewModel,
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
     var userId: Int? = null
+    var showPaidList by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(key1 = 321) { userId = dataStoreManager.readAuthData()?.toInt() }
     Column(
         Modifier.fillMaxSize()
@@ -406,12 +416,12 @@ fun ViewEventDetails(
                 text = stringResource(id = R.string.description),
                 Modifier.paddingFromBaseline(bottom = 16.dp),
                 fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
             )
 
             Text(
                 text = event?.eventDescription!!,
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onBackground
             )
 
@@ -425,7 +435,7 @@ fun ViewEventDetails(
             Modifier
                 .padding(start = 16.dp)
                 .paddingFromBaseline(bottom = 16.dp),
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             fontSize = TextUnit(18.0f, TextUnitType.Sp))
 
         Row(
@@ -433,9 +443,10 @@ fun ViewEventDetails(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = "Group: ")
-            Text(text = event?.groupName!!)
+            Text(text = "Group: ",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(text = event?.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
         Row(
@@ -443,8 +454,10 @@ fun ViewEventDetails(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Event created by:")
-            Text(event?.eventCreator!!)
+            Text(text = "Activity created by:",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(event?.eventCreator!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
         Row(
@@ -452,8 +465,10 @@ fun ViewEventDetails(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Created at:")
-            Text(text = DateFormatter.formatDateTime(event?.dateCreated!!))
+            Text(text = "Created at:",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(text = DateFormatter.formatDateTime(event?.dateCreated!!),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
         Row(
@@ -461,8 +476,10 @@ fun ViewEventDetails(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Levy amount:")
-            Text(text = event?.levyAmount.toString())
+            Text(text = "Levy amount:",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(text = event?.levyAmount.toString(),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
         Row(
@@ -470,8 +487,21 @@ fun ViewEventDetails(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Amount realized so far:")
-            Text(text = event?.amountRealized.toString())
+            Text(text = "No. that have paid:",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(text = event?.paidMembersList?.size.toString(),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+        }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = "Amount realized so far:",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            Text(text = event?.amountRealized.toString(),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
         Row(
@@ -481,8 +511,14 @@ fun ViewEventDetails(
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = if (event?.paidMembersList?.contains(userId) == true) {
-                    "You have paid for this event" } else "You are yet to pay for this event",
-                )
+                    "You have paid for this activity" } else "You are yet to pay for this activity",
+                color = if (event?.paidMembersList?.contains(userId) == true) {
+                    Color.Green
+                } else {
+                    Color.Red
+                },
+                fontSize = TextUnit(14.0f, TextUnitType.Sp)
+            )
         }
 
         Button(
@@ -498,27 +534,138 @@ fun ViewEventDetails(
             Text(text = stringResource(id = R.string.pay_now))
         }
         HorizontalDivider(
-            Modifier.padding(vertical = 16.dp)
+            Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
         )
 
-        Text(
-            text = stringResource(id = R.string.paid_list),
-            fontWeight = FontWeight.Bold
-            )
-        if (event?.paidMembersList != null && event.paidMembersList.isNotEmpty()) {
-            event.paidMembersList.forEach {
-                val member: Member? = homeViewModel.fetchMemberDetailsById(it)
-                if (member != null) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = member.fullName,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(text = member.role)
+        PaidListHeader(groupViewModel, event, showPaidList) {
+            showPaidList = it
+        }
+        if (showPaidList) {
+            if (!event?.paidMembersList.isNullOrEmpty()) {
+                event?.paidMembersList?.forEach {
+                    val member: Member? = authViewModel.fetchMemberDetailsById(it)
+                    if (member != null) {
+                        Row(
+                            Modifier
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = member.fullName,
+                                fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                            )
+                            Text(text = member.memberPost,
+                                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+                        }
                     }
+                }
+            }else {
+                Text(
+                    text = stringResource(id = R.string.no_payment),
+                    Modifier.padding(start = 16.dp),
+                    color = Color.DarkGray,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp))
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+        if (groupViewModel.isUserAdmin()) {
+            AdminActions(event, groupViewModel, navController)
+        }
+    }
+}
+
+@Composable
+fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: NavController) {
+    Surface(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(
+                RoundedCornerShape(
+                    bottomEnd = 32.dp,
+                    bottomStart = 32.dp
+                )
+            ),
+        color = MaterialTheme.colorScheme.primary
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(id = R.string.admin_actions),
+                Modifier.padding(vertical = 18.dp, horizontal = 16.dp),
+                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    Modifier.clickable {  },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.completed_activity),
+                        contentDescription = "",
+                        Modifier.size(32.dp),
+                        tint = Color.Green)
+                    Text(text = stringResource(id = R.string.mark_completed),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onPrimary)
+                }
+                Column(
+                    Modifier.clickable {  },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.archive_down_minimlistic),
+                        contentDescription = "",
+                        Modifier.size(32.dp),
+                        tint = Color.Yellow)
+                    Text(text = stringResource(id = R.string.archive),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    Modifier.clickable {  },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete_activity),
+                        contentDescription = "",
+                        Modifier.size(32.dp),
+                        tint = Color.Red)
+                    Text(text = stringResource(id = R.string.delete_activity),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onPrimary)
+                }
+                Column(
+                    Modifier.clickable {  },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.analytics),
+                        contentDescription = "",
+                        Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.surface)
+                    Text(text = stringResource(id = R.string.generate_report),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
@@ -526,17 +673,56 @@ fun ViewEventDetails(
 }
 
 @Composable
-fun CommentBox(homeViewModel: HomeViewModel, event: Event?, dataStoreManager: DataStoreManager) {
-    var commentText by rememberSaveable {  mutableStateOf("")}
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    val coroutineScope = rememberCoroutineScope()
+fun PaidListHeader(
+    groupViewModel: GroupViewModel,
+    event: Event?,
+    showPaidList: Boolean,
+    callback: (Boolean) -> Unit
+) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clickable { callback(!showPaidList) },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(id = R.string.paid_list),
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showPaidList) {
+            Icon(
+                painter = painterResource(id = R.drawable.up_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { callback(false) }
+            )
+        }else {
+            Icon(
+                painter = painterResource(id = R.drawable.forward_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { callback(true) }
+            )
+        }
+    }
+}
+
+@Composable
+fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: DataStoreManager) {
+    var commentText by rememberSaveable {  mutableStateOf("")}
+    val screenWidth = LocalConfiguration.current.screenWidthDp - 84
+    val coroutineScope = rememberCoroutineScope()
+    Row(
+        Modifier
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+        ) {
         TextField(
             value = commentText,
             onValueChange ={ commentText = it },
@@ -546,13 +732,14 @@ fun CommentBox(homeViewModel: HomeViewModel, event: Event?, dataStoreManager: Da
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent
             ),
-            placeholder = { Text(text = stringResource(id = R.string.comment)) }
+            placeholder = { Text(text = stringResource(id = R.string.comment)) },
+            modifier = Modifier.width(screenWidth.dp)
+
         )
         IconButton(onClick = { coroutineScope.launch {
-           coroutineScope.launch {  val newComment = homeViewModel.postComment(
-               NewEventDto(dataStoreManager.readAuthData(), commentText), event?.eventId)
-           }
-        } }
+            val newComment = groupViewModel.postComment(
+               NewEventDto(dataStoreManager.readAuthData(), commentText), event?.eventId) }
+            }
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Send,
@@ -574,7 +761,8 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                 .height(28.dp)
                 .clickable { }
                 .padding(horizontal = 2.dp),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
         ) {
             Row(
                 modifier = Modifier
@@ -585,7 +773,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                     contentDescription = "React",
                     modifier = Modifier
                         .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(text = unlikeList.toString())
             }
@@ -596,7 +784,8 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                 .height(28.dp)
                 .clickable { }
                 .padding(horizontal = 2.dp),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface
         ) {
             Row(
                 modifier = Modifier
@@ -608,7 +797,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                     modifier = Modifier
                         .padding(vertical = 4.dp)
                         .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(text = likeList.toString())
             }
@@ -619,7 +808,8 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                 .height(28.dp)
                 .clickable { }
                 .padding(horizontal = 2.dp),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface
         ) {
             Row(
                 modifier = Modifier
@@ -631,7 +821,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                     modifier = Modifier
                         .padding(vertical = 4.dp)
                         .size(24.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = Color.Red
                 )
                 Text(text = loveList.toString())
             }
@@ -642,7 +832,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
 @Composable
 fun CommentItem(
     comment: EventComment,
-    homeViewModel: HomeViewModel,
+    groupViewModel: GroupViewModel,
     dataStoreManager: DataStoreManager
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp - 8
@@ -700,7 +890,7 @@ fun CommentItem(
             }
 
             Text(
-                text = stringResource(id = R.string.repply),
+                text = stringResource(id = R.string.reply),
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
@@ -725,10 +915,10 @@ fun CommentItem(
                             unfocusedContainerColor = MaterialTheme.colorScheme.background,
                             focusedContainerColor = MaterialTheme.colorScheme.background
                         ),
-                        placeholder = { Text(text = stringResource(id = R.string.repply)) }
+                        placeholder = { Text(text = stringResource(id = R.string.reply)) }
                     )
                     IconButton(onClick = { coroutineScope.launch {
-                        val newReplyItem = homeViewModel.postCommentReply(
+                        val newReplyItem = groupViewModel.postCommentReply(
                             commentReply,
                             comment.commentId
                         )
@@ -795,14 +985,4 @@ fun ReplyItem(reply: CommentReply) {
             }
         )
     }
-}
-
-@Preview
-@Composable
-fun PreviewEventDetail() {
-    EventDetails(
-        dataStoreManager = DataStoreManager.getInstance(LocalContext.current),
-        navController = rememberNavController(),
-        homeViewModel = HomeViewModel(DataStoreManager.getInstance(LocalContext.current))
-    )
 }

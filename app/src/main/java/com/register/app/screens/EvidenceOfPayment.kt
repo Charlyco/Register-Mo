@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -82,7 +84,7 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                     }
                     .padding(horizontal = 16.dp, vertical = 16.dp),
                 textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.secondary
             )
 
             Row(
@@ -191,12 +193,12 @@ fun TopBarDesign(navController: NavController) {
             }
 
             Text(
-                text = stringResource(id = R.string.uplaod_payment),
+                text = stringResource(id = R.string.upload_payment),
                 Modifier.constrainAs(title) {
                     centerVerticallyTo(parent)
                     centerHorizontallyTo(parent)
                 },
-                fontSize = TextUnit(20.0f, TextUnitType.Sp)
+                fontSize = TextUnit(16.0f, TextUnitType.Sp)
             )
         }
     }
@@ -209,6 +211,7 @@ fun BankDetailDialog(
     groupViewModel: GroupViewModel
 ) {
     val bankDetail = groupViewModel.bankDetails.observeAsState().value
+    val context = LocalContext.current
     Dialog(
         onDismissRequest = { onDismiss() }
     ) {
@@ -233,8 +236,16 @@ fun BankDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "copy",
+                        Modifier.clickable {
+                            Toast.makeText(context, "Bank details coppied to clipboard", Toast.LENGTH_LONG).show()
+                        },
+                        tint = MaterialTheme.colorScheme.primary)
                     Button(
                         onClick = {
                             onDoneClick()
