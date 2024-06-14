@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -48,9 +49,11 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.register.app.R
 import com.register.app.util.DataStoreManager
+import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +69,14 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, onDismiss: (showState: Boo
     var isClosedChecked by rememberSaveable { mutableStateOf(true) }
     var isOpenChecked by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
+    val imageMimeTypes = listOf("image/jpeg", "image/png")
+    val filePicker = rememberLauncherForActivityResult(
+        contract = GetCustomFiles(isMultiple = false),
+        onResult = {uris ->
+            val urisJoined =  uris.joinToString(", ")
+            val file = File(urisJoined)
+            groupViewModel.uploadGroupLogo(file)
+        })
 
     if (showBottomSheet == true) {
         ModalBottomSheet(
@@ -265,13 +276,14 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, onDismiss: (showState: Boo
                        context = context,
                        height = 120,
                        width = 120,
-                       placeHolder = R.drawable.app_icon
+                       placeHolder = R.drawable.placeholder
                    )
                }
 
                Button(
                    onClick = {
-                             // pick image from local file and upload
+                       val mimeType = imageMimeTypes.joinToString(",")
+                       filePicker.launch(mimeType)
                    },
                    Modifier
                        .fillMaxWidth()
@@ -294,7 +306,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, onDismiss: (showState: Boo
                    },
                    Modifier
                        .fillMaxWidth()
-                       .padding(horizontal = 32.dp)
+                       .padding(start = 32.dp, end = 32.dp, bottom = 48.dp)
                        .height(50.dp)
                        .constrainAs(createBtn) {
                            top.linkTo(uploadBtn.bottom, margin = 24.dp)
@@ -305,13 +317,5 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, onDismiss: (showState: Boo
                }
            }
         }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewSheet(){
-    CreateGroupScreen(
-        groupViewModel = GroupViewModel(DataStoreManager(LocalContext.current))) {
     }
 }

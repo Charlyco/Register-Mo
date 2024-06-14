@@ -73,8 +73,9 @@ fun LoginScreen(
 ) {
     val signInBrush = Brush.linearGradient(
         listOf(MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.onBackground),
+            MaterialTheme.colorScheme.background,
+            MaterialTheme.colorScheme.background,
+            MaterialTheme.colorScheme.background),
         tileMode = TileMode.Repeated)
 
     var email by rememberSaveable { mutableStateOf("") }
@@ -88,9 +89,9 @@ fun LoginScreen(
 
     Surface(
         modifier = Modifier
-            .background(brush = signInBrush)
+            //.background(brush = signInBrush)
             .fillMaxSize(),
-        color = Color.Transparent
+        color = MaterialTheme.colorScheme.background
     ) {
         ConstraintLayout(
             modifier = Modifier.fillMaxSize()
@@ -106,12 +107,18 @@ fun LoginScreen(
                     },
                 shape = MaterialTheme.shapes.extraLarge,
                 shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-                color = MaterialTheme.colorScheme.background
+                color = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBackIosNew,
                     contentDescription = "",
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable {
+                            navController.navigate("auth") {
+                                popUpTo("splash")
+                            }
+                        },
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -123,17 +130,20 @@ fun LoginScreen(
                     top.linkTo(parent.top, margin = 72.dp)
                 }
             ) {
-                Surface(Modifier
-                    .padding(vertical = 16.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topEnd = 8.dp,
-                            topStart = 8.dp,
-                            bottomEnd = 8.dp,
-                            bottomStart = 8.dp
-                        ))
-                    .size(80.dp),
-                    color = Color.White
+                Surface(
+                    Modifier
+                        .padding(vertical = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topEnd = 8.dp,
+                                topStart = 8.dp,
+                                bottomEnd = 8.dp,
+                                bottomStart = 8.dp
+                            )
+                        )
+                        .size(80.dp),
+                    color = Color.White,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Image(painter = painterResource(
                         id = R.drawable.app_icon),
@@ -167,8 +177,9 @@ fun LoginScreen(
                         centerHorizontallyTo(parent)
                         centerVerticallyTo(parent)
                     },
-                color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.large
+                color = MaterialTheme.colorScheme.onPrimary,
+                shape = MaterialTheme.shapes.large,
+                //border = BorderStroke(1.dp, Color.Gray)
 
             ) {
                 TextField(
@@ -184,8 +195,8 @@ fun LoginScreen(
                         tint = Color.Gray) },
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
                         unfocusedLabelColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
@@ -200,8 +211,9 @@ fun LoginScreen(
                         centerHorizontallyTo(parent)
                         top.linkTo(emailBox.bottom, margin = 32.dp)
                     },
-                color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.large
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = MaterialTheme.shapes.large,
+                //border = BorderStroke(1.dp, Color.Gray)
 
             ) {
                 TextField(
@@ -242,8 +254,8 @@ fun LoginScreen(
                     },
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
                         unfocusedLabelColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
@@ -266,20 +278,20 @@ fun LoginScreen(
                         }
                     }
                           },
-//                elevation = ButtonDefaults.buttonElevation(
-//                    defaultElevation = dimensionResource(id = R.dimen.default_elevation),
-//                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
-//                ),
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .width(screenWidth.dp)
-                    .height(50.dp)
+                    .height(55.dp)
                     .padding(bottom = 4.dp)
                     .constrainAs(loginBtn) {
                         centerHorizontallyTo(parent)
                         top.linkTo(passwordBox.bottom, margin = 64.dp)
                     },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.background)
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             ) {
                 Text(text = stringResource(id = R.string.signin))
             }
@@ -318,7 +330,7 @@ fun SignUpInstead(navController: NavController) {
             text = stringResource(id = R.string.no_account),
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier.padding(end = 8.dp),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = stringResource(id = R.string.signup),
@@ -326,7 +338,7 @@ fun SignUpInstead(navController: NavController) {
             modifier = Modifier
                 .padding(end = 8.dp)
                 .clickable { navController.navigate("otp") },
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.secondary
         )
     }
 }

@@ -1,6 +1,11 @@
 package com.register.app.screens
 
+import android.content.ContentResolver
+import android.database.Cursor
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -48,17 +53,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
+import com.register.app.util.Utils.copyTextToClipboard
+import com.register.app.util.Utils.getFileNameFromUri
 import com.register.app.viewmodel.GroupViewModel
 
 @Composable
 fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewModel) {
     val fileUrl = groupViewModel.paymentEvidence.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    var fileName by rememberSaveable { mutableStateOf("") }
+    var fileUri by rememberSaveable { mutableStateOf("") }
     var showBankDetails by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val imageMimeTypes = listOf("application/pdf", "image/jpeg", "image/png")
+    val filePicker = rememberLauncherForActivityResult(
+        contract = GetCustomFiles(isMultiple = false),
+        onResult = {uris ->
+            val urisJoined =  uris.joinToString(", ")
+            fileUri = urisJoined
+        })
     Surface(
         Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -94,19 +111,11 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                    Surface(
-                        Modifier
-                            .width((screenWidth - 120).dp)
-                            .height(50.dp),
-                        color = MaterialTheme.colorScheme.background,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
-                    ){
-                        if (fileName.isBlank()) {
-                        Text(text = fileName)
-                    }
-                }
+                getFileNameFromUri(context.contentResolver, fileUri.toUri())?.let { Text(text = it) }
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+                        val mimeType = imageMimeTypes.joinToString(",")
+                        filePicker.launch("*/*") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.onBackground
@@ -243,6 +252,7 @@ fun BankDetailDialog(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = "copy",
                         Modifier.clickable {
+                            copyTextToClipboard(context, bankDetail.accountNumber)
                             Toast.makeText(context, "Bank details coppied to clipboard", Toast.LENGTH_LONG).show()
                         },
                         tint = MaterialTheme.colorScheme.primary)

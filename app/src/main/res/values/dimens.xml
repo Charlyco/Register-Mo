@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="default_elevation">12.dp</dimen>
-    <dimen name="text_field_height">50.dp</dimen>
+    <dimen name="text_field_height">55.dp</dimen>
     <dimen name="button_pressed_evelation">8.dp</dimen>
     <dimen name="progress_indicator_stroke">2.dp</dimen>
     <dimen name="low_elevation">8dp</dimen>

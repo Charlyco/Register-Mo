@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
@@ -31,6 +32,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -76,10 +80,9 @@ fun CircularIndicator() {
 fun BottomNavBar(navController: NavController) {
     val backStackEntry = navController.currentBackStackEntry
     val bottomBarItems = listOf(
-        BottomBarItem("home", R.drawable.home),
+        BottomBarItem("home", R.drawable.icon_home),
         BottomBarItem("forum", R.drawable.messages),
-        BottomBarItem("groups", R.drawable.notepad),
-        BottomBarItem("profile", R.drawable.user)
+        BottomBarItem("profile", R.drawable.profile_simple)
     )
 BottomAppBar(
             modifier = Modifier
@@ -91,7 +94,7 @@ BottomAppBar(
                         topStart = 24.dp
                     )
                 ),
-            containerColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.colorScheme.background,
             tonalElevation = 4.dp,
             windowInsets = BottomAppBarDefaults.windowInsets
         ) {
@@ -111,9 +114,7 @@ BottomAppBar(
                         contentDescription = "") },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.secondary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                        indicatorColor = MaterialTheme.colorScheme.onTertiary
-                    )
+                        unselectedIconColor = MaterialTheme.colorScheme.onBackground)
                 )
         }
     }
@@ -225,78 +226,36 @@ fun ImageLoader(imageUrl: String, context: Context, height: Int, width: Int, pla
 }
 
 @Composable
-fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
-    val context = LocalContext.current
+fun GroupSearchBox(groupViewModel: GroupViewModel, navController: NavController, width: Int) {
+    var searchTag by rememberSaveable { mutableStateOf("") }
     Surface(
         Modifier
-            .fillMaxWidth()
-            .padding(bottom = 2.dp, start = 8.dp, end = 8.dp)
-            .clickable {
-                navController.navigate("group_detail") { launchSingleTop = true }
-                groupViewModel.setSelectedGroupDetail(group)
-            },
+            .padding(horizontal = 8.dp)
+            .width(width.dp),
+        color = MaterialTheme.colorScheme.onPrimary,
         shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-        color = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.extraSmall
+        shape = MaterialTheme.shapes.large
     ) {
-        ConstraintLayout(
-            Modifier
-                .fillMaxWidth()) {
-            val (logo, name, memberCount, type, dateCreated) = createRefs()
-
-            Surface(
-                Modifier
-                    .size(120.dp)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start, margin = 4.dp)
-                        centerVerticallyTo(parent)
-                    },
-                shape = MaterialTheme.shapes.large,
-                color = Color.Transparent
-            ) {
-                ImageLoader(group.logoUrl, context, 120, 120, R.drawable.app_icon)
+        TextField(
+            value = searchTag,
+            onValueChange = { searchTag = it },
+            modifier = Modifier
+                .height(55.dp),
+            placeholder = { Text(
+                text = stringResource(id = R.string.search_group),
+                color = Color.Gray) },
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent
+            ),
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "",
+                    tint = Color.Gray)
             }
-
-            Text(
-                text = group.groupName,
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(name) {
-                        top.linkTo(parent.top, margin = 4.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(text = "Group type: ${group.groupType}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(type) {
-                        top.linkTo(name.bottom, margin = 8.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "Created on: ${DateFormatter.formatDateTime(group.dateCreated)}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(dateCreated) {
-                        top.linkTo(type.bottom, margin = 8.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "${group.memberList?.size} members",
-                Modifier.constrainAs(memberCount) {
-                    top.linkTo(dateCreated.bottom, margin = 8.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-        }
+        )
     }
 }

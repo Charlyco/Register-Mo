@@ -51,10 +51,15 @@ import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 
 @Composable
-fun Events(navController: NavController, groupViewModel: GroupViewModel, authViewModel: AuthViewModel) {
+fun Events(
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    title: String?
+) {
     Scaffold(
         topBar = { GenericTopBar(
-            title = "All Events",
+            title = title!!,
             navController = navController,
             navRoute = "group_detail"
         )},
@@ -104,14 +109,14 @@ fun EventFeedItem(
     groupViewModel: GroupViewModel,
     eventFeed: Event
 ) {
-    val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList.size} )
+    val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     var likeList = 0
     var unlikeList = 0
     var loveList = 0
 
-    eventFeed.eventReactions?.forEach { eventReaction ->
+    eventFeed.eventReactionsList?.forEach { eventReaction ->
         when (eventReaction.reactionType) {
             ReactionType.LIKE.name -> {likeList++}
             ReactionType.UNLIKE.name -> {unlikeList++}
@@ -148,7 +153,7 @@ fun EventFeedItem(
 
 
             ) {
-                eventFeed.imageUrlList[pageState.currentPage]?.let {
+                eventFeed.imageUrlList?.get(pageState.currentPage)?.let {
                     imageUrl  -> ImageLoader(imageUrl, context, 256, screenWidth, R.drawable.event) }
             }
         }
@@ -173,7 +178,7 @@ fun EventFeedItem(
             }
         }
         Text(
-            text = eventFeed.eventTitle,
+            text = eventFeed.eventTitle!!,
             fontSize = TextUnit(20.0f, TextUnitType.Sp),
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.constrainAs(eventTitle) {
@@ -183,7 +188,7 @@ fun EventFeedItem(
         )
 
         Text(
-            text = eventFeed.groupName,
+            text = eventFeed.groupName!!,
             fontSize = TextUnit(16.0f, TextUnitType.Sp),
             modifier = Modifier.constrainAs(groupName) {
                 top.linkTo(eventTitle.bottom, margin = 4.dp)
@@ -261,7 +266,7 @@ fun EventFeedItem(
                     .size(24.dp),
                 tint = MaterialTheme.colorScheme.secondary
             )
-            Text(text = eventFeed.eventCommentsCount.toString())
+            Text(text = eventFeed.eventComments?.size.toString())
         }
     }
 }

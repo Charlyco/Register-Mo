@@ -74,6 +74,8 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.util.ImageLoader
+import com.register.app.util.PAID
+import com.register.app.util.UNPAID
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
@@ -100,7 +102,7 @@ fun GroupDetailTopBar(
     navController: NavController,
     group: Group?,
     groupViewModel: GroupViewModel,
-    function: (show: Boolean) -> Unit
+    viewAllMembers: (show: Boolean) -> Unit
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
     TopAppBar(
@@ -114,19 +116,23 @@ fun GroupDetailTopBar(
                 contentDescription = "",
                 Modifier
                     .size(48.dp)
-                    .clickable { navController.navigateUp() }
+                    .clickable {
+                        navController.navigate("home") {
+                            popUpTo("groups") { inclusive = true }
+                        }
+                    }
             ) },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.background,
-            navigationIconContentColor = MaterialTheme.colorScheme.background
+            titleContentColor = Color.White,
+            navigationIconContentColor = Color.White
         ),
         actions = {
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "menu",
                 Modifier.clickable { isExpanded = !isExpanded },
-                tint = MaterialTheme.colorScheme.background)
+                tint = Color.White)
 
             DropdownMenu(
                 expanded = isExpanded,
@@ -147,12 +153,19 @@ fun GroupDetailTopBar(
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.create_election)) },
                         onClick = { isExpanded = false })
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.create_activity)) },
+                        onClick = {
+                            navController.navigate("create_event") {
+                                launchSingleTop = true
+                            }
+                            isExpanded = false })
                 }
                 DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.view_members)) },
                     onClick = {
                         isExpanded = false
-                        function(true)
+                        viewAllMembers(true)
                     })
 
                 DropdownMenuItem(
@@ -190,10 +203,12 @@ fun GroupDetailScreen(
                 )
                 .fillMaxWidth()
         ) {
-          TopSection(group, groupViewModel)
+            TopSection(group, groupViewModel)
             ActivityRate(group, groupViewModel, navController)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            GroupEvents(groupViewModel, homeViewModel, navController, group)
+            PaidEvents(groupViewModel, homeViewModel, navController, group)
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
+            UnpaidEvents(groupViewModel, homeViewModel, navController, group)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
             GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it}
             if (showProfileDetail) {
@@ -220,11 +235,12 @@ fun GroupDetailScreen(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
+    val context = LocalContext.current
     val activityRate = groupViewModel.activityRateLiveData.observeAsState().value
     val chartData = PieChartData(
         slices = listOf(
-            PieChartData.Slice("Contributions made", activityRate!!, MaterialTheme.colorScheme.primary),
-            PieChartData.Slice("Contributions due", (100 - activityRate), MaterialTheme.colorScheme.surface)),
+            PieChartData.Slice("Contributions made", activityRate!!, Color(color = context.getColor(R.color.teal_200))),
+            PieChartData.Slice("Contributions due", (100 - activityRate), Color(context.getColor(R.color.app_orange)))),
         plotType = PlotType.Donut
     )
 
@@ -249,10 +265,12 @@ fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: N
 
         Text(
             text = "Your membership ID: ${groupViewModel.membershipId.observeAsState().value}",
-            modifier = Modifier.constrainAs(idText) {
-                start.linkTo(parent.start, margin = 16.dp)
-                top.linkTo(parent.top)
-            },
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .constrainAs(idText) {
+                    start.linkTo(parent.start, margin = 16.dp)
+                    top.linkTo(parent.top)
+                },
             fontSize = TextUnit(17.0f, TextUnitType.Sp)
         )
         Text(
@@ -287,13 +305,13 @@ fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: N
 }
 
 @Composable
-fun GroupEvents(
+fun PaidEvents(
     groupViewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
     navController: NavController,
     group: Group?
 ) {
-    val eventList = groupViewModel.activeGroupEvents.observeAsState().value
+    val eventList = groupViewModel.paidActivities.observeAsState().value
     ConstraintLayout (
         Modifier
             .padding(horizontal = 16.dp, vertical = 16.dp)
@@ -301,7 +319,7 @@ fun GroupEvents(
     ) {
         val (header, list, shoeAll) = createRefs()
         Text(
-            text = stringResource(id = R.string.active_events),
+            text = stringResource(id = R.string.paid_activities),
             Modifier.constrainAs(header) {
                 start.linkTo(parent.start)
                 top.linkTo(parent.top)
@@ -327,14 +345,14 @@ fun GroupEvents(
                 text = stringResource(id = R.string.show_more),
                 Modifier
                     .clickable {
-                        groupViewModel.getAllEventsForGroup(group?.groupName)
-                        navController.navigate("events")
+                        groupViewModel.populateActivities(PAID)
+                        navController.navigate("events/Paid Activities")
                     }
                     .constrainAs(shoeAll) {
                         end.linkTo(parent.end)
                         top.linkTo(list.bottom, margin = 4.dp)
                     },
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.tertiary
                 )
         }else{
             Column(
@@ -348,6 +366,73 @@ fun GroupEvents(
                         .padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.empty_event))
+            }
+        }
+    }
+}
+
+@Composable
+fun UnpaidEvents(
+    groupViewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
+    navController: NavController,
+    group: Group?
+) {
+    val eventList = groupViewModel.unpaidActivities.observeAsState().value
+    ConstraintLayout (
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .fillMaxWidth(),
+    ) {
+        val (header, list, shoeAll) = createRefs()
+        Text(
+            text = stringResource(id = R.string.unpaid_activities),
+            Modifier.constrainAs(header) {
+                start.linkTo(parent.start)
+                top.linkTo(parent.top)
+            },
+            fontWeight = FontWeight.SemiBold,
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        if (eventList?.isNotEmpty() == true) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .constrainAs(list) {
+                        top.linkTo(header.bottom, margin = 16.dp)
+                        start.linkTo(parent.start)
+                    }
+            ) {
+                eventList.forEach { event ->
+                    EventItem(event, groupViewModel, homeViewModel, navController)
+                }
+            }
+            Text(
+                text = stringResource(id = R.string.show_more),
+                Modifier
+                    .clickable {
+                        groupViewModel.populateActivities(UNPAID)
+                        navController.navigate("events/Unpaid Activities")
+                    }
+                    .constrainAs(shoeAll) {
+                        end.linkTo(parent.end)
+                        top.linkTo(list.bottom, margin = 4.dp)
+                    },
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        }else{
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ErrorOutline,
+                    contentDescription ="",
+                    Modifier
+                        .size(48.dp)
+                        .padding(vertical = 16.dp))
+                Text(
+                    text = stringResource(id = R.string.no_unpaid_activities))
             }
         }
     }
@@ -384,11 +469,11 @@ fun EventItem(
                    Modifier
                        .size(20.dp)
                        .padding(8.dp),
-                   tint = MaterialTheme.colorScheme.primary)
+                   tint = MaterialTheme.colorScheme.secondary)
             }
 
             Text(
-                text = event.eventTitle,
+                text = event.eventTitle!!,
                 fontSize = TextUnit(16.0f, TextUnitType.Sp)
             )
     }
@@ -643,7 +728,7 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
                         top.linkTo(logo.bottom, margin = 8.dp)
                         centerHorizontallyTo(parent)
                     },
-                color = MaterialTheme.colorScheme.background,
+                color = Color.White,
                 textAlign = TextAlign.Center
             )
         }
@@ -877,9 +962,9 @@ fun AdminItem(admin: Member) {
                 Modifier.constrainAs(office) {
                     centerHorizontallyTo(parent)
                     top.linkTo(parent.top, margin = 8.dp) },
-                fontSize = TextUnit(17.0f, TextUnitType.Sp),
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Surface(
@@ -909,7 +994,6 @@ fun AdminItem(admin: Member) {
                         top.linkTo(profilePic.bottom, margin = 8.dp)
                     },
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
@@ -931,7 +1015,7 @@ fun AdminItem(admin: Member) {
                     centerHorizontallyTo(parent)
                     top.linkTo(name.bottom, margin = 8.dp) },
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
@@ -970,7 +1054,7 @@ fun MemberItem(member: MembershipDto, navController: NavController, groupViewMod
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
-            .clickable {  },
+            .clickable { },
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small
     ) {

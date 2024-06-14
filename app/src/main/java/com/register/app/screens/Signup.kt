@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,11 +69,8 @@ fun Signup(
     navController: NavController,
     dataStoreManager: DataStoreManager
 ) {
-    val signUpBrush = Brush.linearGradient(
-        listOf(MaterialTheme.colorScheme.primary,MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.background))
     Surface(color = Color.Transparent,
         modifier = Modifier
-            .background(signUpBrush)
             .fillMaxSize()
     ) {
         ConstraintLayout(
@@ -85,7 +83,7 @@ fun Signup(
                     .size(40.dp)
                     .clickable {
                         navController.navigate("otp") {
-                            popUpTo("otp") {inclusive = true}
+                            popUpTo("otp") { inclusive = true }
                         }
                     }
                     .constrainAs(backBtn) {
@@ -111,18 +109,20 @@ fun Signup(
                     bottom.linkTo(inputSection.top, margin = 42.dp)
                 }
             ) {
-                Surface(Modifier
-                    .padding(vertical = 16.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topEnd = 8.dp,
-                            topStart = 8.dp,
-                            bottomEnd = 8.dp,
-                            bottomStart = 8.dp
+                Surface(
+                    Modifier
+                        .padding(vertical = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topEnd = 8.dp,
+                                topStart = 8.dp,
+                                bottomEnd = 8.dp,
+                                bottomStart = 8.dp
+                            )
                         )
-                    )
-                    .size(80.dp),
-                    color = Color.White
+                        .size(80.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Image(painter = painterResource(
                         id = R.drawable.app_icon),
@@ -212,7 +212,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(lastNameBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = firstName,
@@ -244,7 +245,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(emailBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = lastName,
@@ -276,7 +278,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(passwordBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = email,
@@ -308,7 +311,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(rePasswordBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = password,
@@ -365,7 +369,8 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     bottom.linkTo(signupBtn.top, margin = 32.dp)
                 },
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
         ) {
             TextField(
                 value = rePassword,
@@ -419,10 +424,11 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                       if (error?.isNotBlank() == true) {
                           Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                       } },
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = dimensionResource(id = R.dimen.low_elevation),
-                pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.primary
             ),
+            border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
             shape = MaterialTheme.shapes.large,
             modifier = Modifier
                 .width(screenWidth.dp)

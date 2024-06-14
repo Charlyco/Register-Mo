@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.GenericTopBar
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 
@@ -35,8 +37,28 @@ fun DiscoverScreen(
     homeViewModel: HomeViewModel,
     navController: NavController
 ) {
+    Scaffold(
+        topBar = { GenericTopBar(
+            title = "Find Colleagues",
+            navController = navController,
+            navRoute = "home"
+        )}
+    ) {
+        DiscoverScreenUi(Modifier.padding(it), groupViewModel, homeViewModel, navController)
+    }
+}
+
+@Composable
+fun DiscoverScreenUi(
+    modifier: Modifier,
+    groupViewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
+    navController: NavController
+) {
     Column(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 64.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
@@ -150,7 +172,9 @@ fun DiscoverScreen(
                             end.linkTo(parent.end, margin = 24.dp)
                         })
             }
-        }
 
+        }
+        Text(text = "UNDER DEVELOPMENT")
     }
 }
+

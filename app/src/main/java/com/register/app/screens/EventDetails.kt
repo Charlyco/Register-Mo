@@ -53,7 +53,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.CommentReply
 import com.register.app.dto.EventComment
-import com.register.app.dto.NewEventDto
+import com.register.app.dto.PostCommentModel
 import com.register.app.dto.ReactionType
 import com.register.app.model.Event
 import com.register.app.util.DataStoreManager
@@ -64,13 +64,17 @@ import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import co.yml.charts.common.model.PlotType
+import co.yml.charts.ui.piechart.charts.DonutPieChart
+import co.yml.charts.ui.piechart.models.PieChartConfig
+import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.model.Member
 import com.register.app.util.DateFormatter
 import com.register.app.viewmodel.AuthViewModel
@@ -103,7 +107,7 @@ fun EventDetailTopBar(
             .height(64.dp)
             .padding(top = 16.dp, start = 16.dp, end = 16.dp),
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.background,
+        color = MaterialTheme.colorScheme.onPrimary,
         shadowElevation = dimensionResource(id = R.dimen.default_elevation)
     ) {
         ConstraintLayout(
@@ -154,13 +158,11 @@ fun EventDetailContent(
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val scrollState = rememberScrollState(initial = 0)
     var likeList = 0
-    var unlikeList = 0
     var loveList = 0
 
-    event?.eventReactions?.forEach { eventReaction ->
+    event?.eventReactionsList?.forEach { eventReaction ->
         when (eventReaction.reactionType) {
             ReactionType.LIKE.name -> {likeList++}
-            ReactionType.UNLIKE.name -> {unlikeList++}
             ReactionType.LOVE.name -> {loveList++}
         }
     }
@@ -183,6 +185,7 @@ fun EventDetailContent(
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
                     .constrainAs(eventImages) {
                         top.linkTo(parent.top)
                         centerHorizontallyTo(parent)
@@ -220,12 +223,12 @@ fun EventDetailContent(
 
             Surface(
                 Modifier.constrainAs(react) {
-                    start.linkTo(parent.start, margin = 16.dp)
-                    top.linkTo(eventImages.bottom, margin = 4.dp)
+                    end.linkTo(eventImages.end, margin = 16.dp)
+                    top.linkTo(eventImages.top, margin = 16.dp)
                 },
                 color = Color.Transparent
             ) {
-                ReactToEvent(likeList, unlikeList, loveList)
+                ReactToEvent(likeList, loveList)
             }
 
             Surface(
@@ -234,7 +237,7 @@ fun EventDetailContent(
                     .height(32.dp)
                     .padding(horizontal = 16.dp)
                     .constrainAs(tab) {
-                        top.linkTo(react.bottom, margin = 8.dp)
+                        top.linkTo(eventImages.bottom, margin = 8.dp)
                         centerHorizontallyTo(parent)
                     },
                 shape = MaterialTheme.shapes.small
@@ -399,9 +402,8 @@ fun ViewEventDetails(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-    var userId: Int? = null
+    val hasUserPaid = groupViewModel.hasPaid.observeAsState().value
     var showPaidList by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(key1 = 321) { userId = dataStoreManager.readAuthData()?.toInt() }
     Column(
         Modifier.fillMaxSize()
     ) {
@@ -415,7 +417,7 @@ fun ViewEventDetails(
             Text(
                 text = stringResource(id = R.string.description),
                 Modifier.paddingFromBaseline(bottom = 16.dp),
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
             )
 
@@ -436,7 +438,7 @@ fun ViewEventDetails(
                 .padding(start = 16.dp)
                 .paddingFromBaseline(bottom = 16.dp),
             fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(18.0f, TextUnitType.Sp))
+            fontSize = TextUnit(16.0f, TextUnitType.Sp))
 
         Row(
             Modifier
@@ -489,7 +491,7 @@ fun ViewEventDetails(
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text(text = "No. that have paid:",
                 fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = event?.paidMembersList?.size.toString(),
+            Text(text = event?.contributions?.size.toString(),
                 fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
@@ -510,9 +512,9 @@ fun ViewEventDetails(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                text = if (event?.paidMembersList?.contains(userId) == true) {
+                text = if (hasUserPaid == true) {
                     "You have paid for this activity" } else "You are yet to pay for this activity",
-                color = if (event?.paidMembersList?.contains(userId) == true) {
+                color = if (hasUserPaid == true) {
                     Color.Green
                 } else {
                     Color.Red
@@ -537,13 +539,14 @@ fun ViewEventDetails(
             Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
         )
 
+        ComplianceRate(event, groupViewModel)
         PaidListHeader(groupViewModel, event, showPaidList) {
             showPaidList = it
         }
         if (showPaidList) {
-            if (!event?.paidMembersList.isNullOrEmpty()) {
-                event?.paidMembersList?.forEach {
-                    val member: Member? = authViewModel.fetchMemberDetailsById(it)
+            if (!event?.contributions.isNullOrEmpty()) {
+                event?.contributions?.forEach {
+                    val member: Member? = authViewModel.fetchMemberDetailsByEmail(it.memberEmail)
                     if (member != null) {
                         Row(
                             Modifier
@@ -575,6 +578,46 @@ fun ViewEventDetails(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
+    val context = LocalContext.current
+    val complianceRate = groupViewModel.getComplianceRate(event?.contributions?.size, event?.groupId)
+    val pieChatData = PieChartData(slices = listOf(
+        PieChartData.Slice("Complied", complianceRate.contributionSize.toFloat(), Color(context.getColor(R.color.teal_200))),
+        PieChartData.Slice("Not Complies", (complianceRate.groupSize - complianceRate.contributionSize).toFloat(), Color(context.getColor(R.color.app_orange)))
+    ), plotType = PlotType.Donut
+    )
+    val pieChartConfig = PieChartConfig(
+        sliceLabelTextColor = MaterialTheme.colorScheme.onBackground,
+        showSliceLabels = true,
+        labelFontSize = TextUnit(24.0f, TextUnitType.Sp),
+        labelColor = MaterialTheme.colorScheme.onBackground,
+        strokeWidth = 42f,
+        activeSliceAlpha = .9f,
+        labelVisible = true,
+        isAnimationEnable = true,
+        chartPadding = 16,
+        backgroundColor = MaterialTheme.colorScheme.background
+        )
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(id = R.string.compliance),
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .fillMaxWidth()
+        )
+        Text(text = "${complianceRate.contributionSize} payments out of ${complianceRate.groupSize} members")
+        DonutPieChart(modifier = Modifier.size(200.dp), pieChartData = pieChatData, pieChartConfig = pieChartConfig)
+    }
+}
+
 @Composable
 fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: NavController) {
     Surface(
@@ -587,24 +630,28 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: N
                     bottomStart = 32.dp
                 )
             ),
-        color = MaterialTheme.colorScheme.primary
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = stringResource(id = R.string.admin_actions),
-                Modifier.padding(vertical = 18.dp, horizontal = 16.dp),
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .padding(vertical = 16.dp, horizontal = 16.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -619,7 +666,7 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: N
                         tint = Color.Green)
                     Text(text = stringResource(id = R.string.mark_completed),
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onPrimary)
+                        color = MaterialTheme.colorScheme.onBackground)
                 }
                 Column(
                     Modifier.clickable {  },
@@ -629,15 +676,17 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: N
                         painter = painterResource(id = R.drawable.archive_down_minimlistic),
                         contentDescription = "",
                         Modifier.size(32.dp),
-                        tint = Color.Yellow)
+                        tint = Color.Magenta)
                     Text(text = stringResource(id = R.string.archive),
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onPrimary)
+                        color = MaterialTheme.colorScheme.onBackground)
                 }
             }
 
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -649,10 +698,10 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: N
                         painter = painterResource(id = R.drawable.delete_activity),
                         contentDescription = "",
                         Modifier.size(32.dp),
-                        tint = Color.Red)
+                        tint = MaterialTheme.colorScheme.secondary)
                     Text(text = stringResource(id = R.string.delete_activity),
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onPrimary)
+                        color = MaterialTheme.colorScheme.onBackground)
                 }
                 Column(
                     Modifier.clickable {  },
@@ -662,10 +711,10 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: N
                         painter = painterResource(id = R.drawable.analytics),
                         contentDescription = "",
                         Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.surface)
+                        tint = MaterialTheme.colorScheme.primary)
                     Text(text = stringResource(id = R.string.generate_report),
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onPrimary)
+                        color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -689,8 +738,9 @@ fun PaidListHeader(
     ) {
         Text(
             text = stringResource(id = R.string.paid_list),
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            fontWeight = FontWeight.SemiBold
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.tertiary
         )
         if (showPaidList) {
             Icon(
@@ -698,7 +748,8 @@ fun PaidListHeader(
                 contentDescription = "",
                 Modifier
                     .size(16.dp)
-                    .clickable { callback(false) }
+                    .clickable { callback(false) },
+                tint = MaterialTheme.colorScheme.tertiary
             )
         }else {
             Icon(
@@ -738,7 +789,7 @@ fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: 
         )
         IconButton(onClick = { coroutineScope.launch {
             val newComment = groupViewModel.postComment(
-               NewEventDto(dataStoreManager.readAuthData(), commentText), event?.eventId) }
+               PostCommentModel(dataStoreManager.readAuthData(), commentText), event?.eventId) }
             }
         ) {
             Icon(
@@ -751,7 +802,7 @@ fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: 
 }
 
 @Composable
-fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
+fun ReactToEvent(likeList: Int, loveList: Int) {
     Row(
         modifier =Modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -762,30 +813,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                 .clickable { }
                 .padding(horizontal = 2.dp),
             shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(painter = painterResource(id = R.drawable.unlike),
-                    contentDescription = "React",
-                    modifier = Modifier
-                        .size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(text = unlikeList.toString())
-            }
-        }
-
-        Surface(
-            Modifier
-                .height(28.dp)
-                .clickable { }
-                .padding(horizontal = 2.dp),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface
+            color = MaterialTheme.colorScheme.onPrimary
         ) {
             Row(
                 modifier = Modifier
@@ -809,7 +837,7 @@ fun ReactToEvent(likeList: Int, unlikeList: Int, loveList: Int) {
                 .clickable { }
                 .padding(horizontal = 2.dp),
             shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface
+            color = MaterialTheme.colorScheme.onPrimary
         ) {
             Row(
                 modifier = Modifier

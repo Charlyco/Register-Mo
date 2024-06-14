@@ -1,6 +1,5 @@
 package com.register.app.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,10 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -63,7 +61,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -89,7 +86,7 @@ import com.register.app.model.Group
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
-import com.register.app.util.GroupItem
+import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
@@ -101,6 +98,9 @@ fun HomeScreen(homeViewModel : HomeViewModel, navController: NavController, grou
         bottomBar = { BottomNavBar(navController) }
     ) {
         HomeScreenContent(modifier = Modifier.padding(it), homeViewModel, groupViewModel, navController)
+        CreateGroupScreen(groupViewModel = groupViewModel) { show->
+            groupViewModel.showCreateGroupSheet.postValue(show)
+        }
     }
 }
 
@@ -132,19 +132,61 @@ fun HomeScreenContent(
                     .pullRefresh(refreshState, true),
                 color = MaterialTheme.colorScheme.background
             ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .verticalScroll(state = scrollState, enabled = true, reverseScrolling = false)
-    ) {
-        HorizontalDivider()
-        YourGroups(groupViewModel, navController)
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        DiscoverSection(groupViewModel, homeViewModel, navController)
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        FeedList(homeViewModel, navController, groupViewModel)
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(
+                            state = scrollState,
+                            enabled = true,
+                            reverseScrolling = false
+                        )
+                ) {
+                    WelcomeNote()
+                    SearchSection(groupViewModel, navController)
+                    DiscoverSection(groupViewModel, homeViewModel, navController)
+                    FeedList(homeViewModel, navController, groupViewModel)
+                    SuggestedGroups(homeViewModel, groupViewModel, navController)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun WelcomeNote() {
+    Text(
+        text = stringResource(id = R.string.welcome_note),
+        Modifier.padding(start = 16.dp),
+        color = MaterialTheme.colorScheme.onBackground,
+        fontSize = TextUnit(20.0f, TextUnitType.Sp)
+        )
+}
+
+@Composable
+fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    Row(
+        Modifier
+            .width(screenWidth.dp)
+            .padding(horizontal = 8.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        GroupSearchBox(groupViewModel = groupViewModel, navController = navController, screenWidth - 92)
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            shadowElevation = dimensionResource(id = R.dimen.low_elevation),
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(55.dp),
+            color = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.search),
+                contentDescription = "",
+                Modifier.padding(16.dp),
+                tint = MaterialTheme.colorScheme.onPrimary
+                )
         }
     }
 }
@@ -162,104 +204,104 @@ fun DiscoverSection(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-           Surface(
-               Modifier
-                   .padding(8.dp)
-                   .size(84.dp),
-           ) {
-               ConstraintLayout(
-                   Modifier.fillMaxSize()
-               ) {
-                   val (image, text) = createRefs()
-                   
-                   Image(
-                       painter = painterResource(id = R.drawable.discovery),
-                       contentDescription = "discover",
-                       modifier = Modifier
-                           .size(32.dp)
-                           .constrainAs(image){
-                           centerHorizontallyTo(parent)
-                           top.linkTo(parent.top, margin = 16.dp)
-                       })
-                   Text(text = stringResource(id = R.string.discover_tag),
-                       modifier = Modifier.constrainAs(text){
-                           top.linkTo(image.bottom, margin = 4.dp)
-                           centerHorizontallyTo(parent)
-                       },
-                       fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                       textAlign = TextAlign.Center)
-               }
-           }
+        Column(
+            Modifier.clickable {
+              navController.navigate("groups")
+            },
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Surface(
                 Modifier
-                    .padding(8.dp)
-                    .size(84.dp),
+                    .size(64.dp),
             ) {
-                ConstraintLayout(
-                    Modifier.fillMaxSize()
-                ) {
-                    val (image, text) = createRefs()
-
-                    Image(
-                        painter = painterResource(id = R.drawable.network_connection),
-                        contentDescription = "discover",
-                        modifier = Modifier
-                            .size(32.dp)
-                            .constrainAs(image){
-                                centerHorizontallyTo(parent)
-                                top.linkTo(parent.top, margin = 16.dp)
-                            })
-                    Text(text = stringResource(id = R.string.new_group),
-                        modifier = Modifier.constrainAs(text){
-                            top.linkTo(image.bottom, margin = 4.dp)
-                            centerHorizontallyTo(parent)
-                        },
-                        fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                        textAlign = TextAlign.Center)
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.groups),
+                    contentDescription = "discover",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(32.dp)
+                )
             }
-
-            Surface(
-                Modifier
-                    .padding(8.dp)
-                    .size(84.dp),
-            ) {
-                ConstraintLayout(
-                    Modifier.fillMaxSize()
-                ) {
-                    val (image, text) = createRefs()
-
-                    Image(
-                        painter = painterResource(id = R.drawable.link_up),
-                        contentDescription = "discover",
-                        modifier = Modifier
-                            .size(32.dp)
-                            .constrainAs(image){
-                                centerHorizontallyTo(parent)
-                                top.linkTo(parent.top, margin = 16.dp)
-                            })
-                    Text(text = stringResource(id = R.string.link_up),
-                        modifier = Modifier.constrainAs(text){
-                            top.linkTo(image.bottom, margin = 4.dp)
-                            centerHorizontallyTo(parent)
-                        },
-                        fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                        textAlign = TextAlign.Center)
-                }
-            }
+            Text(
+                text = stringResource(id = R.string.your_groups),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                textAlign = TextAlign.Center
+            )
         }
-}
+        Column(
+            Modifier.clickable {
+                navController.navigate("colleagues") {
+                    launchSingleTop = true
+                }
+            },
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                Modifier
+                    .size(64.dp),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.files),
+                    contentDescription = "discover",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(32.dp))
+            }
+            Text(text = stringResource(id = R.string.link_up),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                textAlign = TextAlign.Center)
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                Modifier
+                    .size(64.dp),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.forum),
+                    contentDescription = "discover",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(32.dp))
+            }
+            Text(text = stringResource(id = R.string.social),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                textAlign = TextAlign.Center)
+        }
+        Column(
+            Modifier.clickable { groupViewModel.showCreateGroupSheet.postValue(true)},
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Surface(
+                Modifier
+                    .size(64.dp),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.events),
+                    contentDescription = "discover",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(32.dp))
+            }
+            Text(text = stringResource(id = R.string.new_group),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                textAlign = TextAlign.Center)
 
+        }
+    }
+}
 @Composable
-fun YourGroups(groupViewModel: GroupViewModel, navController: NavController) {
-    val groupList = groupViewModel.groupListLiveData.observeAsState().value
+fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navController: NavController) {
+    val groupList = homeViewModel.suggestedGroupListLiveData.observeAsState().value
     ConstraintLayout(
         Modifier
+            .padding(top = 16.dp)
             .fillMaxWidth(),
     ) {
         val (header, list, showMore) = createRefs()
         Text(
-            text = stringResource(id = R.string.your_groups),
+            text = stringResource(id = R.string.suggested),
             Modifier
                 .constrainAs(header) {
                     start.linkTo(parent.start, margin = 8.dp)
@@ -269,16 +311,15 @@ fun YourGroups(groupViewModel: GroupViewModel, navController: NavController) {
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground
         )
-
         if (!groupList.isNullOrEmpty()) {
-            Column(
+            LazyRow(
                 Modifier.constrainAs(list) {
                     top.linkTo(header.bottom, margin = 8.dp)
-                    centerHorizontallyTo(parent)
+                    start.linkTo(parent.start, margin = 8.dp)
                 }
             ) {
-                groupList.forEach { group ->
-                    GroupItem(group, groupViewModel, navController)
+                items(groupList) { group ->
+                    SuggestedGroupItem(group, groupViewModel, navController)
                 }
             }
         }else {
@@ -289,20 +330,74 @@ fun YourGroups(groupViewModel: GroupViewModel, navController: NavController) {
                 Text(text = stringResource(id = R.string.no_groups))
             }
         }
-        Text(
-            text = stringResource(id = R.string.show_more),
+    }
+}
+
+@Composable
+fun SuggestedGroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
+    val context = LocalContext.current
+    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 32
+    Surface(
+        Modifier
+            .size(itemWidth.dp)
+            .padding(bottom = 2.dp, start = 2.dp, end = 2.dp)
+            .clickable {
+//                navController.navigate("group_detail") { launchSingleTop = true }
+//                groupViewModel.setSelectedGroupDetail(group)
+            },
+        color = MaterialTheme.colorScheme.surfaceDim,
+        shape = MaterialTheme.shapes.extraSmall
+    ) {
+        ConstraintLayout(
             Modifier
-                .clickable {
-                    navController.navigate("groups") {
-                        launchSingleTop = true
-                    }
-                }
-                .constrainAs(showMore) {
-                    top.linkTo(list.bottom, margin = 4.dp)
-                    end.linkTo(parent.end, margin = 8.dp)
+                .fillMaxWidth()) {
+            val (logo, name, memberCount, type) = createRefs()
+
+            Surface(
+                Modifier
+                    .size(56.dp)
+                    .constrainAs(logo) {
+                        top.linkTo(parent.top, margin = 4.dp)
+                        centerHorizontallyTo(parent)
+                    },
+                shape = MaterialTheme.shapes.large,
+                color = Color.Transparent
+            ) {
+                ImageLoader(group.logoUrl, context, 64, 64, R.drawable.download)
+            }
+
+            Text(
+                text = group.groupName,
+                Modifier
+                    .padding(horizontal = 4.dp)
+                    .constrainAs(name) {
+                        top.linkTo(logo.bottom)
+                        centerHorizontallyTo(logo)
+                    },
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+
+            Text(text = "Group type: ${group.groupType}",
+                Modifier
+                    .padding(horizontal = 4.dp)
+                    .constrainAs(type) {
+                        top.linkTo(name.bottom)
+                        centerHorizontallyTo(logo)
+                    },
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground)
+
+            Text(text = "${group.memberList?.size} members",
+                Modifier.constrainAs(memberCount) {
+                    top.linkTo(type.bottom)
+                    centerHorizontallyTo(logo)
                 },
-            color = MaterialTheme.colorScheme.primary
-        )
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground)
+        }
     }
 }
 
@@ -315,21 +410,22 @@ fun FeedList(
     val feedList = homeViewModel.eventFeeds.observeAsState().value
     if (feedList?.isNotEmpty() == true) {
         Column(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
                 text = stringResource(id = R.string.active_events),
-                modifier = Modifier.padding(start = 8.dp, bottom = 16.dp),
+                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
                 fontSize = TextUnit(18.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            LazyRow(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                rememberLazyListState()
             ) {
-                items(feedList) {eventFeed ->
+                feedList.forEach { eventFeed ->
                     EventItem(navController, groupViewModel, eventFeed)
                 }
             }
@@ -344,7 +440,7 @@ fun EventItem(
     groupViewModel: GroupViewModel,
     eventFeed: Event
 ) {
-    val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList.size} )
+    val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
 
@@ -356,25 +452,23 @@ fun EventItem(
                     groupViewModel.setSelectedEvent(eventFeed)
                 }
             }
-            .width((screenWidth - 32).dp)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.background,
-        shadowElevation = dimensionResource(id = R.dimen.default_elevation)
+        color = MaterialTheme.colorScheme.surfaceDim,
     ) {
         ConstraintLayout(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            val (eventImages, dotIndicator, eventTitle, groupName, levyAmount) = createRefs()
+            val (eventImages, dotIndicator, eventTitle, groupName, levyAmount, icon) = createRefs()
             Surface(
                 modifier = Modifier
-                    .width(96.dp)
+                    .width(84.dp)
+                    .height(84.dp)
                     .constrainAs(eventImages) {
                         start.linkTo(parent.start)
                         centerVerticallyTo(parent)
                     },
-                shadowElevation = dimensionResource(id = R.dimen.low_elevation),
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.background
             ) {
@@ -383,11 +477,11 @@ fun EventItem(
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    eventFeed.imageUrlList[pageState.currentPage]?.let { imageUrl  -> ImageLoader(
+                    eventFeed.imageUrlList?.get(pageState.currentPage)?.let { imageUrl  -> ImageLoader(
                         imageUrl,
                         context,
-                        96,
-                        196,
+                        84,
+                        84,
                         R.drawable.event
                     ) }
                 }
@@ -415,34 +509,42 @@ fun EventItem(
             }
 
             Text(
-                text = eventFeed.eventTitle,
-                fontSize = TextUnit(17.0f, TextUnitType.Sp),
+                text = eventFeed.eventTitle!!,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.constrainAs(eventTitle) {
-                    top.linkTo(parent.top, margin = 8.dp)
+                    top.linkTo(parent.top, margin = 4.dp)
                     start.linkTo(eventImages.end, margin = 8.dp)
                 }
             )
 
             Text(
-                text = eventFeed.groupName,
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                text = eventFeed.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 modifier = Modifier.constrainAs(groupName) {
-                    top.linkTo(eventTitle.bottom, margin = 8.dp)
+                    top.linkTo(eventTitle.bottom, margin = 4.dp)
+                    bottom.linkTo(levyAmount.top, margin = 4.dp)
                     start.linkTo(eventImages.end, margin = 8.dp)
                 }
             )
 
             Text(
                 text = "Levy: ${eventFeed.levyAmount.toString()}",
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 modifier = Modifier.constrainAs(levyAmount) {
-                    top.linkTo(groupName.bottom, margin = 8.dp)
+                    bottom.linkTo(parent.bottom, margin = 4.dp)
                     start.linkTo(eventImages.end, margin = 8.dp)
                 },
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
+                color = MaterialTheme.colorScheme.onBackground,
             )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "",
+                modifier = Modifier.constrainAs(icon) {
+                    centerVerticallyTo(parent)
+                    end.linkTo(parent.end, margin = 10.dp)
+                })
         }
     }
 
@@ -556,16 +658,4 @@ fun ProfilePictureLoader(dataStoreManager: DataStoreManager) {
             contentDescription = ""
         )
     }
-}
-
-@Preview
-@Composable
-fun PreviewHome() {
-    val context = LocalContext.current
-    HomeScreen(
-        homeViewModel = HomeViewModel(DataStoreManager(context)),
-        navController = rememberNavController(),
-        groupViewModel = GroupViewModel(DataStoreManager(context)),
-        dataStoreManager = DataStoreManager(context)
-    )
 }

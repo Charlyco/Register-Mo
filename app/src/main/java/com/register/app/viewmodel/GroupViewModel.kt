@@ -1,34 +1,37 @@
 package com.register.app.viewmodel
 
-import androidx.datastore.preferences.protobuf.ListValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.register.app.dto.ActivityRate
 import com.register.app.dto.BankDetail
 import com.register.app.dto.CommentReply
+import com.register.app.dto.ComplianceRate
 import com.register.app.dto.EventComment
-import com.register.app.dto.NewEventDto
+import com.register.app.dto.PostCommentModel
 import com.register.app.dto.ReactionType
-import com.register.app.enums.MemberOffice
 import com.register.app.model.Event
-import com.register.app.model.EventReaction
+import com.register.app.model.EventCommentDto
+import com.register.app.model.EventReactionDto
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.model.MembershipRequest
 import com.register.app.util.DataStoreManager
+import com.register.app.util.PAID
+import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withContext
+import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class GroupViewModel @Inject constructor(private val dataStoreManager: DataStoreManager): ViewModel(){
+    private val _activityImages: MutableLiveData<List<String>> = MutableLiveData()
+    val activityImageList: LiveData<List<String>> = _activityImages
+    private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
+    val hasPaid: LiveData<Boolean> = _hasUserPaid
     private val _activityRAteLiveData: MutableLiveData<Float> = MutableLiveData()
     val activityRateLiveData: LiveData<Float> = _activityRAteLiveData
     private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
@@ -46,8 +49,10 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
     val pendingMemberList: LiveData<List<Member>> = _pendingMemberList
     private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
     val groupEvents: LiveData<List<Event>?> = _groupEvents
-    private val _activeGroupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
-    val activeGroupEvents: LiveData<List<Event>?> = _activeGroupEvents
+    private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val paidActivities: LiveData<List<Event>?> = _paidActivities
+    private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
     private val _selectedEvent: MutableLiveData<Event> = MutableLiveData()
     val selectedEvent: LiveData<Event> = _selectedEvent
     private val _eventDetailLiveData: MutableLiveData<Event> = MutableLiveData()
@@ -83,7 +88,15 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
                 listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
                 listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
                 "", "", "CLOSED", "" ),
-
+            Group(1, "CMO St Patrick's Parish",
+                "The Catholic Men Organization of St. Patrick's Parish Nekede, Owerri",
+                "charlyco@gmail.com", "+234-7037590923",
+                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
+                LocalDateTime.now().toString(),
+                listOf(MembershipDto("", ""), MembershipDto("", ""), MembershipDto("", "")),
+                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
+                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
+                "", "", "CLOSED", "" ),
             )
         _groupListLiveDate.value = groups
     }
@@ -97,14 +110,27 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
 
     fun setSelectedGroupDetail(group: Group) {
         _groupDetailLiveData.value = group
-        // Get all active events for user
-        _activeGroupEvents.value =
+        // Get all events for for group and filter into paid and unpaid for user
+        _paidActivities.value =
             listOf(
-                Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), 3,
-                    listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3,4), ""),
-                Event(12, "Child Dedication", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", "", ""), 3,
-                    listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3,4), "")
+                Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
             )
+        _unpaidActivities.value = listOf(
+            Event(13, "Wedding Anniversary", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+            Event(14, "Matriculation Ceremony", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+        )
         //get user activity rate
         _activityRAteLiveData.value = 65.0f
     }
@@ -179,34 +205,42 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
 
     fun getAllEventsForGroup(groupName: String?) {
         _groupEvents.value = listOf(
-            Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("","",""), 3,
-                listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3), ""),
-            Event(12, "Child Dedication", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("-","","",""), 3,
-                listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3), ""),
-            Event(12, "Convocation", "SEES 2019, FPNO", LocalDateTime.now().toString(), "", "", mutableListOf("",""), 3,
-                listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3), ""),
-            Event(12, "Child Dedication", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("","",""), 3,
-                listOf(EventReaction(0, 2, "", ReactionType.LIKE.name)), "Charles", "IHS-2008", 0.0, 0.0, 0.0, listOf(1,2,3), "")
+            Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+            Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+            Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
+                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
         )
     }
 
     fun setSelectedEvent(eventFeed: Event) {
         _selectedEvent.value = eventFeed
+        viewModelScope.launch { getMembershipIdByGroupId(eventFeed.groupId!!) }
     }
 
     fun postCommentReply(commentReply: String, eventCommentId: Int): CommentReply? {
         return null
     }
 
-    fun postComment(newEventDto: NewEventDto, eventId: Int?): EventComment? {
+    fun postComment(postCommentModel: PostCommentModel, eventId: Int?): EventComment? {
         return null
     }
 
-    suspend fun getMembershipId(group: Group?): String {
-        return withContext(Dispatchers.IO) {
+    suspend fun getMembershipId(group: Group?){
             val member = group?.memberList?.find { it.email == dataStoreManager.readUserEmailData() }
-            member?.membershipId ?: ""
-        }
+            member?.membershipId ?: "${group?.groupName}_1234"
+            _membershipId.postValue(member?.membershipId ?: "${group?.groupName}_1234")
+    }
+
+    private suspend fun getMembershipIdByGroupId(groupId: Int){
+            //val grou
+            //val member = group?.memberList?.find { it.email == dataStoreManager.readUserEmailData() }
+            //member?.membershipId ?: ""
+            _membershipId.value = "2123"
     }
 
     fun getUserActivityRate(groupId: Int?) {
@@ -231,5 +265,43 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
             "Secretary",
             0.0, "",
             "USER", listOf())
+    }
+
+    fun getComplianceRate(contributionSize: Int?, groupId: Int?): ComplianceRate {
+        //Get the group detail and check membershipSize
+        return ComplianceRate(23, 45, ((23/45)*100).toDouble())
+    }
+
+    fun uploadGroupLogo(file: File) {
+        //Upload logo and return url
+    }
+
+    fun populateActivities(type: String) {
+        when(type) {
+            PAID -> {
+                _groupEvents.value = _paidActivities.value
+            }
+            UNPAID -> {
+                _groupEvents.value = _unpaidActivities.value
+            }
+            else -> {}
+        }
+    }
+
+    fun uploadActivityImages(file: File) {
+        //Upload the image ans add the url to imageList livedata
+    }
+
+    suspend fun createNewActivity(
+        activityTitle: String,
+        activityDescription: String,
+        levyAmount: Double,
+        eventDate: String
+    ) {
+        //val newActivity = data
+//        newActivity.groupId = _groupDetailLiveData.value?.groupId
+//        newActivity.groupName = _groupDetailLiveData.value?.groupName
+//        newActivity.eventCreator = dataStoreManager.readAuthData()
+        //Call repository method to create activity
     }
 }

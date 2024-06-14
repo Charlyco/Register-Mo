@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Register</string>
     <string name="app_logo">This is app logo</string>
-    <string name="splash_text">All your organization\'s needs in one place</string>
+    <string name="splash_text">Cloud-powered record keeping for your organization</string>
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
     <string name="email">Email address</string>
@@ -33,7 +33,7 @@
     <string name="description">Description</string>
     <string name="other_details">Other Details</string>
     <string name="pay_now">Pay now</string>
-    <string name="paid_list">List of members that have paid</string>
+    <string name="paid_list">View list of members that have paid</string>
     <string name="groups">Groups</string>
     <string name="create_group">Create a new group</string>
     <string name="group_name">Group Name</string>
@@ -62,6 +62,8 @@
     <string name="membership_request">Pending Membership Requests</string>
     <string name="approve">Approve</string>
     <string name="active_events">Ongoing Activities</string>
+    <string name="paid_activities">Paid Activities</string>
+    <string name="unpaid_activities">Unpaid Activities</string>
     <string name="empty_event">No active activities/contributions at this time.</string>
     <string name="show_more">Show more</string>
     <string name="no_groups">Ops! You do not belong to any group!</string>
@@ -79,11 +81,12 @@
     <string name="discover_desc">Not sure where to start, find your physical groups and join them here.</string>
     <string name="discover_friends">"Find your colleagues "</string>
     <string name="find_friends_desc">You can as well search for your colleagues with their phone number, and then join common groups they already belong.</string>
-    <string name="your_groups">Your groups</string>
+    <string name="suggested">Suggested groups</string>
     <string name="phone_number">Enter phone number</string>
-    <string name="discover_tag">Find a group</string>
-    <string name="link_up">Link up </string>
+    <string name="your_groups">Your groups</string>
+    <string name="link_up">Colleagues</string>
     <string name="new_group">New group</string>
+    <string name="social">Social groups</string>
     <string name="chart_header">Your activity rate</string>
     <string name="edit_Profile">Edit profile</string>
     <string name="notifications">Notifications</string>
@@ -92,4 +95,14 @@
     <string name="create_election">Create election</string>
     <string name="elections">Elections</string>
     <string name="save">Save</string>
+    <string name="welcome_note">New here? \nFind your organizations</string>
+    <string name="compliance">Compliance rate</string>
+    <string name="no_unpaid_activities">Kudos! You have no outstanding activities to pay for.</string>
+    <string name="create_activity">Create new Activity</string>
+    <string name="activity_title">Title of activity</string>
+    <string name="activity_description">Description of activity</string>
+    <string name="levy_amount">Levy amount</string>
+    <string name="create_event_title">Fill in the details of this activity</string>
+    <string name="event_date">Date of event</string>
+    <string name="upload_images">Upload releted images</string>
 </resources>

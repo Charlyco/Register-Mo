@@ -1,20 +1,16 @@
 package com.register.app
 
 import androidx.activity.viewModels
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.navigation.NamedNavArgument
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.register.app.screens.Chatroom
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
 import com.register.app.screens.AuthScreen
+import com.register.app.screens.CreateEvent
+import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EvidenceOfPayment
 import com.register.app.screens.Forum
 import com.register.app.screens.GroupDetail
@@ -59,11 +55,11 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         composable("home") {
             HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, dataStoreManager = dataStoreManager)
         }
-        composable("chats") {
-            Chatroom()
+        composable("colleagues") {
+            DiscoverScreen(groupViewModel = groupViewModel, homeViewModel = homeViewModel, navController = navController)
         }
-        composable("events") {
-            Events(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
+        composable("events/{title}") { backStackEntry ->
+            Events(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, backStackEntry.arguments?.getString("title"))
         }
         composable("event_detail") {
             EventDetails(dataStoreManager = dataStoreManager, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
@@ -88,6 +84,9 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("update_group") {
             GroupUpdateScreen(navController = navController, groupViewModel = groupViewModel)
+        }
+        composable("create_event") {
+            CreateEvent(groupViewModel = groupViewModel, navController = navController)
         }
     }
 }

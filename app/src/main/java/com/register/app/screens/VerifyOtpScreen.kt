@@ -62,17 +62,17 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
         ) {
             val (backBtn, lowerSection, image, text, changeNUmber) = createRefs()
 
-//            Image(
-//                painter = painterResource(id = R.drawable.urban2),
-//                contentDescription = "",
-//                modifier = Modifier
-//                    .constrainAs(image) {
-//                        centerHorizontallyTo(parent)
-//                        top.linkTo(parent.top)
-//                    }
-//                    .fillMaxWidth(),
-//                contentScale = ContentScale.FillBounds
-//            )
+            Image(
+                painter = painterResource(id = R.drawable.verify),
+                contentDescription = "",
+                modifier = Modifier
+                    .size(140.dp)
+                    .constrainAs(image) {
+                        top.linkTo(parent.top, margin = 64.dp)
+                        centerHorizontallyTo(parent)
+                    },
+                contentScale = ContentScale.FillBounds
+            )
 
             Surface(
                 modifier = Modifier
@@ -93,28 +93,17 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            bottomEnd = 32.dp,
-                            topStart = 32.dp
-                        )
-                    )
-                    .constrainAs(text) {
-                        centerHorizontallyTo(parent)
-                        bottom.linkTo(lowerSection.top, margin = 32.dp)
-                    },
-                color = MaterialTheme.colorScheme.onTertiary
-            ) {
             Text(
                 text = stringResource(id = R.string.verify_otp_header),
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onPrimary,
                 textAlign = TextAlign.Center,
-            )}
+                modifier = Modifier
+                    .constrainAs(text) {
+                        centerHorizontallyTo(parent)
+                        bottom.linkTo(lowerSection.top, margin = 32.dp)
+                    }
+            )
 
             Surface(
                 modifier = Modifier
@@ -284,7 +273,7 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .clickable { navController.navigate("signin") },
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.secondary
             )
         }
     }

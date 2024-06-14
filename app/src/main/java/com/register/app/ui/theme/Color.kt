@@ -2,16 +2,24 @@ package com.register.app.ui.theme
 
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.pm.ShortcutInfoCompat.Surface
 
-val Purple80 = Color(0xFF0381FF)
+val Interactive0 = Color(0xFF0381FF)
+
 val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val TertiaryDark = Color(0x80EFB8C8)
 
-val Purple40 = Color(0xFF6650a4)
+val PurpleTranslucent = Color(0x806650A4)
 val Secondary = Color(0xFFD01712)
-val Pink40 = Color(0xFF7D5260)
-val Background = Color(0xFFFBFBFB)
-val Surface = Color(0xFFFDD9D8)
-val Primary = Color(0xFF700704)
+val SurfaceDimLight = Color(0xFFF7F2F2)
+val SurfaceDimDark = Color(0xFF302F2F)
+val BackgroundLight = Color(0xFFFBFBFB)
+val BackgroundDark = Color(0xFF222222)
+val SurfaceLight = Color(0xFFF8EEED)
+val SurfaceDark = Color(0xFF686363)
+val PrimaryLight = Color(0xFF68211E)
+val PrimaryDark = Color(0xFF521F1D)
 val Translucent = Color(0x51473B3B)
-val Tertiary = Color(0x80700704)
+val TertiaryLight = Color(0x80700704)
+val OnPrimaryLight = Color(0xFFF3F3F3)
+val OnPrimaryDark = Color(0xFF494848)

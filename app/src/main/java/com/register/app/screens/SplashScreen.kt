@@ -53,17 +53,6 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
                    centerVerticallyTo(parent)
                }
            )
-
-            Text(
-                text = stringResource(id = R.string.splash_text),
-                modifier = Modifier.constrainAs(text) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(logo.bottom, margin = 32.dp)
-                },
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

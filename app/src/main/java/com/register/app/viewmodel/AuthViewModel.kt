@@ -133,4 +133,8 @@ class AuthViewModel @Inject constructor(
             0.0, "",
             "USER", listOf())
     }
+
+    fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
+        TODO("Not yet implemented")
+    }
 }

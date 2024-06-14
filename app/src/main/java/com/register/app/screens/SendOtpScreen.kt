@@ -69,49 +69,30 @@ fun SendOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
             modifier = Modifier.fillMaxSize()
         ) {
             val (lowerSection, image, text) = createRefs()
-
-            Surface (
+            Image(
+                painter = painterResource(id = R.drawable.otp),
+                contentDescription = "",
+                contentScale = ContentScale.FillBounds,
                 modifier = Modifier
+                    .width(140.dp)
+                    .height(180.dp)
                     .constrainAs(image) {
                         centerHorizontallyTo(parent)
                         top.linkTo(parent.top, margin = 64.dp)
-                    },
-                shape = MaterialTheme.shapes.large
-            ){
-                Image(
-                    painter = painterResource(id = R.drawable.otp_image),
-                    contentDescription = "",
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier
-                        .width(170.dp)
-                        .height(240.dp)
-                )
-            }
+                    }
+            )
 
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            bottomEnd = 32.dp,
-                            topStart = 32.dp
-                        )
-                    )
+            Text(
+                text = stringResource(id = R.string.otp_header),
+                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(vertical = 2.dp, horizontal = 4.dp)
                     .constrainAs(text) {
                         centerHorizontallyTo(parent)
-                        bottom.linkTo(lowerSection.top, margin = 32.dp)
-                    },
-                color = MaterialTheme.colorScheme.onTertiary
-            ) {
-                Text(
-                    text = stringResource(id = R.string.otp_header),
-                    fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
+                        bottom.linkTo(lowerSection.top, margin = 32.dp) },
                 )
-            }
 
             Surface(
                 modifier = Modifier
@@ -130,7 +111,7 @@ fun SendOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
                         )
                     )
                     .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.background,
                 shadowElevation = dimensionResource(id = R.dimen.default_elevation)
             ) {
                 LowerSection(authViewModel, navController)
@@ -178,7 +159,7 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
         Surface(
             modifier = Modifier
                 .width(screenWidth.dp)
-                .height(50.dp)
+                .height(55.dp)
                 .constrainAs(phoneBox) {
                     bottom.linkTo(otpBtn.top, margin = 72.dp)
                     centerHorizontallyTo(parent)
@@ -218,19 +199,20 @@ fun LowerSection(authViewModel: AuthViewModel, navController: NavController) {
             },
             modifier = Modifier
                 .width(screenWidth.dp)
-                .height(48.dp)
+                .height(50.dp)
                 .constrainAs(otpBtn) {
                     centerHorizontallyTo(parent)
                     bottom.linkTo(parent.bottom, margin = 120.dp)
                 },
             shape = MaterialTheme.shapes.large,
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = dimensionResource(id = R.dimen.low_elevation),
-                pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
-            ),
+//            elevation = ButtonDefaults.buttonElevation(
+//                defaultElevation = dimensionResource(id = R.dimen.low_elevation),
+//                pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+//            ),
+            border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.primary
             )
             ) {
             Text(text = stringResource(id = R.string.get_otp))
@@ -289,7 +271,7 @@ fun SelectCountry(
     Box(
         modifier = Modifier
             .width((screenWidth - 32).dp)
-            .height(50.dp),
+            .height(55.dp),
         contentAlignment = Alignment.Center
     ) {
        ConstraintLayout(modifier = Modifier
