@@ -65,7 +65,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.res.dimensionResource
@@ -117,7 +117,7 @@ fun EventDetailTopBar(
         ) {
             val (navBtn, eventTitle) = createRefs()
             Icon(
-                imageVector = Icons.Default.ArrowBackIosNew,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                 contentDescription = "",
                 modifier = Modifier
                     .clickable {
@@ -558,8 +558,10 @@ fun ViewEventDetails(
                                 text = member.fullName,
                                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
                             )
-                            Text(text = member.memberPost,
-                                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+                            member.memberPost?.let { post ->
+                                Text(text = post,
+                                    fontSize = TextUnit(14.0f, TextUnitType.Sp))
+                            }
                         }
                     }
                 }
@@ -757,7 +759,8 @@ fun PaidListHeader(
                 contentDescription = "",
                 Modifier
                     .size(16.dp)
-                    .clickable { callback(true) }
+                    .clickable { callback(true)},
+                tint = MaterialTheme.colorScheme.tertiary
             )
         }
     }
@@ -789,7 +792,7 @@ fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: 
         )
         IconButton(onClick = { coroutineScope.launch {
             val newComment = groupViewModel.postComment(
-               PostCommentModel(dataStoreManager.readAuthData(), commentText), event?.eventId) }
+               PostCommentModel(dataStoreManager.readUserData()?.username, commentText), event?.eventId) }
             }
         ) {
             Icon(

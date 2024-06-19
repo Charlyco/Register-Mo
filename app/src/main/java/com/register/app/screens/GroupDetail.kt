@@ -72,7 +72,6 @@ import com.register.app.R
 import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
-import com.register.app.model.MembershipDto
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
@@ -84,14 +83,13 @@ import com.register.app.viewmodel.HomeViewModel
 fun GroupDetail(navController: NavController, groupViewModel: GroupViewModel, authViewModel: AuthViewModel, homeViewModel: HomeViewModel) {
     var showAllMembers by rememberSaveable{ mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
-    LaunchedEffect(key1 = 259) {
-        groupViewModel.getMembershipId(group) }
+    val members = groupViewModel.memberDetailsList.observeAsState().value
     Scaffold(
         topBar = { GroupDetailTopBar(navController, group, groupViewModel){showAllMembers = it} },
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, group)
         if (showAllMembers) {
-            AllMembersList(group, groupViewModel, navController) {shouldShow -> showAllMembers = shouldShow}
+            AllMembersList(group, members, groupViewModel, authViewModel, navController) {shouldShow -> showAllMembers = shouldShow}
         }
     }
 }
@@ -185,7 +183,7 @@ fun GroupDetailScreen(
     homeViewModel: HomeViewModel,
     group: Group?
 ) {
-    var showProfileDetail by rememberSaveable { mutableStateOf(true) }
+    var showProfileDetail by rememberSaveable { mutableStateOf(false) }
     var showAdminList by rememberSaveable { mutableStateOf(false) }
     var showRequests by rememberSaveable { mutableStateOf(false) }
     val verticalScrollState = rememberScrollState(initial = 0)
@@ -957,15 +955,17 @@ fun AdminItem(admin: Member) {
         ) {
             val (profilePic, name, office, phone, email) = createRefs()
 
-            Text(
-                text = admin.memberPost,
-                Modifier.constrainAs(office) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(parent.top, margin = 8.dp) },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            admin.memberPost?.let {
+                Text(
+                    text = it,
+                    Modifier.constrainAs(office) {
+                        centerHorizontallyTo(parent)
+                        top.linkTo(parent.top, margin = 8.dp) },
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
 
             Surface(
                 Modifier
@@ -1023,7 +1023,14 @@ fun AdminItem(admin: Member) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AllMembersList(group: Group?, groupViewModel: GroupViewModel, navController: NavController, function: (show: Boolean) -> Unit) {
+fun AllMembersList(
+    group: Group?,
+    members: List<Member>?,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    navController: NavController,
+    function: (show: Boolean) -> Unit
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -1034,12 +1041,18 @@ fun AllMembersList(group: Group?, groupViewModel: GroupViewModel, navController:
         sheetMaxWidth = screenWidth.dp,
         containerColor = MaterialTheme.colorScheme.background
     ) {
-        if (group?.memberList?.isNotEmpty() == true) {
+        Text(
+            text = stringResource(id = R.string.all_members),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center)
+        if (members?.isNotEmpty() == true) {
             LazyColumn(
                 contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                items(group.memberList) { member ->
-                    MemberItem(member, navController, groupViewModel)
+                items(members) { member ->
+                    MemberItem(member, group, navController, groupViewModel, authViewModel){function(it)}
                 }
             }
         }
@@ -1047,14 +1060,31 @@ fun AllMembersList(group: Group?, groupViewModel: GroupViewModel, navController:
 }
 
 @Composable
-fun MemberItem(member: MembershipDto, navController: NavController, groupViewModel: GroupViewModel) {
-    val memberDetail = groupViewModel.getMemberDetails(member.email)
+fun MemberItem(
+    member: Member,
+    group: Group?,
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    displayCallback: (showState: Boolean) -> Unit
+) {
     val context = LocalContext.current
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
-            .clickable { },
+            .clickable {
+                displayCallback(false)
+                authViewModel.setSelectedMember(member)
+                /*
+                * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
+                * I need to match each detail with the corresponding membershipDto*/
+                val membershipDto = group?.memberList?.filter { membershipDto -> membershipDto.email == member.emailAddress }
+                groupViewModel.setSelectedMember(membershipDto?.get(0)!!)
+                navController.navigate("member_detail") {
+                    launchSingleTop = true
+                }
+            },
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small
     ) {
@@ -1072,7 +1102,7 @@ fun MemberItem(member: MembershipDto, navController: NavController, groupViewMod
                     shape = MaterialTheme.shapes.small
                 ) {
                     ImageLoader(
-                        imageUrl = memberDetail.imageUrl ?: "",
+                        imageUrl = member.imageUrl ?: "",
                         context = context,
                         height = 42,
                         width = 42,
@@ -1081,7 +1111,7 @@ fun MemberItem(member: MembershipDto, navController: NavController, groupViewMod
                 }
 
                 Text(
-                    text = memberDetail.fullName,
+                    text = member.fullName,
                     fontSize = TextUnit(16.0f, TextUnitType.Sp),
                     color = MaterialTheme.colorScheme.onBackground
                 )

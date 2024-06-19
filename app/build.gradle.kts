@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -64,6 +65,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
     //datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
     //navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
     //coroutines
@@ -93,6 +95,9 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     //chart
     implementation("co.yml:ycharts:2.1.0")
+    //websocket
+    implementation ("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
 
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
     implementation("androidx.compose.ui:ui")

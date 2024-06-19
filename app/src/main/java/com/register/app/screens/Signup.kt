@@ -423,7 +423,13 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                 val response = authViewModel.signUp(firstName, lastName, email, password, rePassword)
                       if (error?.isNotBlank() == true) {
                           Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                      } },
+                        }
+                if (response) {
+                    navController.navigate("signin") {
+                        popUpTo("splash") {inclusive = true}
+                    }
+                }
+                      },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.primary

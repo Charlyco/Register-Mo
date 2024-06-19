@@ -104,5 +104,10 @@
     <string name="levy_amount">Levy amount</string>
     <string name="create_event_title">Fill in the details of this activity</string>
     <string name="event_date">Date of event</string>
-    <string name="upload_images">Upload releted images</string>
+    <string name="upload_images">Upload related images</string>
+    <string name="all_members">All members</string>
+    <string name="suspend_user">Suspend</string>
+    <string name="expel_member">Expel</string>
+    <string name="change_role">Change role</string>
+    <string name="recall_member">Recall</string>
 </resources>

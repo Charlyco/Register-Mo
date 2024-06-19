@@ -17,6 +17,8 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.model.MembershipRequest
+import com.register.app.repository.AuthRepository
+import com.register.app.repository.GroupRepository
 import com.register.app.util.DataStoreManager
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
@@ -27,7 +29,11 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
-class GroupViewModel @Inject constructor(private val dataStoreManager: DataStoreManager): ViewModel(){
+class GroupViewModel @Inject constructor(
+    private val dataStoreManager: DataStoreManager,
+    private val groupRepository: GroupRepository): ViewModel(){
+    private val _selectedMember: MutableLiveData<MembershipDto> = MutableLiveData()
+    val selectedMember: LiveData<MembershipDto> = _selectedMember
     private val _activityImages: MutableLiveData<List<String>> = MutableLiveData()
     val activityImageList: LiveData<List<String>> = _activityImages
     private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
@@ -61,6 +67,8 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
     val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
     private val _membershipId: MutableLiveData<String> = MutableLiveData("")
     val membershipId: LiveData<String> = _membershipId
+    private val _memberDetails: MutableLiveData<List<Member>> = MutableLiveData()
+    val memberDetailsList: LiveData<List<Member>> = _memberDetails
 
     init {
         getAllGroupsForUser()
@@ -68,14 +76,13 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
 
     private fun getAllGroupsForUser() {
         //fetch groups from server
-
         val groups = listOf(
             Group(1, "IHS-2008", "2008 set of Isuikwuato High School",
                 "charlyco@gmail.com", "+234-7037590923",
                 "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
                 LocalDateTime.now().toString(),
                 listOf(MembershipDto("", ""),
-                    MembershipDto("", ""), MembershipDto("", "")),
+                    MembershipDto("charlyc835@gmaoil.com", "6673ge773ee"), MembershipDto("charlyco835@gmail.com", "eeerrd345fd")),
                 listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
                 listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
                 "", "", "OPEN", "" ),
@@ -84,7 +91,7 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
                 "charlyco@gmail.com", "+234-7037590923",
                 "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
                 LocalDateTime.now().toString(),
-                listOf(MembershipDto("", ""), MembershipDto("", ""), MembershipDto("", "")),
+                listOf(MembershipDto("charlyco835@gmail.com", "598709834"), MembershipDto("charlyco835@gmail.com", "674r8vd766r6ed"), MembershipDto("charlyco835@gmail.com", "87b8fyqib4gfiquf")),
                 listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
                 listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
                 "", "", "CLOSED", "" ),
@@ -93,7 +100,7 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
                 "charlyco@gmail.com", "+234-7037590923",
                 "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
                 LocalDateTime.now().toString(),
-                listOf(MembershipDto("", ""), MembershipDto("", ""), MembershipDto("", "")),
+                listOf(MembershipDto("charlyco835@gmail.com", "35qoungu394"), MembershipDto("charlyco835@gmail.com", "tiuugflko4kg34"), MembershipDto("charlyco835@gmail.com", "534q34gq34gq34")),
                 listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
                 listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
                 "", "", "CLOSED", "" ),
@@ -133,36 +140,71 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
         )
         //get user activity rate
         _activityRAteLiveData.value = 65.0f
+        //get member details
+        _memberDetails.value = listOf( Member(1,
+            "Nze Darlington",
+            "NzeDal",
+            "+2347037590923",
+            "charlyc835@gmail.com",
+            "", "",
+            "ACTIVE",
+            "President",
+            "",
+            "USER", listOf()),
+            Member(2,
+                "Onuoha Chukwuka",
+                "Chukwii",
+                "+2347037590923",
+                "charlyco835@gmail.com",
+                "", "",
+                "ACTIVE",
+                "Secretary",
+                "",
+                "USER", listOf()),
+            Member(3,
+                "Onuoha Chukwuemeka",
+                "Chacrlyco",
+                "+2347037590923",
+                "charlyco835@gmail.com",
+                "", "",
+                "ACTIVE",
+                " Financial Secretary",
+                "",
+                "USER", listOf())
+        )
     }
 
     fun getIndividualAdminDetail() {
         _groupAdminList.value = listOf(
             Member(1,
                 "Nze Darlington",
+                "NzeDal",
                 "+2347037590923",
                 "charlyco835@gmail.com",
                 "", "",
                 "ACTIVE",
                 "President",
-                0.0, "",
+                 "",
                 "USER", listOf()),
                     Member(2,
             "Onuoha Chukwuka",
+                        "Chukwii",
             "+2347037590923",
             "charlyco835@gmail.com",
             "", "",
             "ACTIVE",
             "Secretary",
-            0.0, "",
+             "",
             "USER", listOf()),
             Member(3,
                 "Onuoha Chukwuemeka",
+                "Chacrlyco",
                 "+2347037590923",
                 "charlyco835@gmail.com",
                 "", "",
                 "ACTIVE",
                 " Financial Secretary",
-                0.0, "",
+                "",
                 "USER", listOf())
         )
     }
@@ -180,21 +222,22 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
         _pendingMemberList.value = listOf(
             Member(1,
                 "Uche Egemba",
+                "Urchman",
                 "+2347037590923",
                 "charlyco835@gmail.com",
                 "", "",
                 "ACTIVE",
                 "President",
-                0.0, "",
+                "",
                 "USER", listOf()),
                     Member(1,
             "Ogbonna Chekwube",
+                        "CHekwube",
             "+2347037590923",
             "charlyco835@gmail.com",
             "", "",
             "ACTIVE",
-            "Secretary",
-            0.0, "",
+            "Secretary", "",
             "USER", listOf())
         )
     }
@@ -245,7 +288,7 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
 
     fun getUserActivityRate(groupId: Int?) {
         viewModelScope.launch {
-            val user = dataStoreManager.readAuthData()
+            val user = dataStoreManager.readUserData()
             // get date registered and membership Id
 
         }
@@ -258,12 +301,13 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
     fun getMemberDetails(email: String): Member {
        return Member(1,
             "Ogbonna Chekwube",
+           "Chekwube",
             "+2347037590923",
             "charlyco835@gmail.com",
             "", "",
             "ACTIVE",
             "Secretary",
-            0.0, "",
+             "",
             "USER", listOf())
     }
 
@@ -303,5 +347,9 @@ class GroupViewModel @Inject constructor(private val dataStoreManager: DataStore
 //        newActivity.groupName = _groupDetailLiveData.value?.groupName
 //        newActivity.eventCreator = dataStoreManager.readAuthData()
         //Call repository method to create activity
+    }
+
+    fun setSelectedMember(member: MembershipDto) {
+        _selectedMember.value = member
     }
 }

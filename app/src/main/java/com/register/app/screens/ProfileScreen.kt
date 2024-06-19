@@ -130,18 +130,20 @@ fun ProfileScreenUi(
             }
         )
 
-        Text(
-            text = user.address,
-            color = Color.DarkGray,
-            fontSize = TextUnit(16.0f, TextUnitType.Sp),
-            modifier = Modifier
-                .padding(horizontal = 14.dp)
-                .constrainAs(address) {
-                    top.linkTo(phone.bottom, margin = 4.dp)
-                    centerHorizontallyTo(parent)
-                },
-            textAlign = TextAlign.Center
-        )
+        user.address?.let {
+            Text(
+                text = it,
+                color = Color.DarkGray,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                modifier = Modifier
+                    .padding(horizontal = 14.dp)
+                    .constrainAs(address) {
+                        top.linkTo(phone.bottom, margin = 4.dp)
+                        centerHorizontallyTo(parent)
+                    },
+                textAlign = TextAlign.Center
+            )
+        }
 
         Surface(
             modifier = Modifier

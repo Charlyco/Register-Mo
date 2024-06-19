@@ -15,11 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -42,7 +38,6 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -50,7 +45,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -69,13 +63,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
@@ -83,18 +75,24 @@ import com.register.app.R
 import com.register.app.dto.ScreenLoadState
 import com.register.app.model.Event
 import com.register.app.model.Group
+import com.register.app.model.Member
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
 import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
+import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 
 @Composable
-fun HomeScreen(homeViewModel : HomeViewModel, navController: NavController, groupViewModel: GroupViewModel, dataStoreManager: DataStoreManager) {
+fun HomeScreen(
+    homeViewModel : HomeViewModel,
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel) {
     Scaffold(
-        topBar = { HomeTopBar(navController, homeViewModel, dataStoreManager) },
+        topBar = { HomeTopBar(navController, homeViewModel, authViewModel) },
         bottomBar = { BottomNavBar(navController) }
     ) {
         HomeScreenContent(modifier = Modifier.padding(it), homeViewModel, groupViewModel, navController)
@@ -158,7 +156,7 @@ fun WelcomeNote() {
         text = stringResource(id = R.string.welcome_note),
         Modifier.padding(start = 16.dp),
         color = MaterialTheme.colorScheme.onBackground,
-        fontSize = TextUnit(20.0f, TextUnitType.Sp)
+        fontSize = TextUnit(18.0f, TextUnitType.Sp)
         )
 }
 
@@ -557,22 +555,25 @@ fun ErrorState(homeViewModel: HomeViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(navController: NavController,
-               homeViewModel: HomeViewModel,
-               dataStoreManager: DataStoreManager) {
+fun HomeTopBar(
+    navController: NavController,
+    homeViewModel: HomeViewModel,
+    authViewModel: AuthViewModel
+) {
     var isExpanded by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val coroutineScope = rememberCoroutineScope()
+    val userData = authViewModel.userLideData.observeAsState().value
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp)
     ) {
-        ProfilePictureLoader(dataStoreManager)
+        ProfilePictureLoader(userData)
         TopAppBar(
-            title = { LaunchedEffect(key1 = 258) { dataStoreManager.readAuthData() } },
+            title = { userData?.username?.let { Text(text = "Welcome $it!") } } ,
             modifier = Modifier.width((screenWidth - 40).dp),
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background),
@@ -639,7 +640,7 @@ fun HomeTopBar(navController: NavController,
 }
 
 @Composable
-fun ProfilePictureLoader(dataStoreManager: DataStoreManager) {
+fun ProfilePictureLoader(user: Member?) {
     val painter = rememberAsyncImagePainter(
         ImageRequest.Builder(LocalContext.current).data(data = "imageUrl").apply(block = fun ImageRequest.Builder.() {
             transformations(CircleCropTransformation())

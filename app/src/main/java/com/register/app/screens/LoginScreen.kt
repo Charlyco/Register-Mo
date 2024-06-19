@@ -266,7 +266,7 @@ fun LoginScreen(
                 onClick = {
                     showIndicator = true
                     coroutineScope.launch {
-                        val response = authViewModel.signIn(email, password)
+                        authViewModel.signIn(email, password)
                         if (error?.isNotBlank() == true) {
                             showIndicator = false
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()

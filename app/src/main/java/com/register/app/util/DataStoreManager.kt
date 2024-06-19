@@ -6,15 +6,17 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.register.app.model.Member
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import java.net.ContentHandler
+import kotlinx.serialization.json.Json
 
 class DataStoreManager(private val applicationContext: Context) {
+    val json = Json { ignoreUnknownKeys = true }
+
     private object PreferencesKeys {
         val tokenKey = stringPreferencesKey("token")
-        val userName = stringPreferencesKey("userName")
+        val user = stringPreferencesKey("user")
         val userRole = stringPreferencesKey("role")
         val firebaseToken = stringPreferencesKey("firebase")
         val contactPermission = stringPreferencesKey("contactPermission")
@@ -25,7 +27,7 @@ class DataStoreManager(private val applicationContext: Context) {
     // Singleton pattern for DataStoreManager
     companion object {
         private val Context.tokenDataStore: DataStore<Preferences> by preferencesDataStore(name = "token_datastore")
-        private val Context.authDataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_datastore")
+        private val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_datastore")
         private val Context.userRoleDataStore: DataStore<Preferences> by preferencesDataStore(name = "role_datastore")
         private val Context.firebaseDataStore: DataStore<Preferences> by preferencesDataStore(name = "firebase_datastore")
         private val Context.contactPermission: DataStore<Preferences> by preferencesDataStore(name = "contact_perm_datastore")
@@ -52,13 +54,13 @@ class DataStoreManager(private val applicationContext: Context) {
         }
     }
 
-    suspend fun readAuthData(): String? {
-        return applicationContext.authDataStore.data.map { it[PreferencesKeys.userName] }.firstOrNull()
+    suspend fun readUserData(): Member? {
+        return applicationContext.userDataStore.data.map { member -> member[PreferencesKeys.user]?.let { json.decodeFromString(Member.serializer(), it) } }.firstOrNull()
     }
 
-    suspend fun writeAuthData(userName: String) {
-        applicationContext.authDataStore.edit { preferences ->
-            preferences[PreferencesKeys.userName] = userName
+    suspend fun writeUserData(user: Member) {
+        applicationContext.userDataStore.edit { preferences ->
+            preferences[PreferencesKeys.user] = json.encodeToString(Member.serializer(), user)
         }
     }
 

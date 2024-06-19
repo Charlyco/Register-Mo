@@ -1,5 +1,6 @@
 package com.register.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,6 +21,8 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
+    val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
     private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData(false)
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
     private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
@@ -30,6 +33,8 @@ class AuthViewModel @Inject constructor(
     val phoneNumber: LiveData<String> = _phoneNumber
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData("")
     val errorLiveData: LiveData<String?> = _errorLiveData
+    private val _userLiveData: MutableLiveData<Member?> = MutableLiveData()
+    val userLideData: LiveData<Member?> = _userLiveData
 
     fun signUp(
         firstName: String,
@@ -52,7 +57,7 @@ class AuthViewModel @Inject constructor(
             val signUpModel = SignUpModel("$firstName $lastName", email, password, rePassword, phoneNumber.value)
             viewModelScope.launch {
                 val authResponse =  authRepository.signUp(signUpModel)
-                dataStoreManager.writeAuthData(authResponse?.member?.emailAddress!!)  //to be modified
+                //dataStoreManager.writeUserData(authResponse?.member?.emailAddress!!)  //to be modified
             }
         }
         return true;
@@ -93,14 +98,23 @@ class AuthViewModel @Inject constructor(
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-    fun signIn(email: String, password: String): AuthResponse? {
+    suspend fun signIn(email: String, password: String){
         var authResponse: AuthResponse? = null
-       viewModelScope.launch {
            authResponse = authRepository.login(LoginUserModel(email, password))
-           //dataStoreManager.writeTokenData(authResponse?.authToken!!)
-           //dataStoreManager.writeUserRoleData(authResponse?.member?.memberPost!!)
-       }
-        return authResponse
+           //authResponse?.member?.let { dataStoreManager.writeUserData(it) }
+        val member =   Member(1,
+            "Chukwuemeka Nkemakolam",
+            "Charlyco",
+            "+2347037590923",
+            "charlyco835@gmail.com",
+            "", "",
+            "ACTIVE",
+            "Member",
+            "",
+            "USER", listOf())
+        dataStoreManager.writeUserData(member)
+        Log.d("USER:", dataStoreManager.readUserData().toString())
+        _userLiveData.value = dataStoreManager.readUserData()
     }
 
     fun isUserAdmin(): Boolean {
@@ -113,28 +127,44 @@ class AuthViewModel @Inject constructor(
     fun fetchMemberDetailsById(memberId: Int): Member {
         return Member(1,
             "Uche Egemba",
+            "Urchman",
             "+2347037590923",
             "charlyco835@gmail.com",
             "", "",
             "ACTIVE",
             "Member",
-            0.0, "",
+            "",
             "USER", listOf())
     }
 
     fun getUserDetails(): Member {
         return Member(1,
             "Uche Egemba",
+            "Urchman",
             "+2347037590923",
             "charlyco835@gmail.com",
             "12 Achuzilam Streen, Oppsite Divina Hospital, Nekede Owerri", "",
             "ACTIVE",
             "Member",
-            0.0, "",
+             "",
             "USER", listOf())
     }
 
     fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
-        TODO("Not yet implemented")
+        val member = Member(1,
+            "Uche Egemba",
+            "Urchman",
+            "+2347037590923",
+            "charlyco835@gmail.com",
+            "12 Achuzilam Streen, Oppsite Divina Hospital, Nekede Owerri", "",
+            "ACTIVE",
+            "Member",
+            "",
+            "USER", listOf())
+        return member
+    }
+
+    fun setSelectedMember(member: Member) {
+        _groupMemberLiveData.value = member
     }
 }

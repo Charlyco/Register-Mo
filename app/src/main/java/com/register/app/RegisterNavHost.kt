@@ -17,6 +17,7 @@ import com.register.app.screens.GroupDetail
 import com.register.app.screens.GroupUpdateScreen
 import com.register.app.screens.HomeScreen
 import com.register.app.screens.LoginScreen
+import com.register.app.screens.MemberDetails
 import com.register.app.screens.ProfileScreen
 import com.register.app.screens.SendOtpScreen
 import com.register.app.screens.Signup
@@ -53,7 +54,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
         composable("home") {
-            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, dataStoreManager = dataStoreManager)
+            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("colleagues") {
             DiscoverScreen(groupViewModel = groupViewModel, homeViewModel = homeViewModel, navController = navController)
@@ -87,6 +88,9 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("create_event") {
             CreateEvent(groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("member_detail") {
+            MemberDetails(groupViewModel = groupViewModel, authViewModel = authViewModel, navController = navController)
         }
     }
 }
