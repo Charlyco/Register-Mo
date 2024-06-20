@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.register.app.screens.AddMember
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
@@ -91,6 +92,9 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("member_detail") {
             MemberDetails(groupViewModel = groupViewModel, authViewModel = authViewModel, navController = navController)
+        }
+        composable("add_member") {
+            AddMember(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
         }
     }
 }

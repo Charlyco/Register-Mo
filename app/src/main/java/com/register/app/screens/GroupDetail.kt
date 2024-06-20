@@ -146,7 +146,12 @@ fun GroupDetailTopBar(
                         })
                     DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.add_member)) },
-                    onClick = { isExpanded = false })
+                    onClick = {
+                        navController.navigate("add_member") {
+                            launchSingleTop = true
+                        }
+                        isExpanded = false
+                    })
 
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.create_election)) },
@@ -1079,7 +1084,8 @@ fun MemberItem(
                 /*
                 * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
                 * I need to match each detail with the corresponding membershipDto*/
-                val membershipDto = group?.memberList?.filter { membershipDto -> membershipDto.email == member.emailAddress }
+                val membershipDto =
+                    group?.memberList?.filter { membershipDto -> membershipDto.email == member.emailAddress }
                 groupViewModel.setSelectedMember(membershipDto?.get(0)!!)
                 navController.navigate("member_detail") {
                     launchSingleTop = true

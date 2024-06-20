@@ -110,4 +110,5 @@
     <string name="expel_member">Expel</string>
     <string name="change_role">Change role</string>
     <string name="recall_member">Recall</string>
+    <string name="username">Username</string>
 </resources>

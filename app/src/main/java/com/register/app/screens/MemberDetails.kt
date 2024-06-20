@@ -118,7 +118,7 @@ fun MemberDetailsUi(
             fontSize = TextUnit(14.0f, TextUnitType.Sp))
 
         Text(
-            text = memberDetail.status,
+            text = memberDetail.status!!,
             modifier = Modifier
                 .padding(start = 16.dp)
                 .constrainAs(status) {

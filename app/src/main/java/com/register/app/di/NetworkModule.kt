@@ -39,7 +39,7 @@ object NetworkModule {
             .retryOnConnectionFailure(true)
             .build()
         return Retrofit.Builder()
-            .baseUrl("")
+            .baseUrl("http://34.105.170.3:8084/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(client)
             .build()

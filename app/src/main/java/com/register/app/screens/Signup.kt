@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -34,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +66,7 @@ import com.register.app.R
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun Signup(
@@ -69,12 +74,15 @@ fun Signup(
     navController: NavController,
     dataStoreManager: DataStoreManager
 ) {
+    val scrollState = rememberScrollState(initial = 0)
     Surface(color = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
     ) {
         ConstraintLayout(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
         ) {
             val (backBtn, header, inputSection, alternate) = createRefs()
 
@@ -187,21 +195,25 @@ fun AlternateAction(navController: NavController) {
 fun TextInputSection(authViewModel: AuthViewModel, navController: NavController) {
     var firstName by rememberSaveable { mutableStateOf("") }
     var lastName by rememberSaveable { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var rePassword by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
 
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showRePassword by rememberSaveable { mutableStateOf(false) }
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     val error = authViewModel.errorLiveData.observeAsState().value
     val context = LocalContext.current
-    var showIndicator by rememberSaveable { mutableStateOf(false) }
+    val showIndicator = authViewModel.progressLiveData.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
 
     ConstraintLayout(
         modifier = Modifier.fillMaxWidth()
     ) {
-        val (emailBox, firstNameBox, lastNameBox, passwordBox, rePasswordBox, signupBtn, alternate, indicator) = createRefs()
+        val (emailBox, phoneBox, usernameBox, firstNameBox, lastNameBox, passwordBox, rePasswordBox, addressBox, signupBtn, alternate, indicator) = createRefs()
 
         Surface(
             modifier = Modifier
@@ -242,7 +254,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                 .height(dimensionResource(id = R.dimen.text_field_height))
                 .constrainAs(lastNameBox) {
                     centerHorizontallyTo(parent)
-                    bottom.linkTo(emailBox.top, margin = 16.dp)
+                    bottom.linkTo(usernameBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.large,
@@ -273,9 +285,75 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
             modifier = Modifier
                 .width(screenWidth.dp)
                 .height(dimensionResource(id = R.dimen.text_field_height))
+                .constrainAs(usernameBox) {
+                    centerHorizontallyTo(parent)
+                    bottom.linkTo(phoneBox.top, margin = 16.dp)
+                },
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
+        ) {
+            TextField(
+                value = username,
+                onValueChange = {username = it},
+                label = { Text(
+                    text = stringResource(id = R.string.username),
+                    color = Color.Gray) },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "",
+                    tint = Color.Gray)},
+                colors = TextFieldDefaults.colors(
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .height(dimensionResource(id = R.dimen.text_field_height))
+                .constrainAs(phoneBox) {
+                    centerHorizontallyTo(parent)
+                    bottom.linkTo(emailBox.top, margin = 16.dp)
+                },
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
+        ) {
+            TextField(
+                value = phone,
+                onValueChange = {phone = it},
+                label = { Text(
+                    text = stringResource(id = R.string.phone),
+                    color = Color.Gray) },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.PhoneAndroid,
+                    contentDescription = "",
+                    tint = Color.Gray)},
+                colors = TextFieldDefaults.colors(
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .height(dimensionResource(id = R.dimen.text_field_height))
                 .constrainAs(emailBox) {
                     centerHorizontallyTo(parent)
-                    bottom.linkTo(passwordBox.top, margin = 16.dp)
+                    bottom.linkTo(addressBox.top, margin = 16.dp)
                 },
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.large,
@@ -286,6 +364,39 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                 onValueChange = {email = it},
                 label = { Text(
                     text = stringResource(id = R.string.email),
+                    color = Color.Gray) },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "",
+                    tint = Color.Gray)},
+                colors = TextFieldDefaults.colors(
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .width(screenWidth.dp)
+                .height(dimensionResource(id = R.dimen.text_field_height))
+                .constrainAs(addressBox) {
+                    centerHorizontallyTo(parent)
+                    bottom.linkTo(passwordBox.top, margin = 16.dp)
+                },
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, Color.Gray)
+        ) {
+            TextField(
+                value = address,
+                onValueChange = {address = it},
+                label = { Text(
+                    text = stringResource(id = R.string.address),
                     color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(
@@ -420,13 +531,15 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
 
         Button(
             onClick = {
-                val response = authViewModel.signUp(firstName, lastName, email, password, rePassword)
-                      if (error?.isNotBlank() == true) {
-                          Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                coroutineScope.launch {
+                    val response = authViewModel.signUp(firstName, lastName, email, phone, username, password, rePassword, address)
+                    if (error?.isNotBlank() == true) {
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+                    if (response) {
+                        navController.navigate("signin") {
+                            popUpTo("splash") {inclusive = true}
                         }
-                if (response) {
-                    navController.navigate("signin") {
-                        popUpTo("splash") {inclusive = true}
                     }
                 }
                       },
@@ -458,7 +571,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
             AlternateAction(navController)
         }
 
-        if (showIndicator) {
+        if (showIndicator == true) {
             Surface(
                 color = Color.Transparent,
                 modifier = Modifier.constrainAs(indicator) {

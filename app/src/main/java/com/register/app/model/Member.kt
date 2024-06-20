@@ -11,9 +11,9 @@ data class Member(
     val emailAddress: String,
     val address: String?,
     val imageUrl: String?,
-    val status: String,
+    val status: String?,
     val memberPost: String?,
-    val signupDateTime: String,
-    val role: String,
-    val groupIds: List<Int>
+    val signupDateTime: String?,
+    val role: String?,
+    val groupIds: List<Int>?
   )

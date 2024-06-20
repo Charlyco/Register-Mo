@@ -1,21 +1,63 @@
 package com.register.app.repositoryimpls
 
+import com.register.app.api.UserService
 import com.register.app.dto.AuthResponse
+import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SendOtpModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.VerifyOtpModel
 import com.register.app.repository.AuthRepository
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
-class AuthRepositoryImpl @Inject constructor(): AuthRepository {
-    override suspend fun login(loginData: LoginUserModel): AuthResponse? {
-      return null
+class AuthRepositoryImpl @Inject constructor(private val userService: UserService): AuthRepository {
+    override suspend fun login(loginData: LoginUserModel): AuthResponseWrapper? {
+      return suspendCoroutine { continuation ->
+          val call = userService.signIn(loginData.email, loginData.password)
+          call.enqueue(object : Callback<AuthResponseWrapper> {
+              override fun onResponse(
+                  call: Call<AuthResponseWrapper>,
+                  response: Response<AuthResponseWrapper>
+              ) {
+                  if (response.isSuccessful) {
+                      continuation.resume(response.body())
+                  }
+              }
+
+              override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
+                  continuation.resumeWithException(t)
+              }
+
+          })
+      }
     }
 
-    override suspend fun signUp(userDetail: SignUpModel): AuthResponse? {
-        return null
+    override suspend fun signUp(userDetail: SignUpModel): AuthResponseWrapper? {
+        return suspendCoroutine { continuation ->
+            val call = userService.signUp(userDetail)
+            call.enqueue(object : Callback<AuthResponseWrapper> {
+                override fun onResponse(
+                    call: Call<AuthResponseWrapper>,
+                    response: Response<AuthResponseWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }
+                }
+
+                override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
     }
 
     override suspend fun sendOtp(senOtpModel: SendOtpModel): GenericResponse {

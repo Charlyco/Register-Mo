@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponse
+import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
 import com.register.app.model.Member
@@ -21,6 +22,8 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _progressLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
+    val progressLiveData: LiveData<Boolean> = _progressLiveData
     private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
     val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
     private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData(false)
@@ -36,31 +39,42 @@ class AuthViewModel @Inject constructor(
     private val _userLiveData: MutableLiveData<Member?> = MutableLiveData()
     val userLideData: LiveData<Member?> = _userLiveData
 
-    fun signUp(
+    suspend fun signUp(
         firstName: String,
         lastName: String,
         email: String,
+        phone: String,
+        username: String,
         password: String,
-        rePassword: String
+        rePassword: String,
+        address: String
     ): Boolean {
         if (firstName.isBlank()) {
             _errorLiveData.value = "First name cannot be blank"
         } else if (lastName.isBlank()) {
-            _errorLiveData.value = "last name cannot be blank"
+            _errorLiveData.value = "Last name cannot be blank"
         } else if (email.isBlank()) {
             _errorLiveData.value = "Email is empty or invalid"
-        } else if (password.length < 6) {
+        } else if (phone.isBlank()) {
+            _errorLiveData.value = "Phone number cannot be blank"
+        }else if (password.length < 6) {
             _errorLiveData.value = "Password must be at least 6 characters"
         }else if (rePassword != password) {
             _errorLiveData.value = "Password mismatch"
         } else {
-            val signUpModel = SignUpModel("$firstName $lastName", email, password, rePassword, phoneNumber.value)
-            viewModelScope.launch {
-                val authResponse =  authRepository.signUp(signUpModel)
-                //dataStoreManager.writeUserData(authResponse?.member?.emailAddress!!)  //to be modified
+            _progressLiveData.value = true
+            val signUpModel = SignUpModel("$firstName $lastName", phone, email, username, password, address)
+                val response =  authRepository.signUp(signUpModel)
+            if (response?.status == true) {
+                dataStoreManager.writeUserData(response.data?.member!!)
+                _progressLiveData.value = false
+                return true
+            }else {
+                _progressLiveData.value = false
+                return false
             }
         }
-        return true;
+        return false
     }
 
     fun setOtpValue(otp: String) {
@@ -98,23 +112,19 @@ class AuthViewModel @Inject constructor(
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-    suspend fun signIn(email: String, password: String){
-        var authResponse: AuthResponse? = null
-           authResponse = authRepository.login(LoginUserModel(email, password))
-           //authResponse?.member?.let { dataStoreManager.writeUserData(it) }
-        val member =   Member(1,
-            "Chukwuemeka Nkemakolam",
-            "Charlyco",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "Member",
-            "",
-            "USER", listOf())
-        dataStoreManager.writeUserData(member)
-        Log.d("USER:", dataStoreManager.readUserData().toString())
-        _userLiveData.value = dataStoreManager.readUserData()
+    suspend fun signIn(email: String, password: String): Boolean{
+        _progressLiveData.value = true
+           val authResponse = authRepository.login(LoginUserModel(email, password))
+        if (authResponse?.status == true) {
+            dataStoreManager.writeUserData(authResponse.data?.member!!)
+            dataStoreManager.writeTokenData(authResponse.data.authToken)
+            _progressLiveData.value = false
+            _userLiveData.value = dataStoreManager.readUserData()
+            return true
+        }else{
+            _progressLiveData.value = false
+            return false
+        }
     }
 
     fun isUserAdmin(): Boolean {

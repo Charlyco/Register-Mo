@@ -70,7 +70,7 @@ fun CreateEvent(groupViewModel: GroupViewModel, navController: NavController) {
         topBar = { GenericTopBar(
             title = "Create new Activity",
             navController = navController,
-            navRoute = "grout_detail"
+            navRoute = "group_detail"
         )}
     ) {
        CreateEventScreen(Modifier.padding(it), groupViewModel, navController)

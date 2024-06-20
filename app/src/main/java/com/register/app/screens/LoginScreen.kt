@@ -266,15 +266,15 @@ fun LoginScreen(
                 onClick = {
                     showIndicator = true
                     coroutineScope.launch {
-                        authViewModel.signIn(email, password)
+                        val response = authViewModel.signIn(email, password)
                         if (error?.isNotBlank() == true) {
                             showIndicator = false
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
-                        // (response.name != null) {
+                        if (response) {
                             navController.navigate("home") {
                                 popUpTo("welcome") {inclusive = true}
-                            //}
+                            }
                         }
                     }
                           },
