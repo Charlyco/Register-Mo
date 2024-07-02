@@ -5,14 +5,22 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
+import com.register.app.dto.ChangeMemberStatusDto
+import com.register.app.dto.FirebaseTokenModel
+import com.register.app.dto.GenericResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
 import com.register.app.model.Member
+import com.register.app.model.MembershipDto
 import com.register.app.repository.AuthRepository
+import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.concurrent.timer
@@ -20,12 +28,11 @@ import kotlin.concurrent.timer
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val chatRepository: ChatRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
     private val _progressLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     val progressLiveData: LiveData<Boolean> = _progressLiveData
-    private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
-    val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
     private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData(false)
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
     private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
@@ -38,6 +45,8 @@ class AuthViewModel @Inject constructor(
     val errorLiveData: LiveData<String?> = _errorLiveData
     private val _userLiveData: MutableLiveData<Member?> = MutableLiveData()
     val userLideData: LiveData<Member?> = _userLiveData
+    private val _intendingMemberLiveData: MutableLiveData<Member?> = MutableLiveData()
+    val intendedMemberLiveData: LiveData<Member?> = _intendingMemberLiveData
 
     suspend fun signUp(
         firstName: String,
@@ -97,11 +106,11 @@ class AuthViewModel @Inject constructor(
         timer(period = 1000) {
             if (remainingTime > 0) {
                 val formattedTime = formatTime(remainingTime)
-                _otpLiveData?.postValue(formattedTime)
+                _otpLiveData.postValue(formattedTime)
                 remainingTime--
             } else if (remainingTime == 0) {
                 _shouldResendOtp.postValue(true)
-                _otpLiveData?.postValue("Time Elapsed!")
+                _otpLiveData.postValue("Time Elapsed!")
                 cancel()
             }
         }
@@ -112,18 +121,28 @@ class AuthViewModel @Inject constructor(
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-    suspend fun signIn(email: String, password: String): Boolean{
+    suspend fun signIn(email: String, password: String): AuthResponseWrapper? {
         _progressLiveData.value = true
            val authResponse = authRepository.login(LoginUserModel(email, password))
         if (authResponse?.status == true) {
             dataStoreManager.writeUserData(authResponse.data?.member!!)
             dataStoreManager.writeTokenData(authResponse.data.authToken)
+            updateFirebaseToken(dataStoreManager.readDeviceId(), dataStoreManager.readFirebaseToken())
             _progressLiveData.value = false
-            _userLiveData.value = dataStoreManager.readUserData()
-            return true
+            _userLiveData.value = authResponse.data.member
+            return authResponse
         }else{
             _progressLiveData.value = false
-            return false
+            return authResponse
+        }
+    }
+
+    private suspend fun updateFirebaseToken(deviceId: String?, firebaseToken: String?) {
+        Log.d("FCM", "Token: $firebaseToken")
+        Log.d("FCM", "deviceId: $deviceId")
+        val shouldUpdate = chatRepository.checkTokenWithDeviceId(deviceId!!, firebaseToken!!).data
+        if (shouldUpdate == true) {
+            chatRepository.updateFcmToken(FirebaseTokenModel(deviceId, firebaseToken))
         }
     }
 
@@ -147,17 +166,8 @@ class AuthViewModel @Inject constructor(
             "USER", listOf())
     }
 
-    fun getUserDetails(): Member {
-        return Member(1,
-            "Uche Egemba",
-            "Urchman",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "12 Achuzilam Streen, Oppsite Divina Hospital, Nekede Owerri", "",
-            "ACTIVE",
-            "Member",
-             "",
-            "USER", listOf())
+    suspend fun getUserDetails() {
+        _userLiveData.value = dataStoreManager.readUserData()!!
     }
 
     fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
@@ -175,6 +185,16 @@ class AuthViewModel @Inject constructor(
     }
 
     fun setSelectedMember(member: Member) {
-        _groupMemberLiveData.value = member
+
     }
+
+    suspend fun getMemberDetails(email: String) {
+        _progressLiveData.value = true
+        Log.d("Member", "fetching member details")
+        val member = authRepository.getMemberDetails(email)
+        _intendingMemberLiveData.value = member
+        _progressLiveData.value = false
+    }
+
+
 }

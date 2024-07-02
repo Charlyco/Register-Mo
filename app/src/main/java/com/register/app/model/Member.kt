@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class Member(
     val userId: Int?,
     val fullName: String,
-    val username: String?,
+    val userName: String?,
     val phoneNumber: String,
     val emailAddress: String,
     val address: String?,

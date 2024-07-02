@@ -17,12 +17,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +48,7 @@ import com.register.app.util.GenericTopBar
 import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AllGroups(navController: NavController, dataStoreManager: DataStoreManager, groupViewModel: GroupViewModel) {
@@ -54,7 +58,7 @@ fun AllGroups(navController: NavController, dataStoreManager: DataStoreManager, 
         floatingActionButtonPosition = FabPosition.End
     ) {
         GroupsScreenContent(Modifier.padding(it), navController, dataStoreManager, groupViewModel)
-        CreateGroupScreen(groupViewModel = groupViewModel) { show->
+        CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
         }
     }
@@ -90,6 +94,7 @@ fun GroupsScreenContent(
     groupViewModel: GroupViewModel
 ) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
+    val loadingState = groupViewModel.loadingState.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Surface(
         Modifier.fillMaxSize(),
@@ -101,6 +106,16 @@ fun GroupsScreenContent(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (loadingState == true) {
+                LinearProgressIndicator(
+                    Modifier
+                        .height(4.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    trackColor = MaterialTheme.colorScheme.secondary,
+                )
+            }
             GroupSearchBox(groupViewModel, navController, screenWidth - 32)
 
             if (!groupList.isNullOrEmpty()) {
@@ -121,13 +136,14 @@ fun GroupsScreenContent(
 @Composable
 fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     Surface(
         Modifier
             .fillMaxWidth()
             .padding(bottom = 2.dp, start = 8.dp, end = 8.dp)
             .clickable {
+                coroutineScope.launch { groupViewModel.setSelectedGroupDetail(group) }
                 navController.navigate("group_detail") { launchSingleTop = true }
-                groupViewModel.setSelectedGroupDetail(group)
             },
         shadowElevation = dimensionResource(id = R.dimen.low_elevation),
         color = MaterialTheme.colorScheme.background,
@@ -148,7 +164,7 @@ fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavCo
                 shape = MaterialTheme.shapes.large,
                 color = Color.Transparent
             ) {
-                ImageLoader(group.logoUrl, context, 120, 120, R.drawable.download)
+                ImageLoader(group.logoUrl?: "", context, 120, 120, R.drawable.download)
             }
 
             Text(

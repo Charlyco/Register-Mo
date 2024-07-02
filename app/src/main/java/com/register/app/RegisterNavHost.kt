@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.register.app.screens.AddMember
+import com.register.app.screens.AddRemoveMember
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
@@ -25,6 +25,7 @@ import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.DataStoreManager
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
@@ -36,6 +37,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
     val homeViewModel: HomeViewModel by mainActivity.viewModels()
     val groupViewModel: GroupViewModel by mainActivity.viewModels()
     val forumViewModel: ForumViewModel by mainActivity.viewModels()
+    val activityViewModel: ActivityViewModel by mainActivity.viewModels()
 
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "splash") {
@@ -55,25 +57,25 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
         composable("home") {
-            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
+            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, activityViewModel = activityViewModel)
         }
         composable("colleagues") {
             DiscoverScreen(groupViewModel = groupViewModel, homeViewModel = homeViewModel, navController = navController)
         }
         composable("events/{title}") { backStackEntry ->
-            Events(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, backStackEntry.arguments?.getString("title"))
+            Events(navController = navController, activityViewModel = activityViewModel, groupViewModel = groupViewModel, authViewModel = authViewModel, title = backStackEntry.arguments?.getString("title"))
         }
         composable("event_detail") {
-            EventDetails(dataStoreManager = dataStoreManager, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel)
+            EventDetails(dataStoreManager = dataStoreManager, navController = navController, activityViewModel = activityViewModel, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("groups") {
             AllGroups(navController = navController, dataStoreManager = dataStoreManager, groupViewModel = groupViewModel)
         }
         composable("payment") {
-            EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel)
+            EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel, activityViewModel = activityViewModel)
         }
         composable("group_detail") {
-            GroupDetail(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, homeViewModel = homeViewModel)
+            GroupDetail(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, homeViewModel = homeViewModel, activityViewModel = activityViewModel)
         }
         composable("profile") {
             ProfileScreen(authViewModel, groupViewModel, navController)
@@ -88,13 +90,13 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             GroupUpdateScreen(navController = navController, groupViewModel = groupViewModel)
         }
         composable("create_event") {
-            CreateEvent(groupViewModel = groupViewModel, navController = navController)
+            CreateEvent(groupViewModel = groupViewModel, activityViewModel = activityViewModel, navController = navController)
         }
         composable("member_detail") {
             MemberDetails(groupViewModel = groupViewModel, authViewModel = authViewModel, navController = navController)
         }
         composable("add_member") {
-            AddMember(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
+            AddRemoveMember(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
         }
     }
 }

@@ -47,6 +47,7 @@ import com.register.app.dto.ReactionType
 import com.register.app.model.Event
 import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 
@@ -55,7 +56,8 @@ fun Events(
     navController: NavController,
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
-    title: String?
+    title: String?,
+    activityViewModel: ActivityViewModel
 ) {
     Scaffold(
         topBar = { GenericTopBar(
@@ -67,7 +69,7 @@ fun Events(
             NewEventActionButton(groupViewModel, navController) }},
         floatingActionButtonPosition = FabPosition.End
     ) {
-        EventScreenDetail(Modifier.padding(it),navController, groupViewModel)
+        EventScreenDetail(Modifier.padding(it),navController, groupViewModel, activityViewModel)
     }
 }
 
@@ -75,7 +77,8 @@ fun Events(
 fun EventScreenDetail(
     modifier: Modifier,
     navController: NavController,
-    groupViewModel: GroupViewModel
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel
 ) {
     Surface(
         Modifier
@@ -83,12 +86,12 @@ fun EventScreenDetail(
             .padding(top = 64.dp),
         color = MaterialTheme.colorScheme.background
     ) {
-        EventList(navController, groupViewModel)
+        EventList(navController, groupViewModel, activityViewModel)
     }
 }
 
 @Composable
-fun EventList(navController: NavController, groupViewModel: GroupViewModel) {
+fun EventList(navController: NavController, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel) {
     val feedList = groupViewModel.groupEvents.observeAsState().value
     if (feedList?.isNotEmpty() == true) {
         LazyColumn(
@@ -96,7 +99,7 @@ fun EventList(navController: NavController, groupViewModel: GroupViewModel) {
             rememberLazyListState()
         ) {
             items(feedList) {eventFeed ->
-                EventFeedItem(navController, groupViewModel, eventFeed)
+                EventFeedItem(navController, groupViewModel, activityViewModel, eventFeed)
             }
         }
     }
@@ -107,6 +110,7 @@ fun EventList(navController: NavController, groupViewModel: GroupViewModel) {
 fun EventFeedItem(
     navController: NavController,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     eventFeed: Event
 ) {
     val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
@@ -128,7 +132,7 @@ fun EventFeedItem(
             .clickable {
                 navController.navigate("event_detail") {
                     launchSingleTop = true
-                    groupViewModel.setSelectedEvent(eventFeed)
+                    activityViewModel.setSelectedEvent(eventFeed)
                 }
             }
             .fillMaxWidth()

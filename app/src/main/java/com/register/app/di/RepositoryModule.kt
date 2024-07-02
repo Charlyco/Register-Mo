@@ -1,8 +1,10 @@
 package com.register.app.di
 
+import com.register.app.repository.ActivityRepository
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.repository.GroupRepository
+import com.register.app.repositoryimpls.ActivityRepositoryImpl
 import com.register.app.repositoryimpls.AuthRepositoryImpl
 import com.register.app.repositoryimpls.ChatRepositoryImpl
 import com.register.app.repositoryimpls.GroupRepositoryImpl
@@ -22,9 +24,13 @@ abstract class RepositoryModule {
 
     @Singleton
     @Binds
-    abstract fun bindsGroupRepository(eventRepositoryImpl: GroupRepositoryImpl): GroupRepository
+    abstract fun bindsGroupRepository(groupRepositoryImpl: GroupRepositoryImpl): GroupRepository
 
     @Singleton
     @Binds
     abstract fun bindsChatRepository(chatRepositoryImpl: ChatRepositoryImpl): ChatRepository
+
+    @Singleton
+    @Binds
+    abstract fun bindsActivityRepository(activityRepositoryImpl: ActivityRepositoryImpl): ActivityRepository
 }

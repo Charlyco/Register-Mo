@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,7 +73,7 @@ fun ProfileScreenUi(
     navController: NavHostController
 ) {
     val context = LocalContext.current
-    val user = authViewModel.getUserDetails()
+    val user = authViewModel.userLideData.observeAsState().value
     val scrollState = rememberScrollState(initial = 0)
     ConstraintLayout(
         Modifier
@@ -110,7 +111,7 @@ fun ProfileScreenUi(
         }
 
         Text(
-            text = user.fullName,
+            text = user?.fullName!!,
             color = MaterialTheme.colorScheme.primary,
             fontSize = TextUnit(20.0f, TextUnitType.Sp),
             fontWeight = FontWeight.SemiBold,

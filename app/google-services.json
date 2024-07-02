@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167681636361",
+    "project_id": "register-b26a9",
+    "storage_bucket": "register-b26a9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167681636361:android:71cd8ad1cb094d00bea0d8",
+        "android_client_info": {
+          "package_name": "com.register.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIciyHPsbEfqdpaULMe-5nMbY2YfEiuL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

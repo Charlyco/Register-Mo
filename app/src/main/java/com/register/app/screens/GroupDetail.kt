@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,11 +29,13 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBar
@@ -42,10 +45,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import co.yml.charts.common.model.PlotType
@@ -72,24 +76,33 @@ import com.register.app.R
 import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
+import com.register.app.model.MembershipDto
+import com.register.app.model.MembershipRequest
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun GroupDetail(navController: NavController, groupViewModel: GroupViewModel, authViewModel: AuthViewModel, homeViewModel: HomeViewModel) {
+fun GroupDetail(
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel
+) {
     var showAllMembers by rememberSaveable{ mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
-    val members = groupViewModel.memberDetailsList.observeAsState().value
     Scaffold(
         topBar = { GroupDetailTopBar(navController, group, groupViewModel){showAllMembers = it} },
     ) {
-        GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, group)
+        GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
-            AllMembersList(group, members, groupViewModel, authViewModel, navController) {shouldShow -> showAllMembers = shouldShow}
+            AllMembersList(group, groupViewModel, authViewModel, navController) {shouldShow -> showAllMembers = shouldShow}
         }
     }
 }
@@ -103,6 +116,7 @@ fun GroupDetailTopBar(
     viewAllMembers: (show: Boolean) -> Unit
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
+    val coroutineScope = rememberCoroutineScope()
     TopAppBar(
         title = { Text(
             text = group?.groupName!!,
@@ -167,8 +181,9 @@ fun GroupDetailTopBar(
                 DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.view_members)) },
                     onClick = {
-                        isExpanded = false
                         viewAllMembers(true)
+                        isExpanded = false
+                        coroutineScope.launch {groupViewModel.populateGroupMembers(group)}
                     })
 
                 DropdownMenuItem(
@@ -186,6 +201,7 @@ fun GroupDetailScreen(
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
     group: Group?
 ) {
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
@@ -209,16 +225,16 @@ fun GroupDetailScreen(
             TopSection(group, groupViewModel)
             ActivityRate(group, groupViewModel, navController)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            PaidEvents(groupViewModel, homeViewModel, navController, group)
+            PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            UnpaidEvents(groupViewModel, homeViewModel, navController, group)
+            UnpaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
             GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it}
             if (showProfileDetail) {
                 GroupProfile(group, groupViewModel)
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-            GroupAdminHeader(group, showAdminList) {showAdminList = it}
+            GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it}
 
             if (showAdminList) {
                 GroupAdminList(group, groupViewModel, navController)
@@ -267,7 +283,7 @@ fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: N
         val (idText, chart, title, detail) = createRefs()
 
         Text(
-            text = "Your membership ID: ${groupViewModel.membershipId.observeAsState().value}",
+            text = "Your membership ID: ${groupViewModel.membershipId.value}",
             modifier = Modifier
                 .padding(end = 8.dp)
                 .constrainAs(idText) {
@@ -311,6 +327,7 @@ fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: N
 fun PaidEvents(
     groupViewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController,
     group: Group?
 ) {
@@ -341,7 +358,7 @@ fun PaidEvents(
                     }
                 ) {
                    eventList.forEach { event ->
-                       EventItem(event, groupViewModel, homeViewModel, navController)
+                       EventItem(event, groupViewModel, homeViewModel, activityViewModel, navController)
                    }
                 }
             Text(
@@ -365,7 +382,6 @@ fun PaidEvents(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
-                        .size(48.dp)
                         .padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.empty_event))
@@ -378,6 +394,7 @@ fun PaidEvents(
 fun UnpaidEvents(
     groupViewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController,
     group: Group?
 ) {
@@ -408,7 +425,7 @@ fun UnpaidEvents(
                     }
             ) {
                 eventList.forEach { event ->
-                    EventItem(event, groupViewModel, homeViewModel, navController)
+                    EventItem(event, groupViewModel, homeViewModel, activityViewModel, navController)
                 }
             }
             Text(
@@ -432,7 +449,6 @@ fun UnpaidEvents(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
-                        .size(48.dp)
                         .padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.no_unpaid_activities))
@@ -446,6 +462,7 @@ fun EventItem(
     event: Event,
     groupViewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
         Row(
@@ -453,7 +470,7 @@ fun EventItem(
                 .clickable {
                     navController.navigate("event_detail") {
                         launchSingleTop = true
-                        groupViewModel.setSelectedEvent(event)
+                        activityViewModel.setSelectedEvent(event)
                     }
                 }
                 .padding(vertical = 2.dp),
@@ -485,15 +502,19 @@ fun EventItem(
 @Composable
 fun MembershipRequestList(group: Group?, groupViewModel: GroupViewModel) {
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
+    var showDetail by rememberSaveable { mutableStateOf(false) }
+    var selectedRequest: MembershipRequest? = null
     if (group?.pendingMemberRequests?.isNotEmpty() == true) {
-        LaunchedEffect(key1 = 257) {
-            groupViewModel.getIndividualMembershipRequest(group.pendingMemberRequests)
-        }
-        val membershipRequest = groupViewModel.pendingMemberList.observeAsState().value
-        if (membershipRequest?.isNotEmpty() == true) {
-            Column {
-                membershipRequest.forEach {request ->
-                    MembershipRequestItem(request, groupViewModel)
+        Column {
+            if(showDetail) {
+                MembershipRequestDetail(groupViewModel, selectedRequest) {
+                    showDetail = it
+                }
+            }
+            group.pendingMemberRequests.forEach {request ->
+                MembershipRequestItem(request, groupViewModel) { shouldShow ->
+                    showDetail = shouldShow
+                    selectedRequest = request
                 }
             }
         }
@@ -501,7 +522,11 @@ fun MembershipRequestList(group: Group?, groupViewModel: GroupViewModel) {
 }
 
 @Composable
-fun MembershipRequestItem(request: Member, groupViewModel: GroupViewModel) {
+fun MembershipRequestItem(
+    request: MembershipRequest,
+    groupViewModel: GroupViewModel,
+    function: (show: Boolean) -> Unit
+) {
     val context = LocalContext.current
     Surface(
         Modifier
@@ -516,44 +541,54 @@ fun MembershipRequestItem(request: Member, groupViewModel: GroupViewModel) {
             color = MaterialTheme.colorScheme.background
         ) {
             ConstraintLayout {
-                val (pic, name, phone, email, approveBtn) = createRefs()
-
-                Surface(
-                    Modifier
-                        .size(96.dp)
-                        .clip(CircleShape)
-                        .constrainAs(pic) {
-                            centerVerticallyTo(parent)
-                            start.linkTo(parent.start, margin = 8.dp)
-                        },
-                ) {
-                    ImageLoader(imageUrl = request.imageUrl?: "", context = context, height = 84, width = 84, R.drawable.event)
-                }
+                val (name, time, email, showDetails, approveBtn) = createRefs()
 
                 Text(
-                    text = request.fullName,
+                    text = request.memberFullName,
                     Modifier.constrainAs(name) {
-                        start.linkTo(pic.end, margin = 8.dp)
+                        start.linkTo(parent.start, margin = 8.dp)
                         top.linkTo(parent.top, margin = 8.dp)
                     })
 
                 Text(
-                    text = "Phone: ${request.phoneNumber}",
-                    Modifier.constrainAs(phone) {
-                        start.linkTo(pic.end, margin = 8.dp)
+                    text = "Email: ${request.memberEmail}",
+                    Modifier.constrainAs(email) {
+                        start.linkTo(parent.start, margin = 8.dp)
                         top.linkTo(name.bottom, margin = 8.dp)
                     })
 
                 Text(
-                    text = "Email: ${request.emailAddress}",
-                    Modifier.constrainAs(email) {
-                        start.linkTo(pic.end, margin = 8.dp)
-                        top.linkTo(phone.bottom, margin = 8.dp)
+                    text = "Request sent on: ${request.timeOfRequest}",
+                    Modifier.constrainAs(time) {
+                        start.linkTo(parent.start, margin = 8.dp)
+                        top.linkTo(email.bottom, margin = 8.dp)
                     })
 
                 Button(
                     onClick = {
-                        groupViewModel.approveMembershipRequest(request.emailAddress) },
+                        function(true)
+                              groupViewModel.getIndividualMembershipRequest(request.memberEmail)},
+                    Modifier
+                        .padding(horizontal = 4.dp)
+                        .constrainAs(showDetails) {
+                            start.linkTo(parent.start, margin = 8.dp)
+                            top.linkTo(email.bottom, margin = 8.dp)
+                            bottom.linkTo(parent.bottom, margin = 4.dp)
+                        },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onBackground
+                    )
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.show_detail),
+                        Modifier.padding(end = 4.dp)
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        groupViewModel.approveMembershipRequest(request) },
                     Modifier
                         .padding(horizontal = 4.dp)
                         .constrainAs(approveBtn) {
@@ -561,6 +596,85 @@ fun MembershipRequestItem(request: Member, groupViewModel: GroupViewModel) {
                             top.linkTo(email.bottom, margin = 8.dp)
                             bottom.linkTo(parent.bottom, margin = 4.dp)
                         }
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.approve),
+                        Modifier.padding(end = 4.dp)
+                    )
+                    Icon(imageVector = Icons.Default.Check, contentDescription = "")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MembershipRequestDetail(
+    groupViewModel: GroupViewModel,
+    selectedRequest: MembershipRequest?,
+    showDialog: (show: Boolean) -> Unit
+) {
+    val requestDetail = groupViewModel.pendingMemberLiveData.observeAsState().value
+    val context = LocalContext.current
+    Dialog(
+        onDismissRequest = { showDialog(false) },
+    ) {
+        Surface(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ImageLoader(
+                    imageUrl = requestDetail?.imageUrl?: "",
+                    context = context,
+                    height = 120,
+                    width = 120,
+                    placeHolder = R.drawable.placeholder
+                )
+
+                Text(
+                    text = requestDetail?.fullName!!,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                    )
+
+                Text(
+                    text = requestDetail.phoneNumber,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                )
+
+                Text(
+                    text = requestDetail.emailAddress,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                )
+
+                Text(
+                    text = "Time of request: ${selectedRequest?.timeOfRequest}",
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                )
+
+                Button(
+                    onClick = {
+                        groupViewModel.approveMembershipRequest(selectedRequest!!) },
+                    Modifier
+                        .padding(horizontal = 4.dp)
                 ) {
                     Text(
                         text = stringResource(id = R.string.approve),
@@ -607,42 +721,6 @@ fun PendingMembershipRequestHeader(
                 Modifier
                     .size(16.dp)
                     .clickable { callback(true) }
-            )
-        }
-    }
-}
-
-
-@Composable
-fun GroupAdminHeader(group: Group?, showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-            .clickable { shouldShow(!showAdminList) },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(id = R.string.group_admin),
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            fontWeight = FontWeight.SemiBold
-        )
-        if (showAdminList) {
-            Icon(
-                painter = painterResource(id = R.drawable.up_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable { shouldShow(false) }
-            )
-        }else {
-            Icon(
-                painter = painterResource(id = R.drawable.forward_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable { shouldShow(true) }
             )
         }
     }
@@ -784,7 +862,7 @@ fun GroupProfile(group: Group?, groupViewModel: GroupViewModel) {
             color = MaterialTheme.colorScheme.background
         ) {
             Text(
-                text = group?.email?: "",
+                text = group?.groupEmail?: "",
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onBackground
@@ -807,7 +885,7 @@ fun GroupProfile(group: Group?, groupViewModel: GroupViewModel) {
             color = MaterialTheme.colorScheme.background
         ) {
             Text(
-                text = group?.phone?: "",
+                text = group?.phoneNumber?: "",
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onBackground
@@ -885,54 +963,116 @@ fun GroupProfile(group: Group?, groupViewModel: GroupViewModel) {
 }
 
 @Composable
+fun GroupAdminHeader(group: Group?, groupViewModel: GroupViewModel, showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clickable {
+                coroutineScope.launch {
+                    group?.memberList?.let { groupViewModel.filterAdmins(it) }
+                }
+                shouldShow(!showAdminList)
+            },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(id = R.string.group_admin),
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showAdminList) {
+            Icon(
+                painter = painterResource(id = R.drawable.up_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { shouldShow(false) }
+            )
+        }else {
+            Icon(
+                painter = painterResource(id = R.drawable.forward_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable {
+                        coroutineScope.launch {
+                            group?.memberList?.let { groupViewModel.filterAdmins(it) }
+                        }
+                        shouldShow(true)
+                    }
+            )
+        }
+    }
+}
+
+@Composable
 fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
     val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
-    if (group?.adminList?.isNotEmpty() == true) {
-        LaunchedEffect(key1 = 256) {
-            groupViewModel.getIndividualAdminDetail()
-        }
-        val adminList = groupViewModel.groupAdminList.observeAsState().value
-        if (adminList?.isNotEmpty() == true) {
-            LazyRow(
-                Modifier
-                    .padding(start = 8.dp, end = 8.dp)
-                    .height(204.dp),
-                state = rememberLazyListState(),
-                contentPadding = PaddingValues(vertical = 2.dp)
-            ) {
-                items(adminList) { admin ->
-                    AdminItem(admin)
-                }
-                if (groupViewModel.isUserAdmin()) {
-                    item{
-                        Surface(
-                            Modifier
-                                .height(200.dp)
-                                .width(itemWidth.dp)
-                                .padding(horizontal = 8.dp)
-                                .clickable { TODO("to be implemented") },
-                            shape = MaterialTheme.shapes.small,
-                            shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            ConstraintLayout(
-                                Modifier.fillMaxSize()
+    if (group?.memberList?.isNotEmpty() == true) {
+        val loadingState = groupViewModel.loadingState.observeAsState().value
+        val adminList: List<Member>? = groupViewModel.groupAdminList.observeAsState().value
+        Column(
+            Modifier
+                .fillMaxWidth()
+        ) {
+            if (loadingState == true) {
+                LinearProgressIndicator(
+                    Modifier
+                        .height(4.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    trackColor = MaterialTheme.colorScheme.secondary,
+                )
+            }
+            if (adminList?.isNotEmpty() == true) {
+                LazyRow(
+                    Modifier
+                        .padding(start = 8.dp, end = 8.dp)
+                        .height(204.dp),
+                    state = rememberLazyListState(),
+                    contentPadding = PaddingValues(vertical = 2.dp)
+                ) {
+                    items(adminList) { admin ->
+                        val membershipDto = group.memberList.find { membershipDto -> membershipDto.emailAddress == admin.emailAddress }
+                        if (membershipDto != null) {
+                            AdminItem(admin, membershipDto)
+                        }
+                    }
+                    if (groupViewModel.isUserAdmin()) {
+                        item{
+                            Surface(
+                                Modifier
+                                    .height(200.dp)
+                                    .width(itemWidth.dp)
+                                    .padding(horizontal = 8.dp)
+                                    .clickable { TODO("to be implemented") },
+                                shape = MaterialTheme.shapes.small,
+                                shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+                                color = MaterialTheme.colorScheme.background
                             ) {
-                                val (icon, text) = createRefs()
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "edit",
-                                    Modifier.constrainAs(icon) {
-                                        centerHorizontallyTo(parent)
-                                        centerVerticallyTo(parent)
-                                    })
-                                Text(
-                                    text = stringResource(id = R.string.change_admin),
-                                    Modifier.constrainAs(text) {
-                                        top.linkTo(icon.bottom, margin = 8.dp)
-                                        centerHorizontallyTo(parent)
-                                    }
-                                )
+                                ConstraintLayout(
+                                    Modifier.fillMaxSize()
+                                ) {
+                                    val (icon, text) = createRefs()
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "edit",
+                                        Modifier.constrainAs(icon) {
+                                            centerHorizontallyTo(parent)
+                                            centerVerticallyTo(parent)
+                                        })
+                                    Text(
+                                        text = stringResource(id = R.string.change_admin),
+                                        Modifier.constrainAs(text) {
+                                            top.linkTo(icon.bottom, margin = 8.dp)
+                                            centerHorizontallyTo(parent)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -943,7 +1083,7 @@ fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController:
 }
 
 @Composable
-fun AdminItem(admin: Member) {
+fun AdminItem(admin: Member, membershipDto: MembershipDto) {
     val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
     val context = LocalContext.current
     Surface(
@@ -960,17 +1100,15 @@ fun AdminItem(admin: Member) {
         ) {
             val (profilePic, name, office, phone, email) = createRefs()
 
-            admin.memberPost?.let {
-                Text(
-                    text = it,
-                    Modifier.constrainAs(office) {
-                        centerHorizontallyTo(parent)
-                        top.linkTo(parent.top, margin = 8.dp) },
-                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            Text(
+                text = membershipDto.memberOffice,
+                Modifier.constrainAs(office) {
+                    centerHorizontallyTo(parent)
+                    top.linkTo(parent.top, margin = 8.dp) },
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
             Surface(
                 Modifier
@@ -1030,7 +1168,6 @@ fun AdminItem(admin: Member) {
 @Composable
 fun AllMembersList(
     group: Group?,
-    members: List<Member>?,
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
     navController: NavController,
@@ -1039,6 +1176,7 @@ fun AllMembersList(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
+    val members = groupViewModel.memberDetailsList.observeAsState().value
     ModalBottomSheet(
         onDismissRequest = { function(false) },
         modifier = Modifier.height(screenHeight.dp),
@@ -1079,17 +1217,18 @@ fun MemberItem(
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .clickable {
-                displayCallback(false)
-                authViewModel.setSelectedMember(member)
+                groupViewModel.setSelectedMember(member)
                 /*
                 * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
                 * I need to match each detail with the corresponding membershipDto*/
                 val membershipDto =
-                    group?.memberList?.filter { membershipDto -> membershipDto.email == member.emailAddress }
-                groupViewModel.setSelectedMember(membershipDto?.get(0)!!)
+                    group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
+                groupViewModel.setSelectedMembership(membershipDto!!)
+                Log.d("MEMBERSHIP", membershipDto.toString())
                 navController.navigate("member_detail") {
                     launchSingleTop = true
                 }
+                displayCallback(false)
             },
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small

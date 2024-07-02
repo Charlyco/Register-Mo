@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -53,7 +54,6 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.CommentReply
 import com.register.app.dto.EventComment
-import com.register.app.dto.PostCommentModel
 import com.register.app.dto.ReactionType
 import com.register.app.model.Event
 import com.register.app.util.DataStoreManager
@@ -61,22 +61,30 @@ import com.register.app.util.ImageLoader
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.paddingFromBaseline
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import co.yml.charts.common.model.PlotType
 import co.yml.charts.ui.piechart.charts.DonutPieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
+import com.register.app.dto.Payment
+import com.register.app.enums.PaymentMethod
 import com.register.app.model.Member
 import com.register.app.util.DateFormatter
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 
@@ -85,12 +93,209 @@ fun EventDetails(
     dataStoreManager: DataStoreManager,
     navController: NavController,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel) {
-    val selectedEvent = groupViewModel.selectedEvent.observeAsState().value
+    authViewModel: AuthViewModel,
+    activityViewModel: ActivityViewModel
+) {
+    val selectedEvent = activityViewModel.selectedEvent.observeAsState().value
+    var showPayments by rememberSaveable { mutableStateOf(false) }
     Scaffold(
-        topBar = { EventDetailTopBar(navController, groupViewModel, selectedEvent) }
+        topBar = { EventDetailTopBar(navController, groupViewModel, activityViewModel, selectedEvent){ showPayments = it } }
     ) {
-        EventDetailContent(Modifier.padding(it), dataStoreManager, navController, groupViewModel, authViewModel)
+        EventDetailContent(Modifier.padding(it), dataStoreManager, navController, groupViewModel, activityViewModel, authViewModel)
+        if (showPayments) {
+            PaymentScreen(navController, groupViewModel, activityViewModel) {
+                shouldShow -> showPayments = shouldShow
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PaymentScreen(
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    callback: (Boolean) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val paymentList = activityViewModel.selectedEvent.observeAsState().value?.pendingEvidenceOfPayment
+    var showImage by rememberSaveable { mutableStateOf(false) }
+    var selectedPayment by rememberSaveable { mutableStateOf<Payment?>(null) }
+    ModalBottomSheet(
+        onDismissRequest = { /*TODO*/ },
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.background,
+        sheetMaxWidth = screenWidth.dp,
+        modifier = Modifier
+            .height(screenHeight.dp)
+            .padding(start = 4.dp, end = 4.dp, top = 16.dp)
+        ) {
+        Text(
+            text = stringResource(id = R.string.payment),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            modifier = Modifier.fillMaxWidth()
+                ,
+            textAlign = TextAlign.Center)
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        if (!paymentList.isNullOrEmpty()) {
+            LazyColumn(
+                Modifier.fillMaxWidth(),
+                rememberLazyListState(),
+            ) {
+                items(paymentList) { payment ->
+                    PaymentItem(payment, groupViewModel, activityViewModel) { show, selected ->
+                        showImage = show
+                        selectedPayment = selected
+                    }
+                }
+            }
+        }
+        if (showImage) {
+            ConfirmPaymentDialog(selectedPayment, activityViewModel, groupViewModel) {showImage = it}
+            }
+        }
+    }
+
+@Composable
+fun ConfirmPaymentDialog(
+    selectedPayment: Payment?,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel,
+    callback: (show: Boolean) -> Unit
+) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    var amountPaid by rememberSaveable { mutableStateOf("0.0") }
+    var outstanding by rememberSaveable { mutableStateOf("0.0") }
+    val coroutineScope = rememberCoroutineScope()
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val context = LocalContext.current
+    Dialog(
+        onDismissRequest = { callback(false)}) {
+        Surface(
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState(initial = 0)),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ImageLoader(
+                    selectedPayment?.imageUrl ?: "",
+                    LocalContext.current,
+                    screenHeight - 164,
+                    screenWidth - 16,
+                    R.drawable.event
+                )
+
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, 4.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    TextField(
+                        value = amountPaid,
+                        onValueChange = { amountPaid = it},
+                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                            )
+                        )
+                }
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    TextField(
+                        value = outstanding,
+                        onValueChange = { outstanding = it},
+                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                        )
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val response = activityViewModel.confirmPayment(selectedPayment, amountPaid,
+                                outstanding, group?.groupId!!, PaymentMethod.BANK_TRANSFER.name)
+                            if (response.status) {
+                                callback(false)
+                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                              },
+                    Modifier
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .width(screenWidth.dp - 32.dp),
+                    shape = MaterialTheme.shapes.small,
+                    ) {
+                    Text(text = stringResource(id = R.string.confirm))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentItem(
+    payment: Payment,
+    groupViewModel: GroupViewModel,
+    activityViewModel1: ActivityViewModel,
+    callBack: (Boolean, Payment) -> Unit = { _, _ -> }
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .clickable { callBack(true, payment) },
+        horizontalAlignment = Alignment.Start
+    ) {
+        HorizontalDivider()
+        Text(
+            text = payment.eventTitle,
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+            )
+
+        Text(
+            text = payment.groupName,
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = payment.payerEmail,
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -98,9 +303,13 @@ fun EventDetails(
 fun EventDetailTopBar(
     navController: NavController,
     groupViewModel: GroupViewModel,
-    selectedEvent: Event?
+    activityViewModel: ActivityViewModel,
+    selectedEvent: Event?,
+    callback: (Boolean) -> Unit
 ) {
     //val topBarWidth = LocalConfiguration.current.screenWidthDp - 32
+    //val payment = activityViewModel.unapprovedPayments.observeAsState().value
+    val context = LocalContext.current
     Surface(
         Modifier
             .fillMaxWidth()
@@ -115,7 +324,7 @@ fun EventDetailTopBar(
                 .fillMaxWidth()
                 .fillMaxHeight()
         ) {
-            val (navBtn, eventTitle) = createRefs()
+            val (navBtn, eventTitle, payments) = createRefs()
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
                 contentDescription = "",
@@ -136,6 +345,32 @@ fun EventDetailTopBar(
                     centerVerticallyTo(parent)
                 }
             )
+            
+            if (groupViewModel.isUserAdmin()) {
+                 Box(
+                     Modifier
+                         .size(32.dp)
+                         .clickable {
+                             callback(true)
+                         }
+                         .constrainAs(payments) {
+                             end.linkTo(parent.end, margin = 8.dp)
+                             centerVerticallyTo(parent)
+
+                         },
+                     contentAlignment = Alignment.Center
+                 ) {
+                     Icon(painter = painterResource(id = R.drawable.wallet),
+                         contentDescription = "",
+                         tint = MaterialTheme.colorScheme.secondary)
+                     if (!selectedEvent.pendingEvidenceOfPayment.isNullOrEmpty()) {
+                         Text(
+                             text = selectedEvent.pendingEvidenceOfPayment.size.toString(),
+                             fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                             color = MaterialTheme.colorScheme.onBackground)
+                     }
+                 }
+            }
         }
     }
 }
@@ -147,9 +382,10 @@ fun EventDetailContent(
     dataStoreManager: DataStoreManager,
     navController: NavController,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     authViewModel: AuthViewModel
 ) {
-    val event = groupViewModel.selectedEvent.observeAsState().value
+    val event = activityViewModel.selectedEvent.observeAsState().value
     val commentList = groupViewModel.eventCommentLiveData.observeAsState().value
     val pageState = rememberPagerState(pageCount = { event?.imageUrlList?.size?: 0} )
     var showDetails by rememberSaveable { mutableStateOf(true)}
@@ -257,7 +493,7 @@ fun EventDetailContent(
                         },
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    ViewEventDetails(event, dataStoreManager, authViewModel, groupViewModel, navController)
+                    ViewEventDetails(event, dataStoreManager, authViewModel, groupViewModel, activityViewModel, navController)
                 }
             }
             if (!showDetails) {
@@ -281,7 +517,7 @@ fun EventDetailContent(
                           border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
                           shape = MaterialTheme.shapes.medium
                       ) {
-                          CommentBox(groupViewModel, event, dataStoreManager)
+                          CommentBox(groupViewModel, activityViewModel, event)
                       }
 
                       if (commentList?.isNotEmpty() == true) {
@@ -292,7 +528,7 @@ fun EventDetailContent(
                               verticalArrangement = Arrangement.Top
                           ) {
                               items(commentList) { comment ->
-                                  CommentItem(comment, groupViewModel, dataStoreManager)
+                                  CommentItem(comment, groupViewModel, activityViewModel)
                               }
                           }
                       }
@@ -399,6 +635,7 @@ fun ViewEventDetails(
     dataStoreManager: DataStoreManager,
     authViewModel: AuthViewModel,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -575,7 +812,7 @@ fun ViewEventDetails(
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
         if (groupViewModel.isUserAdmin()) {
-            AdminActions(event, groupViewModel, navController)
+            AdminActions(event, groupViewModel, activityViewModel, navController)
         }
     }
 }
@@ -621,7 +858,7 @@ fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
 }
 
 @Composable
-fun AdminActions(event: Event?, groupViewModel: GroupViewModel, navController: NavController) {
+fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, navController: NavController) {
     Surface(
         Modifier
             .fillMaxWidth()
@@ -759,7 +996,7 @@ fun PaidListHeader(
                 contentDescription = "",
                 Modifier
                     .size(16.dp)
-                    .clickable { callback(true)},
+                    .clickable { callback(true) },
                 tint = MaterialTheme.colorScheme.tertiary
             )
         }
@@ -767,7 +1004,7 @@ fun PaidListHeader(
 }
 
 @Composable
-fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: DataStoreManager) {
+fun CommentBox(groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, event: Event?) {
     var commentText by rememberSaveable {  mutableStateOf("")}
     val screenWidth = LocalConfiguration.current.screenWidthDp - 84
     val coroutineScope = rememberCoroutineScope()
@@ -791,8 +1028,7 @@ fun CommentBox(groupViewModel: GroupViewModel, event: Event?, dataStoreManager: 
 
         )
         IconButton(onClick = { coroutineScope.launch {
-            val newComment = groupViewModel.postComment(
-               PostCommentModel(dataStoreManager.readUserData()?.username, commentText), event?.eventId) }
+            val newComment = activityViewModel.postComment(commentText, event?.eventId) }
             }
         ) {
             Icon(
@@ -864,7 +1100,7 @@ fun ReactToEvent(likeList: Int, loveList: Int) {
 fun CommentItem(
     comment: EventComment,
     groupViewModel: GroupViewModel,
-    dataStoreManager: DataStoreManager
+    activityViewModel: ActivityViewModel
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp - 8
     var showCommentReplyBox by rememberSaveable { mutableStateOf(false) }
@@ -879,7 +1115,7 @@ fun CommentItem(
         shape = MaterialTheme.shapes.extraSmall
     ) {
         ConstraintLayout {
-            val (commentText, replyText, replyBox, replyList, userName, time ) = createRefs()
+            val (commentText, replyText, replyBox, replyList, userName, time) = createRefs()
             Text(
                 text = "${comment.username}: ",
                 fontSize = TextUnit(10.0f, TextUnitType.Sp),
@@ -940,7 +1176,7 @@ fun CommentItem(
                 ) {
                     TextField(
                         value = commentReply,
-                        onValueChange ={ commentReply = it },
+                        onValueChange = { commentReply = it },
                         modifier = Modifier.width((screenWidth - 84).dp),
                         colors = TextFieldDefaults.colors(
                             unfocusedContainerColor = MaterialTheme.colorScheme.background,
@@ -948,17 +1184,21 @@ fun CommentItem(
                         ),
                         placeholder = { Text(text = stringResource(id = R.string.reply)) }
                     )
-                    IconButton(onClick = { coroutineScope.launch {
-                        val newReplyItem = groupViewModel.postCommentReply(
-                            commentReply,
-                            comment.commentId
-                        )
-                        if (newReplyItem != null) {
-                            val newCommentReplyList = commentReplyList.toMutableList() // creates a mutable list of the reply list defined above
-                            newCommentReplyList.add(newReplyItem) //adds the new item to the list
-                            commentReplyList = newCommentReplyList //reassign the reply list with the updated list
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            val newReplyItem = activityViewModel.postCommentReply(
+                                commentReply,
+                                comment.commentId
+                            )
+                            if (newReplyItem != null) {
+                                val newCommentReplyList =
+                                    commentReplyList.toMutableList() // creates a mutable list of the reply list defined above
+                                newCommentReplyList.add(newReplyItem) //adds the new item to the list
+                                commentReplyList =
+                                    newCommentReplyList //reassign the reply list with the updated list
+                            }
                         }
-                    } }) {
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send reply",

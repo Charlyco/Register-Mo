@@ -271,10 +271,12 @@ fun LoginScreen(
                             showIndicator = false
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
-                        if (response) {
+                        if (response?.status == true) {
                             navController.navigate("home") {
                                 popUpTo("welcome") {inclusive = true}
                             }
+                        }else {
+                            Toast.makeText(context, "Invalid login credentials", Toast.LENGTH_LONG).show()
                         }
                     }
                           },

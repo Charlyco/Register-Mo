@@ -44,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -81,22 +82,25 @@ import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
 import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
     homeViewModel : HomeViewModel,
     navController: NavController,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel) {
+    authViewModel: AuthViewModel,
+    activityViewModel: ActivityViewModel) {
     Scaffold(
         topBar = { HomeTopBar(navController, homeViewModel, authViewModel) },
         bottomBar = { BottomNavBar(navController) }
     ) {
-        HomeScreenContent(modifier = Modifier.padding(it), homeViewModel, groupViewModel, navController)
-        CreateGroupScreen(groupViewModel = groupViewModel) { show->
+        HomeScreenContent(modifier = Modifier.padding(it), homeViewModel, groupViewModel, activityViewModel, navController)
+        CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
         }
     }
@@ -108,6 +112,7 @@ fun HomeScreenContent(
     modifier: Modifier,
     homeViewModel: HomeViewModel,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
     val scrollState = rememberScrollState(initial = 0)
@@ -142,7 +147,7 @@ fun HomeScreenContent(
                     WelcomeNote()
                     SearchSection(groupViewModel, navController)
                     DiscoverSection(groupViewModel, homeViewModel, navController)
-                    FeedList(homeViewModel, navController, groupViewModel)
+                    FeedList(homeViewModel, navController, groupViewModel, activityViewModel)
                     SuggestedGroups(homeViewModel, groupViewModel, navController)
                 }
             }
@@ -195,6 +200,7 @@ fun DiscoverSection(
     homeViewModel: HomeViewModel,
     navController: NavController
 ) {
+    val coroutineScope = rememberCoroutineScope()
     Row(
         Modifier
             .fillMaxWidth()
@@ -204,6 +210,9 @@ fun DiscoverSection(
     ) {
         Column(
             Modifier.clickable {
+                coroutineScope.launch {
+                    groupViewModel.getAllGroupsForUser()
+                }
               navController.navigate("groups")
             },
             horizontalAlignment = Alignment.CenterHorizontally
@@ -320,13 +329,6 @@ fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel
                     SuggestedGroupItem(group, groupViewModel, navController)
                 }
             }
-        }else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(imageVector = Icons.Default.ErrorOutline, contentDescription = "")
-                Text(text = stringResource(id = R.string.no_groups))
-            }
         }
     }
 }
@@ -361,7 +363,7 @@ fun SuggestedGroupItem(group: Group, groupViewModel: GroupViewModel, navControll
                 shape = MaterialTheme.shapes.large,
                 color = Color.Transparent
             ) {
-                ImageLoader(group.logoUrl, context, 64, 64, R.drawable.download)
+                ImageLoader(group.logoUrl?: "", context, 64, 64, R.drawable.download)
             }
 
             Text(
@@ -403,7 +405,8 @@ fun SuggestedGroupItem(group: Group, groupViewModel: GroupViewModel, navControll
 fun FeedList(
     homeViewModel: HomeViewModel,
     navController: NavController,
-    groupViewModel: GroupViewModel
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel
 ) {
     val feedList = homeViewModel.eventFeeds.observeAsState().value
     if (feedList?.isNotEmpty() == true) {
@@ -424,7 +427,7 @@ fun FeedList(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 feedList.forEach { eventFeed ->
-                    EventItem(navController, groupViewModel, eventFeed)
+                    EventItem(navController, groupViewModel, activityViewModel, eventFeed)
                 }
             }
         }
@@ -436,6 +439,7 @@ fun FeedList(
 fun EventItem(
     navController: NavController,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     eventFeed: Event
 ) {
     val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
@@ -447,7 +451,7 @@ fun EventItem(
             .clickable {
                 navController.navigate(route = "event_detail") {
                     launchSingleTop = true
-                    groupViewModel.setSelectedEvent(eventFeed)
+                    activityViewModel.setSelectedEvent(eventFeed)
                 }
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -573,7 +577,9 @@ fun HomeTopBar(
     ) {
         ProfilePictureLoader(userData)
         TopAppBar(
-            title = { userData?.username?.let { Text(text = "Welcome $it!") } } ,
+            title = {  Text(
+                text = "Welcome ${userData?.userName}!",
+                color = MaterialTheme.colorScheme.onBackground) } ,
             modifier = Modifier.width((screenWidth - 40).dp),
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background),

@@ -1,6 +1,9 @@
 package com.register.app.screens
 
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -51,21 +54,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
 import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
+import com.register.app.util.Utils
 import com.register.app.util.Utils.formatToYYYYMMDD
 import com.register.app.util.Utils.toLocalDateTime
 import com.register.app.util.Utils.toMills
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.IOException
 import java.time.LocalDateTime
 
 @Composable
-fun CreateEvent(groupViewModel: GroupViewModel, navController: NavController) {
+fun CreateEvent(groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, navController: NavController) {
+    val isLoading = activityViewModel.loadingState.observeAsState().value
     Scaffold(
         topBar = { GenericTopBar(
             title = "Create new Activity",
@@ -73,7 +82,30 @@ fun CreateEvent(groupViewModel: GroupViewModel, navController: NavController) {
             navRoute = "group_detail"
         )}
     ) {
-       CreateEventScreen(Modifier.padding(it), groupViewModel, navController)
+        ConstraintLayout(Modifier.fillMaxSize()) {
+            val (content, progress) = createRefs()
+            Surface(
+                Modifier
+                    .fillMaxSize()
+                    .constrainAs(content) {
+                        centerHorizontallyTo(parent)
+                        centerVerticallyTo(parent)
+                    },
+                color = Color.Transparent) {
+                CreateEventScreen(Modifier.padding(it), groupViewModel,activityViewModel, navController)
+            }
+            if (isLoading == true) {
+                Surface(
+                    Modifier
+                        .constrainAs(progress) {
+                            centerHorizontallyTo(parent)
+                            centerVerticallyTo(parent)
+                        },
+                    color = Color.Transparent) {
+                    CircularIndicator()
+                }
+            }
+        }
     }
 }
 
@@ -82,14 +114,16 @@ fun CreateEvent(groupViewModel: GroupViewModel, navController: NavController) {
 fun CreateEventScreen(
     modifier: Modifier,
     groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
     var activityTitle by rememberSaveable { mutableStateOf("")}
     var activityDescription by rememberSaveable { mutableStateOf("")}
     var levyAmount by rememberSaveable { mutableStateOf("") }
     var eventDate by rememberSaveable { mutableStateOf("") }
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
     var showCalender by rememberSaveable { mutableStateOf(false) }
-    val imageList = groupViewModel.activityImageList.observeAsState().value
+    val imageList = activityViewModel.activityImageList.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     val dateTime = LocalDateTime.now()
     val context = LocalContext.current
@@ -278,10 +312,10 @@ Surface(
                     )
                 }
                 item {
-                    UploadButton(groupViewModel)
+                    UploadButton(activityViewModel)
                 }
             }
-        }else {UploadButton(groupViewModel)}
+        }else {UploadButton(activityViewModel)}
 
         Column(
             Modifier
@@ -291,7 +325,16 @@ Surface(
         ) {
             Button(
                 onClick = { coroutineScope.launch {
-                    groupViewModel.createNewActivity(activityTitle, activityDescription, levyAmount.toDouble(),eventDate ) }
+                    val response = activityViewModel.createNewActivity(activityTitle,
+                        activityDescription, levyAmount.toDouble(),eventDate, group?.groupName!!, group.groupId  )
+                    if (response.status) {
+                        Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
+                        navController.navigateUp()
+                    }
+                    else {
+                        Toast.makeText(context, "Failed to create activity", Toast.LENGTH_SHORT).show()
+                    }
+                }
                           },
                 Modifier
                     .height(50.dp)
@@ -305,21 +348,35 @@ Surface(
 }
 
 @Composable
-fun UploadButton(groupViewModel: GroupViewModel) {
-    val imageMimeTypes = listOf("image/jpeg", "image/png")
+fun UploadButton(activityViewModel: ActivityViewModel) {
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val filePicker = rememberLauncherForActivityResult(
-        contract = GetCustomFiles(isMultiple = false),
-        onResult = {uris ->
-            val urisJoined =  uris.joinToString(", ")
-            val file = File(urisJoined)
-            groupViewModel.uploadActivityImages(file)
-        })
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            if (uri != null) {
+                coroutineScope.launch {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(uri)
+                        if (inputStream != null) {
+                            val mimeType = context.contentResolver.getType(uri)
+                            activityViewModel.uploadActivityImages(inputStream, mimeType, Utils.getFileNameFromUri(context.contentResolver, uri))
+                        } else {
+                            // Handle error
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        // Handle error
+                    }
+                }
+            }
+        }
+    )
     Surface(
         Modifier
             .size(48.dp)
             .clickable {
-                val mimeType = imageMimeTypes.joinToString(",")
-                filePicker.launch(mimeType)
+                filePicker.launch("image/*")
             }
     ) {
         Icon(

@@ -31,37 +31,7 @@ init {
 }
 
     private fun getSuggestedGroups() {
-        val groups = listOf(
-            Group(1, "IHS-2008", "2008 set of Isuikwuato High School",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(
-                    MembershipDto("", ""),
-                    MembershipDto("", ""), MembershipDto("", "")
-                ),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "OPEN", "" ),
-            Group(1, "CMO St Patrick's Parish",
-                "The Catholic Men Organization of St. Patrick's Parish Nekede, Owerri",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(MembershipDto("", ""), MembershipDto("", ""), MembershipDto("", "")),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "CLOSED", "" ),
-            Group(1, "CMO St Patrick's Parish",
-                "The Catholic Men Organization of St. Patrick's Parish Nekede, Owerri",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(MembershipDto("", ""), MembershipDto("", ""), MembershipDto("", "")),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "CLOSED", "" ),
-        )
+        val groups = listOf<Group>()
         _suggestedGroupLiveData.value = groups
     }
 
@@ -70,15 +40,15 @@ init {
             Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")
             ), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(), "ACTIVE"),
             Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")
             ), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
             Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")
             ), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
         )
         _eventFeeds.value = events
     }

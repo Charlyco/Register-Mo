@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -37,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,26 +58,47 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.CircularIndicator
 import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
+import com.register.app.util.Utils
 import com.register.app.util.Utils.copyTextToClipboard
 import com.register.app.util.Utils.getFileNameFromUri
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
+import kotlinx.coroutines.launch
+import java.io.IOException
 
 @Composable
-fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewModel) {
-    val fileUrl = groupViewModel.paymentEvidence.observeAsState().value
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    var fileUri by rememberSaveable { mutableStateOf("") }
+fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel) {
+    val fileName = activityViewModel.fileName.observeAsState().value
+    val loadingState = activityViewModel.loadingState.observeAsState().value
     var showBankDetails by rememberSaveable { mutableStateOf(false) }
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val membershipId = groupViewModel.membershipId.observeAsState().value
     val context = LocalContext.current
-    val imageMimeTypes = listOf("application/pdf", "image/jpeg", "image/png")
+    val coroutineScope = rememberCoroutineScope()
     val filePicker = rememberLauncherForActivityResult(
-        contract = GetCustomFiles(isMultiple = false),
-        onResult = {uris ->
-            val urisJoined =  uris.joinToString(", ")
-            fileUri = urisJoined
-        })
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            if (uri != null) {
+                coroutineScope.launch {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(uri)
+                        if (inputStream != null) {
+                            val mimeType = context.contentResolver.getType(uri)
+                            activityViewModel.uploadEvidenceOfPayment(inputStream, mimeType, getFileNameFromUri(context.contentResolver, uri))
+                        } else {
+                            // Handle error
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        // Handle error
+                    }
+                }
+            }
+        }
+    )
     Surface(
         Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -96,14 +119,16 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                 text = stringResource(id = R.string.view_bank_detail),
                 Modifier
                     .clickable {
-                        showBankDetails = true
                         groupViewModel.getBankDetails()
+                        showBankDetails = true
                     }
                     .padding(horizontal = 16.dp, vertical = 16.dp),
                 textAlign = TextAlign.Start,
                 color = MaterialTheme.colorScheme.secondary
             )
-
+            if (loadingState == true) {
+                CircularIndicator()
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -111,11 +136,12 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                getFileNameFromUri(context.contentResolver, fileUri.toUri())?.let { Text(text = it) }
+                if (fileName != null) {
+                    Text(text = fileName)
+                }
                 Button(
                     onClick = {
-                        val mimeType = imageMimeTypes.joinToString(",")
-                        filePicker.launch("*/*") },
+                        filePicker.launch("image/*") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.onBackground
@@ -129,7 +155,14 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
             }
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    coroutineScope.launch {
+                        val response = activityViewModel.submitEvidenceOfPayment(group?.groupName!!, membershipId!!)
+                        if (response.status) {
+                            Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
                 Modifier
                     .fillMaxWidth()
                     .padding(vertical = 32.dp, horizontal = 32.dp),
@@ -236,9 +269,9 @@ fun BankDetailDialog(
                     .padding(16.dp)
                     .fillMaxWidth()
             ) {
-                Text(text = bankDetail?.bankName!!)
-                Text(text = bankDetail.accountNumber)
-                Text(text = bankDetail.accountName)
+                Text(text = "Bank: ${bankDetail?.bankName}")
+                Text(text = "Account number: ${bankDetail?.accountNumber}")
+                Text(text = "Account name:${bankDetail?.accountName}")
                 Spacer(
                     modifier = Modifier.height(16.dp))
                 Row(
@@ -252,7 +285,7 @@ fun BankDetailDialog(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = "copy",
                         Modifier.clickable {
-                            copyTextToClipboard(context, bankDetail.accountNumber)
+                            bankDetail?.accountNumber?.let { copyTextToClipboard(context, it) }
                             Toast.makeText(context, "Bank details coppied to clipboard", Toast.LENGTH_LONG).show()
                         },
                         tint = MaterialTheme.colorScheme.primary)

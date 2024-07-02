@@ -111,4 +111,15 @@
     <string name="change_role">Change role</string>
     <string name="recall_member">Recall</string>
     <string name="username">Username</string>
+    <string name="creator_office">Your post/office</string>
+    <string name="show_detail">Show Details</string>
+    <string name="bank_details">Bank details</string>
+    <string name="bank_name">Bank name</string>
+    <string name="account_number">Account number</string>
+    <string name="account_holder">Account name</string>
+    <string name="search_by_email">Enter the user\'s email address</string>
+    <string name="add_to_group">Add to group</string>
+    <string name="payment">Pending payments</string>
+    <string name="confirm">Confirm payment</string>
+    <string name="amount_paid">Amount paid</string>
 </resources>

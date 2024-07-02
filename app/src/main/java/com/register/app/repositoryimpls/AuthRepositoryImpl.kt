@@ -5,9 +5,11 @@ import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.LoginUserModel
+import com.register.app.dto.MemberDetailWrapper
 import com.register.app.dto.SendOtpModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.VerifyOtpModel
+import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
 import retrofit2.Call
 import retrofit2.Callback
@@ -66,6 +68,43 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
 
     override suspend fun verifyOtp(verifyOtpModel: VerifyOtpModel): GenericResponse {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun getAllMembersForGroup(memberEmail: List<String>): MemberDetailWrapper? {
+        return suspendCoroutine { continuation ->
+            val call = userService.getAllMembersForGroup(memberEmail)
+            call.enqueue(object : Callback<MemberDetailWrapper?> {
+                override fun onResponse(
+                    call: Call<MemberDetailWrapper?>,
+                    response: Response<MemberDetailWrapper?>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }
+                }
+
+                override fun onFailure(call: Call<MemberDetailWrapper?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun getMemberDetails(emailAddress: String): Member? {
+        return suspendCoroutine { continuation ->
+            val call = userService.getMemberDetails(emailAddress)
+            call.enqueue(object : Callback<Member?> {
+                override fun onResponse(call: Call<Member?>, response: Response<Member?>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }
+                }
+
+                override fun onFailure(call: Call<Member?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
     }
 
 }

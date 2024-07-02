@@ -1,6 +1,7 @@
 package com.register.app.di
 
 import android.content.Context
+import com.register.app.api.ActivityService
 import com.register.app.api.ChatService
 import com.register.app.api.GroupService
 import com.register.app.api.HttpInterceptor
@@ -32,8 +33,8 @@ object NetworkModule {
     @Provides
     fun provideRetrofit(@ApplicationContext context: Context, dataStoreManager: DataStoreManager): Retrofit {
         val client = OkHttpClient.Builder()
-            .addInterceptor(HttpInterceptor(context, dataStoreManager))
             .addInterceptor(logger)
+            .addInterceptor(HttpInterceptor(context, dataStoreManager))
             .callTimeout(Duration.ofMillis(100000))
             .readTimeout(Duration.ofMillis(100000))
             .retryOnConnectionFailure(true)
@@ -58,5 +59,10 @@ object NetworkModule {
     @Provides
     fun providesChatService(retrofit: Retrofit) : ChatService {
         return retrofit.create(ChatService::class.java)
+    }
+
+    @Provides
+    fun providesActivityService(retrofit: Retrofit) : ActivityService {
+        return retrofit.create(ActivityService::class.java)
     }
 }

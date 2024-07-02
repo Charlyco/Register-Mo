@@ -1,5 +1,6 @@
 package com.register.app.model
 
+import com.register.app.dto.Payment
 import java.io.Serializable
 
 data class Event(
@@ -19,6 +20,7 @@ data class Event(
     val eventBudget: Double?,
     val amountRealized: Double?,
     val contributions: List<ContributionDto>?,
+    val pendingEvidenceOfPayment: List<Payment>?,
     val eventStatus: String?
 )
 

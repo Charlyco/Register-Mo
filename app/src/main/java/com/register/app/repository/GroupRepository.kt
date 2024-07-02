@@ -1,4 +1,27 @@
 package com.register.app.repository
 
+import com.register.app.dto.ActivityRate
+import com.register.app.dto.ChangeMemberStatusDto
+import com.register.app.dto.CreateEventModel
+import com.register.app.dto.CreateGroupModel
+import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.ImageUploadResponse
+import com.register.app.dto.MembershipDtoWrapper
+import com.register.app.dto.RemoveMemberModel
+import com.register.app.model.Event
+import com.register.app.model.Group
+import okhttp3.RequestBody
+
 interface GroupRepository {
+    suspend fun getAllGroupsForUser(groupIds: List<Int>?): List<Group>?
+    suspend fun getAllActivitiesForGroup(groupId: Int): List<Event>?
+    suspend fun createNewGroup(groupModel: CreateGroupModel): Group
+    suspend fun getMemberActivityRate(membershipId: String?, dateJoined: String?, groupId: Int): ActivityRate
+    suspend fun updateGroup(groupId: Int, group: GroupUpdateDto): GenericResponse?
+    suspend fun addMemberToGroup(groupId: Int?, emailAddress: String): GenericResponse
+    suspend fun submitEvidenceOfPayment(): GenericResponse
+    suspend fun uploadImage(image: RequestBody, name: String): ImageUploadResponse
+    suspend fun changeMemberStatus(membershipId: String, changeMemberStatusDto: ChangeMemberStatusDto): MembershipDtoWrapper
+    suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse
 }

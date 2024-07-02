@@ -11,6 +11,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.UUID
 
 object Utils {
     fun getFileNameFromUri(contentResolver: ContentResolver, fileUri: Uri): String? {
@@ -52,5 +53,12 @@ object Utils {
     // Define an extension function to format LocalDate
     fun LocalDate.formatToYYYYMMDD(): String {
         return this.toString()
+    }
+
+    suspend fun createDeviceId(dataStoreManager: DataStoreManager) {
+        if (dataStoreManager.readDeviceId() == null) {
+            val deviceId = UUID.randomUUID().toString()
+            dataStoreManager.writeDeviceId(deviceId)
+        }
     }
 }

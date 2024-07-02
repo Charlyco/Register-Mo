@@ -1,15 +1,22 @@
 package com.register.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.BankDetail
-import com.register.app.dto.CommentReply
+import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.ComplianceRate
+import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.EventComment
-import com.register.app.dto.PostCommentModel
+import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.MembershipDtoWrapper
+import com.register.app.dto.RateData
 import com.register.app.dto.ReactionType
+import com.register.app.dto.RemoveMemberModel
+import com.register.app.enums.Designation
 import com.register.app.model.Event
 import com.register.app.model.EventCommentDto
 import com.register.app.model.EventReactionDto
@@ -24,189 +31,104 @@ import com.register.app.util.PAID
 import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.io.File
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.InputStream
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
-    private val groupRepository: GroupRepository): ViewModel(){
-    private val _selectedMember: MutableLiveData<MembershipDto> = MutableLiveData()
-    val selectedMember: LiveData<MembershipDto> = _selectedMember
-    private val _activityImages: MutableLiveData<List<String>> = MutableLiveData()
-    val activityImageList: LiveData<List<String>> = _activityImages
-    private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
-    val hasPaid: LiveData<Boolean> = _hasUserPaid
-    private val _activityRAteLiveData: MutableLiveData<Float> = MutableLiveData()
-    val activityRateLiveData: LiveData<Float> = _activityRAteLiveData
-    private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
-    val groupDetailLiveData: LiveData<Group> = _groupDetailLiveData
-    private val _bankDetails: MutableLiveData<BankDetail> = MutableLiveData()
-    val bankDetails: LiveData<BankDetail> = _bankDetails
-    private val _paymentEvidence: MutableLiveData<String?> = MutableLiveData()
-    val paymentEvidence: LiveData<String?> = _paymentEvidence
-    private val _groupListLiveDate: MutableLiveData<List<Group>> = MutableLiveData()
-    val groupListLiveData: LiveData<List<Group>> = _groupListLiveDate
-    val showCreateGroupSheet: MutableLiveData<Boolean> = MutableLiveData(false)
-    private val _groupAdminList: MutableLiveData<List<Member>> = MutableLiveData()
-    val groupAdminList: LiveData<List<Member>> = _groupAdminList
-    private val _pendingMemberList: MutableLiveData<List<Member>> = MutableLiveData()
-    val pendingMemberList: LiveData<List<Member>> = _pendingMemberList
-    private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
-    val groupEvents: LiveData<List<Event>?> = _groupEvents
-    private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
-    val paidActivities: LiveData<List<Event>?> = _paidActivities
-    private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
-    val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
-    private val _selectedEvent: MutableLiveData<Event> = MutableLiveData()
-    val selectedEvent: LiveData<Event> = _selectedEvent
-    private val _eventDetailLiveData: MutableLiveData<Event> = MutableLiveData()
-    val eventDetailLiveData: LiveData<Event> = _eventDetailLiveData
-    private val _eventCommentLideData: MutableLiveData<List<EventComment>> = MutableLiveData()
-    val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
-    private val _membershipId: MutableLiveData<String> = MutableLiveData("")
-    val membershipId: LiveData<String> = _membershipId
-    private val _memberDetails: MutableLiveData<List<Member>> = MutableLiveData()
-    val memberDetailsList: LiveData<List<Member>> = _memberDetails
+    private val groupRepository: GroupRepository,
+    private val authRepository: AuthRepository): ViewModel(){
+        private val _groupLogoLivedata: MutableLiveData<String> = MutableLiveData()
+        val groupLogoLivedata: LiveData<String> = _groupLogoLivedata
+        private val _selectedMember: MutableLiveData<MembershipDto?> = MutableLiveData()
+        val selectedMember: LiveData<MembershipDto?> = _selectedMember
+        private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
+        val hasPaid: LiveData<Boolean> = _hasUserPaid
+        private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
+        val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
+        private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
+        val groupDetailLiveData: LiveData<Group> = _groupDetailLiveData
+        private val _bankDetails: MutableLiveData<BankDetail?> = MutableLiveData()
+        val bankDetails: LiveData<BankDetail?> = _bankDetails
+        private val _groupListLiveDate: MutableLiveData<List<Group>?> = MutableLiveData()
+        val groupListLiveData: MutableLiveData<List<Group>?> = _groupListLiveDate
+        val showCreateGroupSheet: MutableLiveData<Boolean> = MutableLiveData(false)
+        private val _groupAdminList: MutableLiveData<List<Member>?> = MutableLiveData()
+        val groupAdminList: LiveData<List<Member>?> = _groupAdminList
+        private val _pendingMembershipDetail: MutableLiveData<Member> = MutableLiveData()
+        val pendingMemberLiveData: LiveData<Member> = _pendingMembershipDetail
+        private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
+        val groupEvents: LiveData<List<Event>?> = _groupEvents
+        private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+        val paidActivities: LiveData<List<Event>?> = _paidActivities
+        private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+        val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
+        private val _eventCommentLideData: MutableLiveData<List<EventComment>> = MutableLiveData()
+        val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
+        private val _membershipId: MutableLiveData<String?> = MutableLiveData("")
+        val membershipId: LiveData<String?> = _membershipId
+        private val _memberDetails: MutableLiveData<List<Member>?> = MutableLiveData()
+        val memberDetailsList: LiveData<List<Member>?> = _memberDetails
+        private val _logoUrl: MutableLiveData<String?> = MutableLiveData()
+        private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
+        val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
+        val logoUrl: LiveData<String?> = _logoUrl
+        private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
+        val loadingState: LiveData<Boolean> = _loadingState
 
-    init {
-        getAllGroupsForUser()
-    }
-
-    private fun getAllGroupsForUser() {
+    suspend fun getAllGroupsForUser() {
         //fetch groups from server
-        val groups = listOf(
-            Group(1, "IHS-2008", "2008 set of Isuikwuato High School",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(MembershipDto("", ""),
-                    MembershipDto("charlyc835@gmaoil.com", "6673ge773ee"), MembershipDto("charlyco835@gmail.com", "eeerrd345fd")),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "OPEN", "" ),
-            Group(1, "CMO St Patrick's Parish",
-                "The Catholic Men Organization of St. Patrick's Parish Nekede, Owerri",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(MembershipDto("charlyco835@gmail.com", "598709834"), MembershipDto("charlyco835@gmail.com", "674r8vd766r6ed"), MembershipDto("charlyco835@gmail.com", "87b8fyqib4gfiquf")),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "CLOSED", "" ),
-            Group(1, "CMO St Patrick's Parish",
-                "The Catholic Men Organization of St. Patrick's Parish Nekede, Owerri",
-                "charlyco@gmail.com", "+234-7037590923",
-                "12 Achuzilam avenue Umuoma Nekede Owerri","Onuoha Charles",
-                LocalDateTime.now().toString(),
-                listOf(MembershipDto("charlyco835@gmail.com", "35qoungu394"), MembershipDto("charlyco835@gmail.com", "tiuugflko4kg34"), MembershipDto("charlyco835@gmail.com", "534q34gq34gq34")),
-                listOf(MembershipRequest(1, "charlyco835@gmail.com", ""), MembershipRequest(2, "darlingtonnze@gmail.com", "")),
-                listOf("charlyco835@gmail.com", "darlingtonnze@gmail.com"),
-                "", "", "CLOSED", "" ),
-            )
-        _groupListLiveDate.value = groups
+        _loadingState.value = true
+        if (!dataStoreManager.readUserData()?.groupIds.isNullOrEmpty()) {
+            val groups: List<Group>? = groupRepository.getAllGroupsForUser(dataStoreManager.readUserData()?.groupIds)
+            _groupListLiveDate.value = groups
+            _loadingState.value = false
+        } else {
+            _loadingState.value = false
+        }
     }
 
     fun getBankDetails() {
-        val detail = BankDetail("Onuoha Chukwuemeka",
-            "000999888777",
-            "First Bank")
-        _bankDetails.value = detail
+        val group = groupDetailLiveData.value
+        _bankDetails.value = group?.bankDetails
     }
 
-    fun setSelectedGroupDetail(group: Group) {
+    suspend fun setSelectedGroupDetail(group: Group) {
         _groupDetailLiveData.value = group
-        // Get all events for for group and filter into paid and unpaid for user
-        _paidActivities.value =
-            listOf(
-                Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
-                Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
-                Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                    EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                    "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
-            )
-        _unpaidActivities.value = listOf(
-            Event(13, "Wedding Anniversary", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
-            Event(14, "Matriculation Ceremony", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
-        )
+        //get membership id
+        val member = getMember(group.memberList)
+        _membershipId.value = member?.membershipId
+
         //get user activity rate
-        _activityRAteLiveData.value = 65.0f
-        //get member details
-        _memberDetails.value = listOf( Member(1,
-            "Nze Darlington",
-            "NzeDal",
-            "+2347037590923",
-            "charlyc835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "President",
-            "",
-            "USER", listOf()),
-            Member(2,
-                "Onuoha Chukwuka",
-                "Chukwii",
-                "+2347037590923",
-                "charlyco835@gmail.com",
-                "", "",
-                "ACTIVE",
-                "Secretary",
-                "",
-                "USER", listOf()),
-            Member(3,
-                "Onuoha Chukwuemeka",
-                "Chacrlyco",
-                "+2347037590923",
-                "charlyco835@gmail.com",
-                "", "",
-                "ACTIVE",
-                " Financial Secretary",
-                "",
-                "USER", listOf())
-        )
+        val activityRate = groupRepository.getMemberActivityRate(
+            membershipId.value, member?.joinedDateTime, group.groupId).data
+        _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
+
+        // Get all events for for group and filter into paid and unpaid for user
+        val groupEvents = groupRepository.getAllActivitiesForGroup(group.groupId)
+        val paidActivities = groupEvents?.filter { event ->
+            event.contributions?.any { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true }
+        _paidActivities.value = paidActivities
+        val unpaidActivities = groupEvents?.filter { event ->
+            event.contributions?.none { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true }
+        _unpaidActivities.value = unpaidActivities
+        //getMembershipId(group)
     }
 
-    fun getIndividualAdminDetail() {
-        _groupAdminList.value = listOf(
-            Member(1,
-                "Nze Darlington",
-                "NzeDal",
-                "+2347037590923",
-                "charlyco835@gmail.com",
-                "", "",
-                "ACTIVE",
-                "President",
-                 "",
-                "USER", listOf()),
-                    Member(2,
-            "Onuoha Chukwuka",
-                        "Chukwii",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "Secretary",
-             "",
-            "USER", listOf()),
-            Member(3,
-                "Onuoha Chukwuemeka",
-                "Chacrlyco",
-                "+2347037590923",
-                "charlyco835@gmail.com",
-                "", "",
-                "ACTIVE",
-                " Financial Secretary",
-                "",
-                "USER", listOf())
-        )
+    private fun calculateActivityRate(activityRate: RateData): Float? {
+        if (activityRate.eventsDue != 0) {
+            return ((activityRate.eventsPaid / activityRate.eventsDue) * 100).toFloat()
+        } else {
+            return 100.0f
+        }
+    }
+
+    private suspend fun getMember(memberList: List<MembershipDto>?): MembershipDto? {
+        return memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
     }
 
     fun isUserAdmin(): Boolean {
@@ -218,8 +140,8 @@ class GroupViewModel @Inject constructor(
         return true //isAdmin?: false
     }
 
-    fun getIndividualMembershipRequest(pendingMemberRequests: List<MembershipRequest>) {
-        _pendingMemberList.value = listOf(
+    fun getIndividualMembershipRequest(emailAddress: String) {
+        _pendingMembershipDetail.value =
             Member(1,
                 "Uche Egemba",
                 "Urchman",
@@ -229,20 +151,10 @@ class GroupViewModel @Inject constructor(
                 "ACTIVE",
                 "President",
                 "",
-                "USER", listOf()),
-                    Member(1,
-            "Ogbonna Chekwube",
-                        "CHekwube",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "Secretary", "",
-            "USER", listOf())
-        )
+                "USER", listOf())
     }
 
-    fun approveMembershipRequest(emailAddress: String) {
+    fun approveMembershipRequest(membershipRequest: MembershipRequest) {
         
     }
 
@@ -250,33 +162,22 @@ class GroupViewModel @Inject constructor(
         _groupEvents.value = listOf(
             Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
             Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(),
+                listOf(), "ACTIVE"),
             Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), "ACTIVE"),
+                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
         )
     }
 
-    fun setSelectedEvent(eventFeed: Event) {
-        _selectedEvent.value = eventFeed
-        viewModelScope.launch { getMembershipIdByGroupId(eventFeed.groupId!!) }
-    }
 
-    fun postCommentReply(commentReply: String, eventCommentId: Int): CommentReply? {
-        return null
-    }
 
-    fun postComment(postCommentModel: PostCommentModel, eventId: Int?): EventComment? {
-        return null
-    }
-
-    suspend fun getMembershipId(group: Group?){
-            val member = group?.memberList?.find { it.email == dataStoreManager.readUserEmailData() }
-            member?.membershipId ?: "${group?.groupName}_1234"
-            _membershipId.postValue(member?.membershipId ?: "${group?.groupName}_1234")
+    private suspend fun getMembershipId(group: Group?): String?{
+            val member = group?.memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
+            return member?.membershipId
     }
 
     private suspend fun getMembershipIdByGroupId(groupId: Int){
@@ -294,21 +195,29 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun saveGroupUpdate() {
-
-    }
-
-    fun getMemberDetails(email: String): Member {
-       return Member(1,
-            "Ogbonna Chekwube",
-           "Chekwube",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "Secretary",
-             "",
-            "USER", listOf())
+    suspend fun saveGroupUpdate(
+        groupId: Int,
+        groupName: String,
+        description: String?,
+        address: String?,
+        phone: String?,
+        email: String?,
+        logoUrl: String?,
+        bankDetail: BankDetail
+    ): GenericResponse? {
+        val group = GroupUpdateDto(
+            groupName = groupName,
+            groupDescription = description?: "",
+            groupEmail = email?: "",
+            phoneNumber = phone?: "",
+            address = address?: "",
+            logoUrl = logoUrl?: "",
+            groupType = groupDetailLiveData.value?.groupType!!,
+            bankDetails = bankDetail)
+        _loadingState.value = true
+        val response = groupRepository.updateGroup(groupId, group)
+        _loadingState.value = false
+        return response
     }
 
     fun getComplianceRate(contributionSize: Int?, groupId: Int?): ComplianceRate {
@@ -316,8 +225,16 @@ class GroupViewModel @Inject constructor(
         return ComplianceRate(23, 45, ((23/45)*100).toDouble())
     }
 
-    fun uploadGroupLogo(file: File) {
-        //Upload logo and return url
+    suspend fun uploadGroupLogo(
+        inputStream: InputStream,
+        mimeType: String?,
+        fileNameFromUri: String?
+    ): String {
+        val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
+        val response = groupRepository.uploadImage(requestBody, fileNameFromUri!!)
+        _groupLogoLivedata.value = response.data.secureUrl
+        //Log.d("UPLOAD IMAGE", "uploadGroupLogo: $file")
+        return response.data.secureUrl
     }
 
     fun populateActivities(type: String) {
@@ -332,24 +249,71 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun uploadActivityImages(file: File) {
-        //Upload the image ans add the url to imageList livedata
-    }
-
-    suspend fun createNewActivity(
-        activityTitle: String,
-        activityDescription: String,
-        levyAmount: Double,
-        eventDate: String
-    ) {
-        //val newActivity = data
-//        newActivity.groupId = _groupDetailLiveData.value?.groupId
-//        newActivity.groupName = _groupDetailLiveData.value?.groupName
-//        newActivity.eventCreator = dataStoreManager.readAuthData()
-        //Call repository method to create activity
-    }
-
-    fun setSelectedMember(member: MembershipDto) {
+    fun setSelectedMembership(member: MembershipDto) {
         _selectedMember.value = member
+    }
+
+    suspend fun createNewGroup(groupName: String, groupDescription: String, memberOffice: String, groupType: String): Group {
+        _loadingState.value = true
+        val groupModel = CreateGroupModel(
+            groupName,
+            groupDescription,
+            dataStoreManager.readUserData()?.emailAddress!!,
+            dataStoreManager.readUserData()?.fullName!!,
+            memberOffice,
+            groupType,
+            groupLogoLivedata.value?: "")
+        val response = groupRepository.createNewGroup(groupModel)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun populateGroupMembers(group: Group?) {
+        val membersEmailList = group?.memberList?.map { it.emailAddress }
+        if (membersEmailList != null) {
+            val members = authRepository.getAllMembersForGroup(membersEmailList)
+            _memberDetails.value = members?.data
+        }else{
+            Log.d("MEMBER DETAILS", "getAllGroupMembers: null")
+        }
+    }
+
+    suspend fun filterAdmins(memberList: List<MembershipDto>) {
+        _loadingState.value = true
+        val admins = memberList.filter { member -> member.designation == Designation.ADMIN.name }.map { it.emailAddress }
+        val adminDetail = authRepository.getAllMembersForGroup(admins)?.data
+        _groupAdminList.value = adminDetail
+        _loadingState.value = false
+    }
+
+    suspend fun addMemberToGroup(groupId: Int?, emailAddress: String): Boolean {
+        _loadingState.value = true
+        val response = groupRepository.addMemberToGroup(groupId, emailAddress)
+        _loadingState.value = false
+        return response.status
+    }
+
+    fun setSelectedMember(member: Member) {
+        _groupMemberLiveData.value = member
+    }
+
+    suspend fun changeMemberStatus(
+        membershipId: String,
+        changeMemberStatusDto: ChangeMemberStatusDto
+    ): MembershipDtoWrapper {
+        _loadingState.value = true
+        val response = groupRepository.changeMemberStatus(membershipId, changeMemberStatusDto)
+        _loadingState.value = false
+        if (response.status) {
+            _selectedMember.value = response.data
+        }
+        return response
+    }
+
+    suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse {
+        _loadingState.value = true
+        val response = groupRepository.expelMember(removeMemberModel)
+        _loadingState.value = false
+        return response
     }
 }
