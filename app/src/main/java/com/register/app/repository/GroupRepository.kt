@@ -24,4 +24,5 @@ interface GroupRepository {
     suspend fun uploadImage(image: RequestBody, name: String): ImageUploadResponse
     suspend fun changeMemberStatus(membershipId: String, changeMemberStatusDto: ChangeMemberStatusDto): MembershipDtoWrapper
     suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse
+    suspend fun getGroupDetails(groupId: Int?): Group?
 }

@@ -217,4 +217,8 @@ class GroupRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun getGroupDetails(groupId: Int?): Group? {
+        return null
+    }
 }

@@ -4,9 +4,11 @@ import com.register.app.api.ActivityService
 import com.register.app.api.UserService
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
+import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
+import com.register.app.model.Event
 import com.register.app.model.Member
 import com.register.app.repository.ActivityRepository
 import okhttp3.MultipartBody
@@ -119,6 +121,46 @@ class ActivityRepositoryImpl @Inject constructor(
                 }
 
                 override fun onFailure(call: Call<Member?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun changeEventStatus(eventId: Int, status: String): EventDetailWrapper {
+        return suspendCoroutine { continuation ->
+            val call = activityService.changeEventStatus(eventId, status)
+            call.enqueue(object : Callback<EventDetailWrapper> {
+                override fun onResponse(
+                    call: Call<EventDetailWrapper>,
+                    response: Response<EventDetailWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<EventDetailWrapper>, t: Throwable) {
+                   continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun deleteActivity(eventId: Int): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.deleteActivity(eventId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
             })

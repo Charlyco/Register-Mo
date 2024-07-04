@@ -2,8 +2,8 @@ package com.register.app.enums
 
 enum class EventStatus {
     CURRENT,
-    OLD,
-    CANCELLED,
+    COMPLETED,
+    ARCHIVED,
     FUTURISTIC,
     UNDEFINED
 }

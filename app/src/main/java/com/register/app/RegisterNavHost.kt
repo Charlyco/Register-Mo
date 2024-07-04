@@ -93,7 +93,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             CreateEvent(groupViewModel = groupViewModel, activityViewModel = activityViewModel, navController = navController)
         }
         composable("member_detail") {
-            MemberDetails(groupViewModel = groupViewModel, authViewModel = authViewModel, navController = navController)
+            MemberDetails(groupViewModel = groupViewModel, authViewModel = authViewModel, activityViewModel = activityViewModel, navController = navController)
         }
         composable("add_member") {
             AddRemoveMember(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)

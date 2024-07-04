@@ -8,6 +8,7 @@ import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.EventComment
+import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
@@ -162,15 +163,26 @@ class ActivityViewModel @Inject constructor(
         _loadingState.value = false
     }
 
-    fun markActivityCompleted(event: Event) {
-        TODO("Not yet implemented")
+    suspend fun markActivityCompleted(event: Event): EventDetailWrapper {
+        _loadingState.value = true
+        val response = activityRepository.changeEventStatus(event.eventId, EventStatus.COMPLETED.name)
+        _loadingState.value = false
+        setSelectedEvent(event)
+        return response
     }
 
-    fun archiveActivity(event: Event) {
-        TODO("Not yet implemented")
+    suspend fun archiveActivity(event: Event) : EventDetailWrapper {
+        _loadingState.value = true
+        val response = activityRepository.changeEventStatus(event.eventId, EventStatus.ARCHIVED.name)
+        _loadingState.value = false
+        setSelectedEvent(event)
+        return response
     }
 
-    fun deleteActivity(event: Event) {
-        TODO("Not yet implemented")
+    suspend fun deleteActivity(event: Event) : GenericResponse{
+        _loadingState.value = true
+        val response = activityRepository.deleteActivity(event.eventId)
+        _loadingState.value = false
+        return response
     }
 }

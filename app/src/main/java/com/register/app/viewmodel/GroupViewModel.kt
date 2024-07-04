@@ -75,8 +75,8 @@ class GroupViewModel @Inject constructor(
         private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
         val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
         val logoUrl: LiveData<String?> = _logoUrl
-        private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
-        val loadingState: LiveData<Boolean> = _loadingState
+        private val _loadingState: MutableLiveData<Boolean?> = MutableLiveData(false)
+        val loadingState: LiveData<Boolean?> = _loadingState
 
     suspend fun getAllGroupsForUser() {
         //fetch groups from server
@@ -108,7 +108,7 @@ class GroupViewModel @Inject constructor(
         _paidActivities.value = paidActivities
         Log.d("PAID", paidActivities.toString())
         val unpaidActivities = groupEvents?.filter { event ->
-            event.contributions?.none { it.memberEmail == userEmail } == true }
+            event.contributions?.none { it.memberEmail == userEmail } == true  && (event.eventStatus != "COMPLETED" && event.eventStatus != "ARCHIVED") }
         _unpaidActivities.value = unpaidActivities
         Log.d("UNPAID", unpaidActivities.toString())
         //get user activity rate
@@ -303,5 +303,11 @@ class GroupViewModel @Inject constructor(
         val response = groupRepository.expelMember(removeMemberModel)
         _loadingState.value = false
         return response
+    }
+
+    suspend fun reloadGroup(groupId: Int?) {
+        _loadingState.value = true
+        Log.d("PULLREFRESH", "Refreshing")
+        val response = groupRepository?.getGroupDetails(groupId)
     }
 }

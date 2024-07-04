@@ -88,6 +88,7 @@ import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
     homeViewModel : HomeViewModel,
@@ -95,18 +96,45 @@ fun HomeScreen(
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
     activityViewModel: ActivityViewModel) {
+    val loadingState = homeViewModel.loadingState?.observeAsState()?.value
+    val isRefreshing by rememberSaveable { mutableStateOf(false)}
+    val refreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { homeViewModel.refreshHomeContents() },
+        refreshThreshold = 84.dp,
+        refreshingOffset = 64.dp)
     Scaffold(
         topBar = { HomeTopBar(navController, homeViewModel, authViewModel) },
         bottomBar = { BottomNavBar(navController) }
     ) {
-        HomeScreenContent(modifier = Modifier.padding(it), homeViewModel, groupViewModel, activityViewModel, navController)
-        CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
-            groupViewModel.showCreateGroupSheet.postValue(show)
+        when (loadingState) {
+            ScreenLoadState.LOADING -> { CircularIndicator() }
+            ScreenLoadState.ERROR -> { ErrorState(homeViewModel) }
+            else -> {
+                Surface(
+                    modifier = Modifier
+                        .padding(top = 64.dp, bottom = 64.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState(initial = 0))
+                        .pullRefresh(refreshState),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    HomeScreenContent(
+                        modifier = Modifier.padding(it),
+                        homeViewModel,
+                    groupViewModel,
+                    activityViewModel,
+                    navController
+                )
+                    CreateGroupScreen(groupViewModel = groupViewModel, navController) { show ->
+                    groupViewModel.showCreateGroupSheet.postValue(show)
+                }
+            }
+        }
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreenContent(
     modifier: Modifier,
@@ -117,41 +145,15 @@ fun HomeScreenContent(
 ) {
     val scrollState = rememberScrollState(initial = 0)
     val height = LocalConfiguration.current.screenHeightDp - 64
-    val loadingState = homeViewModel.loadingState?.observeAsState()?.value
-    val isRefreshing by rememberSaveable { mutableStateOf(false)}
-    val refreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
-        onRefresh = { homeViewModel.refreshHomeContents() },
-        refreshThreshold = 84.dp,
-        refreshingOffset = 64.dp)
-    when (loadingState) {
-        ScreenLoadState.LOADING -> { CircularIndicator() }
-        ScreenLoadState.ERROR -> { ErrorState(homeViewModel) }
-        else -> {
-            Surface(
-                modifier = Modifier
-                    .padding(top = 64.dp, bottom = 64.dp)
-                    .fillMaxSize()
-                    .pullRefresh(refreshState, true),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(
-                            state = scrollState,
-                            enabled = true,
-                            reverseScrolling = false
-                        )
-                ) {
-                    WelcomeNote()
-                    SearchSection(groupViewModel, navController)
-                    DiscoverSection(groupViewModel, homeViewModel, navController)
-                    FeedList(homeViewModel, navController, groupViewModel, activityViewModel)
-                    SuggestedGroups(homeViewModel, groupViewModel, navController)
-                }
-            }
-        }
+    Column(
+        Modifier
+            .fillMaxWidth()
+    ) {
+        WelcomeNote()
+        SearchSection(groupViewModel, navController)
+        DiscoverSection(groupViewModel, homeViewModel, navController)
+        FeedList(homeViewModel, navController, groupViewModel, activityViewModel)
+        SuggestedGroups(homeViewModel, groupViewModel, navController)
     }
 }
 

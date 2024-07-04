@@ -28,6 +28,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -42,6 +45,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -87,6 +92,7 @@ import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun GroupDetail(
     navController: NavController,
@@ -194,6 +200,7 @@ fun GroupDetailTopBar(
     )
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun GroupDetailScreen(
     modifier: Modifier,
@@ -208,22 +215,28 @@ fun GroupDetailScreen(
     var showAdminList by rememberSaveable { mutableStateOf(false) }
     var showRequests by rememberSaveable { mutableStateOf(false) }
     val verticalScrollState = rememberScrollState(initial = 0)
+    val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
+    val coroutineScope = rememberCoroutineScope()
+    val refreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { coroutineScope.launch { groupViewModel.reloadGroup(group?.groupId) } })
     Surface(
         Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .verticalScroll(
+                state = verticalScrollState,
+                enabled = true,
+                reverseScrolling = false
+            )
+            .pullRefresh(refreshState, true),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
             Modifier
-                .verticalScroll(
-                    state = verticalScrollState,
-                    enabled = true,
-                    reverseScrolling = false
-                )
                 .fillMaxWidth()
         ) {
             TopSection(group, groupViewModel)
-            ActivityRate(group, groupViewModel, navController)
+            ActivityRate(groupViewModel)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
             PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
             HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
@@ -253,7 +266,7 @@ fun GroupDetailScreen(
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
+fun ActivityRate(groupViewModel: GroupViewModel) {
     val context = LocalContext.current
     val activityRate = groupViewModel.activityRateLiveData.observeAsState().value
     val chartData = PieChartData(
@@ -280,22 +293,12 @@ fun ActivityRate(group: Group?, groupViewModel: GroupViewModel, navController: N
             .padding(vertical = 16.dp)
             .fillMaxWidth()
     ) {
-        val (idText, chart, title, detail) = createRefs()
+        val (chart, title, detail) = createRefs()
 
-        Text(
-            text = "Your membership ID: ${groupViewModel.membershipId.value}",
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .constrainAs(idText) {
-                    start.linkTo(parent.start, margin = 16.dp)
-                    top.linkTo(parent.top)
-                },
-            fontSize = TextUnit(17.0f, TextUnitType.Sp)
-        )
         Text(
             text = stringResource(id = R.string.chart_header),
             modifier = Modifier.constrainAs(title) {
-                top.linkTo(idText.bottom, margin = 8.dp)
+                top.linkTo(parent.top, margin = 8.dp)
                 centerHorizontallyTo(parent)
             },
             fontWeight = FontWeight.SemiBold,
@@ -466,23 +469,23 @@ fun EventItem(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-        Row(
-            Modifier
-                .clickable {
-                    navController.navigate("event_detail") {
-                        launchSingleTop = true
-                        coroutineScope.launch { activityViewModel.setSelectedEvent(event) }
-                    }
+    Row(
+        Modifier
+            .clickable {
+                navController.navigate("event_detail") {
+                    launchSingleTop = true
+                    coroutineScope.launch { activityViewModel.setSelectedEvent(event) }
                 }
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                Modifier
-                    .padding(end = 16.dp)
-                    .size(36.dp),
-                color = MaterialTheme.colorScheme.surface,
-                shape = MaterialTheme.shapes.extraSmall,
+            }
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            Modifier
+                .padding(end = 16.dp)
+                .size(36.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.extraSmall,
             ) {
                Icon(
                    imageVector = Icons.Default.EventAvailable,
@@ -782,7 +785,7 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
         ConstraintLayout(
             Modifier.fillMaxSize()
         ) {
-            val (bgImage, logo, header, description, id) = createRefs()
+            val (logo, description, id) = createRefs()
 
             Surface(
                 Modifier
@@ -806,12 +809,22 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
                 text = group?.groupDescription!!,
                 modifier = Modifier
                     .padding(horizontal = 14.dp, vertical = 8.dp)
-                    .constrainAs(header) {
+                    .constrainAs(description) {
                         top.linkTo(logo.bottom, margin = 8.dp)
                         centerHorizontallyTo(parent)
                     },
                 color = Color.White,
                 textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Your membership ID: ${groupViewModel.membershipId.value}",
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .constrainAs(id) {
+                        start.linkTo(parent.start, margin = 16.dp)
+                        top.linkTo(description.bottom, margin = 16.dp)
+                    },
+                fontSize = TextUnit(17.0f, TextUnitType.Sp)
             )
         }
     }
@@ -1179,12 +1192,67 @@ fun AllMembersList(
             fontSize = TextUnit(16.0f, TextUnitType.Sp),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center)
-        if (members?.isNotEmpty() == true) {
-            LazyColumn(
-                contentPadding = PaddingValues(vertical = 4.dp)
+
+        SearchField(members, group, navController, groupViewModel, authViewModel){function(it)}
+    }
+}
+
+@Composable
+fun SearchField(
+    members: List<Member>?,
+    group: Group?,
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    function: (Boolean) -> Unit
+) {
+    var searchTag by rememberSaveable { mutableStateOf("") }
+
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                Modifier
+                    .padding(horizontal = 8.dp)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = dimensionResource(id = R.dimen.low_elevation),
+                shape = MaterialTheme.shapes.large
             ) {
-                items(members) { member ->
-                    MemberItem(member, group, navController, groupViewModel, authViewModel){function(it)}
+                TextField(
+                    value = searchTag,
+                    onValueChange = { searchTag = it },
+                    modifier = Modifier
+                        .height(55.dp),
+                    placeholder = {
+                        Text(
+                            text = stringResource(id = R.string.search_members),
+                            color = Color.Gray
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent
+                    ),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "",
+                            tint = Color.Gray
+                        )
+                    }
+                )
+            }
+            if (members?.isNotEmpty() == true) {
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(members.filter { member -> member.fullName.contains(searchTag, ignoreCase = true) }) { member ->
+                        MemberItem(member, group, navController, groupViewModel, authViewModel){function(it)}
+
                 }
             }
         }

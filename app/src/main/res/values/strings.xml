@@ -87,7 +87,7 @@
     <string name="link_up">Colleagues</string>
     <string name="new_group">New group</string>
     <string name="social">Social groups</string>
-    <string name="chart_header">Your activity rate</string>
+    <string name="chart_header">Activity rate</string>
     <string name="edit_Profile">Edit profile</string>
     <string name="notifications">Notifications</string>
     <string name="help">Help</string>
@@ -126,4 +126,8 @@
     <string name="cancel">Cancel</string>
     <string name="delete_activity_description">Are you sure you want to delete this activity?</string>
     <string name="archive_activity_description">Are you sure you want to move this activity to archive?</string>
+    <string name="payment_record">Activity records</string>
+    <string name="no_paid_activities">This member has not paid for any activities yet</string>
+    <string name="no_outstanding_activities">This member has no outstanding activities to pay for.</string>
+    <string name="search_members">Enter a member\'s name to search</string>
 </resources>

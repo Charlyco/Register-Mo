@@ -895,7 +895,7 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (showCompleteDialog) {
-                AdminActionDialog(activityViewModel, event!!, action, descriptionText) {showCompleteDialog = it}
+                AdminActionDialog(activityViewModel, event!!, action, descriptionText, navController) {showCompleteDialog = it}
             }
 
             Text(
@@ -994,8 +994,15 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
 }
 
 @Composable
-fun AdminActionDialog(activityViewModel: ActivityViewModel, event: Event, action: String, descriptionText: Int, callback: (Boolean) -> Unit) {
+fun AdminActionDialog(
+    activityViewModel: ActivityViewModel,
+    event: Event,
+    action: String,
+    descriptionText: Int,
+    navController: NavController,
+    callback: (Boolean) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     Dialog(onDismissRequest = { callback(false) }) {
         Surface(
             color = MaterialTheme.colorScheme.background,
@@ -1039,23 +1046,35 @@ fun AdminActionDialog(activityViewModel: ActivityViewModel, event: Event, action
                             when (action) {
                                 AdminActions.COMPLETE.name -> {
                                     coroutineScope.launch {
-                                        activityViewModel.markActivityCompleted(event)
+                                        val response = activityViewModel.markActivityCompleted(event)
+                                        if(response.status) {
+                                            Toast.makeText(context, "Activity completed", Toast.LENGTH_SHORT).show()
+                                            navController.navigateUp()
+                                        }
+                                        callback(false)
                                     }
-                                    callback(false)
                                 }
 
                                 AdminActions.ARCHIVE.name -> {
                                     coroutineScope.launch {
-                                        activityViewModel.archiveActivity(event)
+                                        val response = activityViewModel.archiveActivity(event)
+                                        if(response.status) {
+                                            Toast.makeText(context, "Activity archived", Toast.LENGTH_SHORT).show()
+                                            navController.navigateUp()
+                                        }
+                                        callback(false)
                                     }
-                                    callback(false)
                                 }
 
                                 AdminActions.DELETE.name -> {
                                     coroutineScope.launch {
-                                        activityViewModel.deleteActivity(event)
+                                        val response = activityViewModel.deleteActivity(event)
+                                        if(response.status) {
+                                            Toast.makeText(context, "Activity deleted", Toast.LENGTH_SHORT).show()
+                                            navController.navigateUp()
+                                        }
+                                        callback(false)
                                     }
-                                    callback(false)
                                 }
 
                                 else -> {
