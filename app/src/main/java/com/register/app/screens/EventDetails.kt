@@ -64,16 +64,22 @@ import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import co.yml.charts.common.model.PlotType
@@ -81,6 +87,7 @@ import co.yml.charts.ui.piechart.charts.DonutPieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.dto.Payment
+import com.register.app.enums.AdminActions
 import com.register.app.enums.PaymentMethod
 import com.register.app.model.Member
 import com.register.app.util.DateFormatter
@@ -125,7 +132,9 @@ fun PaymentScreen(
     var showImage by rememberSaveable { mutableStateOf(false) }
     var selectedPayment by rememberSaveable { mutableStateOf<Payment?>(null) }
     ModalBottomSheet(
-        onDismissRequest = { /*TODO*/ },
+        onDismissRequest = {
+            callback(false)
+        },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
         sheetMaxWidth = screenWidth.dp,
@@ -170,8 +179,8 @@ fun ConfirmPaymentDialog(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    var amountPaid by rememberSaveable { mutableStateOf("0.0") }
-    var outstanding by rememberSaveable { mutableStateOf("0.0") }
+    var amountPaid by rememberSaveable { mutableDoubleStateOf(0.0) }
+    var outstanding by rememberSaveable { mutableDoubleStateOf(0.0) }
     val coroutineScope = rememberCoroutineScope()
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val context = LocalContext.current
@@ -191,7 +200,7 @@ fun ConfirmPaymentDialog(
                 ImageLoader(
                     selectedPayment?.imageUrl ?: "",
                     LocalContext.current,
-                    screenHeight - 164,
+                    screenHeight - 180,
                     screenWidth - 16,
                     R.drawable.event
                 )
@@ -205,8 +214,8 @@ fun ConfirmPaymentDialog(
                     shape = MaterialTheme.shapes.small
                 ) {
                     TextField(
-                        value = amountPaid,
-                        onValueChange = { amountPaid = it},
+                        value = amountPaid.toString(),
+                        onValueChange = { amountPaid = it.toDouble()},
                         placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -215,7 +224,10 @@ fun ConfirmPaymentDialog(
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedTextColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-                            )
+                            ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        )
                         )
                 }
                 Surface(
@@ -227,8 +239,8 @@ fun ConfirmPaymentDialog(
                     shape = MaterialTheme.shapes.small
                 ) {
                     TextField(
-                        value = outstanding,
-                        onValueChange = { outstanding = it},
+                        value = outstanding.toString(),
+                        onValueChange = { outstanding = it.toDouble()},
                         placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -237,6 +249,9 @@ fun ConfirmPaymentDialog(
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedTextColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
                         )
                     )
                 }
@@ -330,7 +345,7 @@ fun EventDetailTopBar(
                 contentDescription = "",
                 modifier = Modifier
                     .clickable {
-                        navController.navigateUp()
+                        navController.navigate("group_detail")
                     }
                     .constrainAs(navBtn) {
                         start.linkTo(parent.start, margin = 8.dp)
@@ -639,7 +654,7 @@ fun ViewEventDetails(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val hasUserPaid = groupViewModel.hasPaid.observeAsState().value
+    val hasUserPaid = activityViewModel.hasPaid.observeAsState().value
     var showPaidList by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize()
@@ -759,18 +774,19 @@ fun ViewEventDetails(
                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
             )
         }
-
-        Button(
-            onClick = {
-                navController.navigate("payment") {
-                    launchSingleTop = true
-                }
-            },
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 64.dp, end = 64.dp, top = 32.dp)
+        if (hasUserPaid == false) {
+            Button(
+                onClick = {
+                    navController.navigate("payment") {
+                        launchSingleTop = true
+                    }
+                },
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 64.dp, end = 64.dp, top = 32.dp)
             ) {
-            Text(text = stringResource(id = R.string.pay_now))
+                Text(text = stringResource(id = R.string.pay_now))
+            }
         }
         HorizontalDivider(
             Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
@@ -782,23 +798,21 @@ fun ViewEventDetails(
         }
         if (showPaidList) {
             if (!event?.contributions.isNullOrEmpty()) {
-                event?.contributions?.forEach {
-                    val member: Member? = authViewModel.fetchMemberDetailsByEmail(it.memberEmail)
-                    if (member != null) {
-                        Row(
-                            Modifier
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = member.fullName,
-                                fontSize = TextUnit(14.0f, TextUnitType.Sp)
-                            )
-                            member.memberPost?.let { post ->
-                                Text(text = post,
-                                    fontSize = TextUnit(14.0f, TextUnitType.Sp))
-                            }
+                val memberList  = activityViewModel.paidMembersList.observeAsState().value
+                memberList?.forEach { member ->
+                    Row(
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = member.fullName,
+                            fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                        )
+                        member.memberPost?.let { post ->
+                            Text(text = post,
+                                fontSize = TextUnit(14.0f, TextUnitType.Sp))
                         }
                     }
                 }
@@ -821,10 +835,10 @@ fun ViewEventDetails(
 @Composable
 fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
     val context = LocalContext.current
-    val complianceRate = groupViewModel.getComplianceRate(event?.contributions?.size, event?.groupId)
+    val complianceRate = groupViewModel.getComplianceRate(event?.contributions?.size)
     val pieChatData = PieChartData(slices = listOf(
-        PieChartData.Slice("Complied", complianceRate.contributionSize.toFloat(), Color(context.getColor(R.color.teal_200))),
-        PieChartData.Slice("Not Complies", (complianceRate.groupSize - complianceRate.contributionSize).toFloat(), Color(context.getColor(R.color.app_orange)))
+        PieChartData.Slice("Paid", complianceRate.contributionSize.toFloat(), Color(context.getColor(R.color.teal_200))),
+        PieChartData.Slice("Not paid", (complianceRate.groupSize - complianceRate.contributionSize).toFloat(), Color(context.getColor(R.color.app_orange)))
     ), plotType = PlotType.Donut
     )
     val pieChartConfig = PieChartConfig(
@@ -832,7 +846,7 @@ fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
         showSliceLabels = true,
         labelFontSize = TextUnit(24.0f, TextUnitType.Sp),
         labelColor = MaterialTheme.colorScheme.onBackground,
-        strokeWidth = 42f,
+        strokeWidth = 32f,
         activeSliceAlpha = .9f,
         labelVisible = true,
         isAnimationEnable = true,
@@ -859,6 +873,9 @@ fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
 
 @Composable
 fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, navController: NavController) {
+    var showCompleteDialog by rememberSaveable { mutableStateOf(false) }
+    var action by rememberSaveable { mutableStateOf("") }
+    var descriptionText by rememberSaveable { mutableIntStateOf(0) }
     Surface(
         Modifier
             .fillMaxWidth()
@@ -877,6 +894,10 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (showCompleteDialog) {
+                AdminActionDialog(activityViewModel, event!!, action, descriptionText) {showCompleteDialog = it}
+            }
+
             Text(
                 text = stringResource(id = R.string.admin_actions),
                 Modifier
@@ -895,7 +916,11 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(
-                    Modifier.clickable {  },
+                    Modifier.clickable {
+                        descriptionText = R.string.confirm_event_completion
+                        action = AdminActions.COMPLETE.name
+                        showCompleteDialog = true
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
@@ -908,7 +933,11 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                         color = MaterialTheme.colorScheme.onBackground)
                 }
                 Column(
-                    Modifier.clickable {  },
+                    Modifier.clickable {
+                        descriptionText = R.string.archive_activity_description
+                        action = AdminActions.ARCHIVE.name
+                        showCompleteDialog = true
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
@@ -930,7 +959,11 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(
-                    Modifier.clickable {  },
+                    Modifier.clickable {
+                        descriptionText = R.string.delete_activity_description
+                        action = AdminActions.DELETE.name
+                        showCompleteDialog = true
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
@@ -954,6 +987,95 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                     Text(text = stringResource(id = R.string.generate_report),
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
                         color = MaterialTheme.colorScheme.onBackground)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminActionDialog(activityViewModel: ActivityViewModel, event: Event, action: String, descriptionText: Int, callback: (Boolean) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+    Dialog(onDismissRequest = { callback(false) }) {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            ConstraintLayout(
+                Modifier.padding(8.dp)
+            ) {
+                val (text, confirm, cancel) = createRefs()
+                Text(
+                    text = stringResource(id = descriptionText),
+                    Modifier
+                        .padding(end = 8.dp)
+                        .constrainAs(text) {
+                            top.linkTo(parent.top, margin = 8.dp)
+                            start.linkTo(parent.start, margin = 8.dp)
+                        },
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    textAlign = TextAlign.Start
+                )
+                Row(
+                    Modifier
+                        .clickable { callback(false) }
+                        .constrainAs(cancel) {
+                            start.linkTo(parent.start, margin = 16.dp)
+                            top.linkTo(text.bottom, margin = 32.dp)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = stringResource(id = R.string.cancel))
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "cancel",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Row(
+                    Modifier
+                        .clickable {
+                            when (action) {
+                                AdminActions.COMPLETE.name -> {
+                                    coroutineScope.launch {
+                                        activityViewModel.markActivityCompleted(event)
+                                    }
+                                    callback(false)
+                                }
+
+                                AdminActions.ARCHIVE.name -> {
+                                    coroutineScope.launch {
+                                        activityViewModel.archiveActivity(event)
+                                    }
+                                    callback(false)
+                                }
+
+                                AdminActions.DELETE.name -> {
+                                    coroutineScope.launch {
+                                        activityViewModel.deleteActivity(event)
+                                    }
+                                    callback(false)
+                                }
+
+                                else -> {
+                                    callback(false)
+                                }
+                            }
+                            {}
+                        }
+                        .constrainAs(confirm) {
+                            end.linkTo(parent.end, margin = 16.dp)
+                            top.linkTo(text.bottom, margin = 32.dp)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = stringResource(id = R.string.cancel))
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "cancel",
+                        tint = Color(LocalContext.current.getColor(R.color.teal_200))
+                    )
                 }
             }
         }

@@ -153,34 +153,12 @@ class AuthViewModel @Inject constructor(
         //return role
     }
 
-    fun fetchMemberDetailsById(memberId: Int): Member {
-        return Member(1,
-            "Uche Egemba",
-            "Urchman",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "", "",
-            "ACTIVE",
-            "Member",
-            "",
-            "USER", listOf())
-    }
-
     suspend fun getUserDetails() {
         _userLiveData.value = dataStoreManager.readUserData()!!
     }
 
-    fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
-        val member = Member(1,
-            "Uche Egemba",
-            "Urchman",
-            "+2347037590923",
-            "charlyco835@gmail.com",
-            "12 Achuzilam Streen, Oppsite Divina Hospital, Nekede Owerri", "",
-            "ACTIVE",
-            "Member",
-            "",
-            "USER", listOf())
+    suspend fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
+        val member = authRepository.getMemberDetails(memberEmail!!)
         return member
     }
 

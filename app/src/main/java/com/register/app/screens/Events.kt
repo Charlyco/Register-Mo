@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +51,7 @@ import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun Events(
@@ -116,6 +118,7 @@ fun EventFeedItem(
     val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
+    val coroutineScope = rememberCoroutineScope()
     var likeList = 0
     var unlikeList = 0
     var loveList = 0
@@ -132,7 +135,7 @@ fun EventFeedItem(
             .clickable {
                 navController.navigate("event_detail") {
                     launchSingleTop = true
-                    activityViewModel.setSelectedEvent(eventFeed)
+                    coroutineScope.launch { activityViewModel.setSelectedEvent(eventFeed) }
                 }
             }
             .fillMaxWidth()

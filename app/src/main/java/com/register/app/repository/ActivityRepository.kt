@@ -5,6 +5,7 @@ import com.register.app.dto.CreateEventModel
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
+import com.register.app.model.Member
 import okhttp3.RequestBody
 
 interface ActivityRepository {
@@ -12,4 +13,5 @@ interface ActivityRepository {
     suspend fun uploadImage(image: RequestBody, name: String): ImageUploadResponse
     suspend fun createNewActivity(newActivity: CreateEventModel): GenericResponse
     suspend fun confirmPayment(contribution: ConfirmPaymentModel): GenericResponse
+    suspend fun getMemberDetails(memberEmail: String?): Member?
 }

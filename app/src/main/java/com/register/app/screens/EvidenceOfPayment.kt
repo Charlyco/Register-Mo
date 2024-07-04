@@ -112,7 +112,8 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
             Text(
                 text = stringResource(id = R.string.payment_hint),
                  Modifier.padding(start = 16.dp, end = 16.dp, top = 32.dp),
-                textAlign = TextAlign.Start
+                textAlign = TextAlign.Start,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp)
                 )
 
             Text(

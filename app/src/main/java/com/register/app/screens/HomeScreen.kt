@@ -445,13 +445,14 @@ fun EventItem(
     val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
+    val coroutineScope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier
             .clickable {
                 navController.navigate(route = "event_detail") {
                     launchSingleTop = true
-                    activityViewModel.setSelectedEvent(eventFeed)
+                    coroutineScope.launch { activityViewModel.setSelectedEvent(eventFeed) }
                 }
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),

@@ -465,12 +465,13 @@ fun EventItem(
     activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
+    val coroutineScope = rememberCoroutineScope()
         Row(
             Modifier
                 .clickable {
                     navController.navigate("event_detail") {
                         launchSingleTop = true
-                        activityViewModel.setSelectedEvent(event)
+                        coroutineScope.launch { activityViewModel.setSelectedEvent(event) }
                     }
                 }
                 .padding(vertical = 2.dp),
@@ -493,7 +494,7 @@ fun EventItem(
             }
 
             Text(
-                text = event.eventTitle!!,
+                text = event.eventTitle,
                 fontSize = TextUnit(16.0f, TextUnitType.Sp)
             )
     }
@@ -1139,18 +1140,6 @@ fun AdminItem(admin: Member, membershipDto: MembershipDto) {
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.onBackground
             )
-
-//                Text(
-//                    text = admin.emailAddress,
-//                    Modifier
-//                        .padding(horizontal = 2.dp)
-//                        .constrainAs(email) {
-//                        centerHorizontallyTo(parent)
-//                        top.linkTo(name.bottom, margin = 8.dp)
-//                    },
-//                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
-//                    color = Color.DarkGray
-//                )
 
             Text(
                 text = admin.phoneNumber,

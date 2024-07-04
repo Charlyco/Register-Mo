@@ -46,8 +46,6 @@ class GroupViewModel @Inject constructor(
         val groupLogoLivedata: LiveData<String> = _groupLogoLivedata
         private val _selectedMember: MutableLiveData<MembershipDto?> = MutableLiveData()
         val selectedMember: LiveData<MembershipDto?> = _selectedMember
-        private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
-        val hasPaid: LiveData<Boolean> = _hasUserPaid
         private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
         val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
         private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
@@ -102,28 +100,29 @@ class GroupViewModel @Inject constructor(
         //get membership id
         val member = getMember(group.memberList)
         _membershipId.value = member?.membershipId
-
+        // Get all events for for group and filter into paid and unpaid for user
+        val groupEvents = groupRepository.getAllActivitiesForGroup(group.groupId)
+        val userEmail = dataStoreManager.readUserData()?.emailAddress
+        val paidActivities = groupEvents?.filter { event ->
+            event.contributions?.any { it.memberEmail == userEmail } == true }
+        _paidActivities.value = paidActivities
+        Log.d("PAID", paidActivities.toString())
+        val unpaidActivities = groupEvents?.filter { event ->
+            event.contributions?.none { it.memberEmail == userEmail } == true }
+        _unpaidActivities.value = unpaidActivities
+        Log.d("UNPAID", unpaidActivities.toString())
         //get user activity rate
         val activityRate = groupRepository.getMemberActivityRate(
             membershipId.value, member?.joinedDateTime, group.groupId).data
         _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
-
-        // Get all events for for group and filter into paid and unpaid for user
-        val groupEvents = groupRepository.getAllActivitiesForGroup(group.groupId)
-        val paidActivities = groupEvents?.filter { event ->
-            event.contributions?.any { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true }
-        _paidActivities.value = paidActivities
-        val unpaidActivities = groupEvents?.filter { event ->
-            event.contributions?.none { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true }
-        _unpaidActivities.value = unpaidActivities
         //getMembershipId(group)
     }
 
     private fun calculateActivityRate(activityRate: RateData): Float? {
-        if (activityRate.eventsDue != 0) {
-            return ((activityRate.eventsPaid / activityRate.eventsDue) * 100).toFloat()
+        return if (activityRate.eventsDue > 0) {
+            ((activityRate.eventsPaid / activityRate.eventsDue) * 100).toFloat()
         } else {
-            return 100.0f
+            0.0f
         }
     }
 
@@ -159,18 +158,6 @@ class GroupViewModel @Inject constructor(
     }
 
     fun getAllEventsForGroup(groupName: String?) {
-        _groupEvents.value = listOf(
-            Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
-            Event(13, "Convocation", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Convocation")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(),
-                listOf(), "ACTIVE"),
-            Event(14, "Wedding of Victor", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Wedding of Victor")), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, 200.0, listOf(), listOf(),"ACTIVE"),
-        )
     }
 
 
@@ -220,9 +207,10 @@ class GroupViewModel @Inject constructor(
         return response
     }
 
-    fun getComplianceRate(contributionSize: Int?, groupId: Int?): ComplianceRate {
-        //Get the group detail and check membershipSize
-        return ComplianceRate(23, 45, ((23/45)*100).toDouble())
+    fun getComplianceRate(contributionSize: Int?): ComplianceRate {
+        val groupSize = groupDetailLiveData.value?.memberList?.size
+        val percentage = (contributionSize?.div(groupSize!!))?.times(100)?.toDouble()!!
+        return ComplianceRate(contributionSize?: 0, groupSize!!, percentage)
     }
 
     suspend fun uploadGroupLogo(

@@ -13,6 +13,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.enums.EventStatus
 import com.register.app.model.Event
+import com.register.app.model.Member
 import com.register.app.repository.ActivityRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,11 +41,28 @@ class ActivityViewModel @Inject constructor(
     val activityImageList: LiveData<MutableList<String>?> = _activityImages
     private val _unapprovedPayments: MutableLiveData<List<Payment>?> = MutableLiveData()
     val unapprovedPayments: LiveData<List<Payment>?> = _unapprovedPayments
+    private val _hasUserPaid: MutableLiveData<Boolean> = MutableLiveData(false)
+    val hasPaid: LiveData<Boolean> = _hasUserPaid
+    private val _paidMembersList: MutableLiveData<List<Member>?> = MutableLiveData(listOf())
+    val paidMembersList: LiveData<List<Member>?> = _paidMembersList
 
 
-    fun setSelectedEvent(eventFeed: Event) {
+    suspend fun setSelectedEvent(eventFeed: Event) {
         _selectedEvent.value = eventFeed
-        viewModelScope.launch { getMembershipIdByGroupId(eventFeed.groupId!!) }
+        if (eventFeed.contributions?.any { contributionDto ->
+            contributionDto.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true) {
+            _hasUserPaid.value = true
+        }
+        viewModelScope.launch {
+            getMembershipIdByGroupId(eventFeed.groupId!!)
+            val paidMembers = paidMembersList.value?.toMutableList()
+            eventFeed.contributions?.forEach { contributionDto ->
+                val member = activityRepository.getMemberDetails(contributionDto.memberEmail)
+                paidMembers?.add(member!!)
+            }
+            _paidMembersList.value = paidMembers
+
+        }
     }
 
     private fun getMembershipIdByGroupId(groupId: Int) {
@@ -73,11 +91,13 @@ class ActivityViewModel @Inject constructor(
         inputStream: InputStream,
         mimeType: String?,
         fileNameFromUri: String?) {
+        _loadingState.value = true
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response: ImageUploadResponse = activityRepository.uploadImage(requestBody, fileNameFromUri!!)
         val images = activityImageList.value
         images?.add(response.data.secureUrl)
         _activityImages.value = images
+        _loadingState.value = false
     }
 
     suspend fun createNewActivity(
@@ -107,8 +127,8 @@ class ActivityViewModel @Inject constructor(
 
     suspend fun confirmPayment(
         selectedPayment: Payment?,
-        amountPaid: String,
-        outstanding: String,
+        amountPaid: Double,
+        outstanding: Double,
         groupId: Int,
         paymentMethod: String
     ): GenericResponse {
@@ -119,8 +139,8 @@ class ActivityViewModel @Inject constructor(
             selectedPayment.eventTitle,
             groupId,
             selectedPayment.groupName,
-            amountPaid.toDouble(),
-            outstanding.toDouble(),
+            amountPaid,
+            outstanding,
             paymentMethod,
             dataStoreManager.readUserData()?.fullName!!
             )
@@ -140,5 +160,17 @@ class ActivityViewModel @Inject constructor(
         _paymentEvidence.value = response.data.secureUrl
         _fileName.value = fileNameFromUri
         _loadingState.value = false
+    }
+
+    fun markActivityCompleted(event: Event) {
+        TODO("Not yet implemented")
+    }
+
+    fun archiveActivity(event: Event) {
+        TODO("Not yet implemented")
+    }
+
+    fun deleteActivity(event: Event) {
+        TODO("Not yet implemented")
     }
 }

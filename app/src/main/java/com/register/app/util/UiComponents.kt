@@ -209,7 +209,7 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
 fun ImageLoader(imageUrl: String, context: Context, height: Int, width: Int, placeHolder: Int) {
     val painter = rememberAsyncImagePainter(
         ImageRequest.Builder(context).data(data = imageUrl).apply(block = fun ImageRequest.Builder.() {
-            transformations(CircleCropTransformation())
+            transformations()
             placeholder(placeHolder)
             error(placeHolder)
         }).build()
