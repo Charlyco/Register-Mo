@@ -14,8 +14,8 @@ import com.register.app.model.Member
 interface AuthRepository {
     suspend fun login(loginData: LoginUserModel): AuthResponseWrapper?
     suspend fun signUp(userDetail: SignUpModel): AuthResponseWrapper?
-    suspend fun sendOtp(senOtpModel: SendOtpModel): GenericResponse
-    suspend fun verifyOtp(verifyOtpModel: VerifyOtpModel): GenericResponse
+    suspend fun sendOtp(email: String): GenericResponse?
+    suspend fun verifyOtp(otp: Int, emailAddress: String): GenericResponse
     suspend fun getAllMembersForGroup(memberEmail: List<String>): MemberDetailWrapper?
     suspend fun getMemberDetails(email: String): Member?
 }

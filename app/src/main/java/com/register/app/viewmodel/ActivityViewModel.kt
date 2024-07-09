@@ -108,6 +108,7 @@ class ActivityViewModel @Inject constructor(
         eventDate: String,
         groupName: String,
         groupId: Int,
+        eventType: String,
     ): GenericResponse {
         _loadingState.value = true
         val newActivity = CreateEventModel(
@@ -120,7 +121,8 @@ class ActivityViewModel @Inject constructor(
             groupName,
             groupId,
             levyAmount,
-            EventStatus.CURRENT.name)
+            EventStatus.CURRENT.name,
+            eventType)
         val response = activityRepository.createNewActivity(newActivity)
         _loadingState.value = false
         return response

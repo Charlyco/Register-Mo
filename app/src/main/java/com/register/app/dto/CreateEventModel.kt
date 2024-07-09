@@ -10,5 +10,6 @@ data class CreateEventModel(
     var groupName: String?,
     var groupId: Int?,
     val levyAmount: Double?,
-    val eventStatus: String?
+    val eventStatus: String?,
+    val eventType: String?
 )

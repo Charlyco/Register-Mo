@@ -19,7 +19,8 @@ data class Event(
     val amountRealized: Double?,
     val contributions: List<ContributionDto>?,
     val pendingEvidenceOfPayment: List<Payment>?,
-    val eventStatus: String?
+    val eventStatus: String?,
+    val eventType: String?
 )
 
 data class EventReactionDto(

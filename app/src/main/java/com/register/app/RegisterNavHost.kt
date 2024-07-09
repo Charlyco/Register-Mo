@@ -20,7 +20,7 @@ import com.register.app.screens.HomeScreen
 import com.register.app.screens.LoginScreen
 import com.register.app.screens.MemberDetails
 import com.register.app.screens.ProfileScreen
-import com.register.app.screens.SendOtpScreen
+import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.VerifyOtpScreen
@@ -42,16 +42,16 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
-            SplashScreen(authViewModel, navController)
+            SplashScreen(authViewModel, navController, dataStoreManager)
         }
         composable("signup") {
             Signup(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
-        composable("otp") {
-            SendOtpScreen(authViewModel, navController)
+        composable("sinup_cont") {
+            SignUpCont(authViewModel, navController)
         }
-        composable("otp_verify") {
-            VerifyOtpScreen(authViewModel = authViewModel, navController = navController)
+        composable("otp_verify/{email}") {
+            VerifyOtpScreen(authViewModel = authViewModel, navController = navController, email = it.arguments?.getString("email"))
         }
         composable("signin") {
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
@@ -83,7 +83,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         composable("forum") {
             Forum(forumViewModel = forumViewModel, groupViewModel = groupViewModel, navController = navController)
         }
-        composable("auth") {
+        composable("onboard") {
             AuthScreen(navController = navController, dataStoreManager = dataStoreManager)
         }
         composable("update_group") {

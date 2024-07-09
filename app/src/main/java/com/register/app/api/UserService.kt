@@ -21,6 +21,13 @@ interface UserService {
 
     @POST("auth-service/api/v1/user/group/members")
     fun getAllMembersForGroup(@Body memberEmail: List<String>): Call<MemberDetailWrapper?>
+
     @GET("auth-service/api/v1/user/member/email")
     fun getMemberDetails(@Query("emailAddress") emailAddress: String): Call<Member?>
+
+    @POST("messaging-service/api/otp/email")
+    fun sendOtp(@Query("emailAddress") emailAddress: String): Call<GenericResponse>
+
+    @POST("messaging-service/api/otp/verify")
+    fun verifyOtp(@Query("otp") otp: Int, @Query("emailAddress") emailAddress: String): Call<GenericResponse>
 }

@@ -4,15 +4,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,28 +17,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import com.register.app.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun OtpTextField(
-    modifier: Modifier = Modifier,
     otpCount: Int = 6,
     authViewModel: AuthViewModel?,
+    email: String
 ) {
     var otp by rememberSaveable { mutableStateOf("") }
     var otpLength by rememberSaveable { mutableIntStateOf(0) }
-    var isDone = false
+    var isDone by rememberSaveable { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     BasicTextField(
         value = otp,
@@ -51,7 +50,9 @@ fun OtpTextField(
                 otpLength++
             }
             if (otpLength == otpCount) {
-                authViewModel?.setOtpValue(otp)
+                coroutineScope.launch {
+                    authViewModel?.verifyOtp(otp.toInt(), email)
+                }
                 isDone = true
             }
         },

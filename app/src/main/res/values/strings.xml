@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Register</string>
     <string name="app_logo">This is app logo</string>
-    <string name="splash_text">Cloud-powered record keeping for your organization</string>
+    <string name="splash_text">Cloud-powered \nRecord keeping \nfor your Organization</string>
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
     <string name="email">Email address</string>
@@ -15,7 +15,7 @@
     <string name="fill_info">Fill in your info and lets get started!</string>
     <string name="otp_header">We will send a one time password to this phone number</string>
     <string name="get_otp">Get OTP</string>
-    <string name="verify_otp_header">Enter the 6 digit OTP sent your phone number</string>
+    <string name="verify_otp_header">Enter the 6 digit OTP sent your email address</string>
     <string name="change_number">Change your phone number</string>
     <string name="resend">Resend OTP</string>
     <string name="next">Next</string>
@@ -83,7 +83,7 @@
     <string name="find_friends_desc">You can as well search for your colleagues with their phone number, and then join common groups they already belong.</string>
     <string name="suggested">Suggested groups</string>
     <string name="phone_number">Enter phone number</string>
-    <string name="your_groups">Your groups</string>
+    <string name="your_groups">Groups</string>
     <string name="link_up">Colleagues</string>
     <string name="new_group">New group</string>
     <string name="social">Social groups</string>
@@ -130,4 +130,11 @@
     <string name="no_paid_activities">This member has not paid for any activities yet</string>
     <string name="no_outstanding_activities">This member has no outstanding activities to pay for.</string>
     <string name="search_members">Enter a member\'s name to search</string>
+    <string name="event_type_mandatory">Mandatory contribution</string>
+    <string name="event_type_freewill">Freewill donation</string>
+    <string name="proceed">Proceed</string>
+    <string name="welcome_back">Welcome \n\nBack</string>
+    <string name="explore">Explore</string>
+    <string name="customer_support">Support</string>
+    <string name="top_groups">Top groups</string>
 </resources>

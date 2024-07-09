@@ -71,13 +71,6 @@ fun LoginScreen(
     navController: NavController,
     dataStoreManager: DataStoreManager
 ) {
-    val signInBrush = Brush.linearGradient(
-        listOf(MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.background,
-            MaterialTheme.colorScheme.background,
-            MaterialTheme.colorScheme.background),
-        tileMode = TileMode.Repeated)
-
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
@@ -85,7 +78,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val error = authViewModel.errorLiveData.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
-    var showIndicator by rememberSaveable { mutableStateOf(false) }
+    val showIndicator = authViewModel.progressLiveData.observeAsState().value
 
     Surface(
         modifier = Modifier
@@ -96,14 +89,38 @@ fun LoginScreen(
         ConstraintLayout(
             modifier = Modifier.fillMaxSize()
         ) {
-            val (backBtn, header, emailBox, passwordBox, loginBtn, alternate, indicator) = createRefs()
+            val (backBtn, header, topBg, emailBox, passwordBox, loginBtn, alternate, indicator) = createRefs()
+
+            Image(painter = painterResource(
+                id = R.drawable.auth_bg2),
+                contentDescription = "",
+                modifier = Modifier
+                    .height(360.dp)
+                    .fillMaxWidth()
+                    .constrainAs(topBg) {
+                        top.linkTo(parent.top, margin = 0.dp)
+                        centerHorizontallyTo(parent)
+                    },
+                contentScale = ContentScale.FillBounds,
+                )
+            
+            Text(
+                text = stringResource(id = R.string.welcome_back),
+                fontWeight = FontWeight.Bold,
+                fontSize = TextUnit(48.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.background,
+                modifier = Modifier.constrainAs(header) {
+                    top.linkTo(backBtn.bottom, margin = 40.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                }
+                )
 
             Surface(
                 modifier = Modifier
                     .size(40.dp)
                     .constrainAs(backBtn) {
                         start.linkTo(parent.start, margin = 16.dp)
-                        top.linkTo(parent.top, margin = 12.dp)
+                        top.linkTo(parent.top, margin = 16.dp)
                     },
                 shape = MaterialTheme.shapes.extraLarge,
                 shadowElevation = dimensionResource(id = R.dimen.default_elevation),
@@ -122,64 +139,17 @@ fun LoginScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.constrainAs(header) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(parent.top, margin = 72.dp)
-                }
-            ) {
-                Surface(
-                    Modifier
-                        .padding(vertical = 16.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                topEnd = 8.dp,
-                                topStart = 8.dp,
-                                bottomEnd = 8.dp,
-                                bottomStart = 8.dp
-                            )
-                        )
-                        .size(80.dp),
-                    color = Color.White,
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                ) {
-                    Image(painter = painterResource(
-                        id = R.drawable.app_icon),
-                        contentDescription = "",
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxSize(),
-                        contentScale = ContentScale.FillBounds,
-                    )
-                }
-                Text(text = stringResource(
-                    id = R.string.welcome),
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = TextUnit(22.0f, TextUnitType.Sp),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = stringResource(id = R.string.fill_info),
-                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                    modifier = Modifier.padding(end = 8.dp, top = 8.dp),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
             Surface(
                 modifier = Modifier
                     .width(screenWidth.dp)
                     .height(dimensionResource(id = R.dimen.text_field_height))
                     .constrainAs(emailBox) {
                         centerHorizontallyTo(parent)
-                        centerVerticallyTo(parent)
+                        bottom.linkTo(passwordBox.top, margin = 32.dp)
                     },
-                color = MaterialTheme.colorScheme.onPrimary,
-                shape = MaterialTheme.shapes.large,
-                //border = BorderStroke(1.dp, Color.Gray)
+                color = MaterialTheme.colorScheme.background,
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, Color.Gray)
 
             ) {
                 TextField(
@@ -195,8 +165,8 @@ fun LoginScreen(
                         tint = Color.Gray) },
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
                         unfocusedLabelColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
@@ -209,11 +179,11 @@ fun LoginScreen(
                     .height(dimensionResource(id = R.dimen.text_field_height))
                     .constrainAs(passwordBox) {
                         centerHorizontallyTo(parent)
-                        top.linkTo(emailBox.bottom, margin = 32.dp)
+                        bottom.linkTo(loginBtn.top, margin = 32.dp)
                     },
-                color = MaterialTheme.colorScheme.onSurface,
-                shape = MaterialTheme.shapes.large,
-                //border = BorderStroke(1.dp, Color.Gray)
+                color = MaterialTheme.colorScheme.background,
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, Color.Gray)
 
             ) {
                 TextField(
@@ -254,8 +224,8 @@ fun LoginScreen(
                     },
                     colors = TextFieldDefaults.colors(
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
                         unfocusedLabelColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
@@ -264,35 +234,33 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    showIndicator = true
                     coroutineScope.launch {
                         val response = authViewModel.signIn(email, password)
                         if (error?.isNotBlank() == true) {
-                            showIndicator = false
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
                         if (response?.status == true) {
                             navController.navigate("home") {
-                                popUpTo("welcome") {inclusive = true}
+                                popUpTo("onboard") {inclusive = true}
                             }
                         }else {
                             Toast.makeText(context, "Invalid login credentials", Toast.LENGTH_LONG).show()
                         }
                     }
                           },
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .width(screenWidth.dp)
                     .height(55.dp)
                     .padding(bottom = 4.dp)
                     .constrainAs(loginBtn) {
                         centerHorizontallyTo(parent)
-                        top.linkTo(passwordBox.bottom, margin = 64.dp)
+                        bottom.linkTo(alternate.top, margin = 32.dp)
                     },
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                 colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.background
+                    contentColor = MaterialTheme.colorScheme.background,
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text(text = stringResource(id = R.string.signin))
@@ -302,13 +270,13 @@ fun LoginScreen(
                 color = Color.Transparent,
                 modifier = Modifier.constrainAs(alternate) {
                     centerHorizontallyTo(parent)
-                    bottom.linkTo(parent.bottom, margin = 48.dp)
+                    bottom.linkTo(parent.bottom, margin = 24.dp)
                 }
             ) {
                 SignUpInstead(navController)
             }
 
-            if (showIndicator) {
+            if (showIndicator == true) {
                 Surface(
                     color = Color.Transparent,
                     modifier = Modifier.constrainAs(indicator) {
@@ -339,7 +307,11 @@ fun SignUpInstead(navController: NavController) {
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier
                 .padding(end = 8.dp)
-                .clickable { navController.navigate("otp") },
+                .clickable {
+                    navController.navigate("signup") {
+                        popUpTo("home") {inclusive = true}
+                    }
+                           },
             color = MaterialTheme.colorScheme.secondary
         )
     }

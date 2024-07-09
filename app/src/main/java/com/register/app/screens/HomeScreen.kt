@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Details
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
@@ -44,8 +43,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -79,7 +78,6 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
-import com.register.app.util.DataStoreManager
 import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ActivityViewModel
@@ -117,7 +115,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState(initial = 0))
                         .pullRefresh(refreshState),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.surface
                 ) {
                     HomeScreenContent(
                         modifier = Modifier.padding(it),
@@ -152,8 +150,8 @@ fun HomeScreenContent(
         WelcomeNote()
         SearchSection(groupViewModel, navController)
         DiscoverSection(groupViewModel, homeViewModel, navController)
-        FeedList(homeViewModel, navController, groupViewModel, activityViewModel)
-        SuggestedGroups(homeViewModel, groupViewModel, navController)
+        TopGroups(homeViewModel, groupViewModel, navController)
+        MessaageFeedList(homeViewModel, navController, groupViewModel, activityViewModel)
     }
 }
 
@@ -206,7 +204,7 @@ fun DiscoverSection(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -222,6 +220,8 @@ fun DiscoverSection(
             Surface(
                 Modifier
                     .size(64.dp),
+                color = MaterialTheme.colorScheme.onTertiary,
+                shape = MaterialTheme.shapes.small
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.groups),
@@ -248,15 +248,17 @@ fun DiscoverSection(
             Surface(
                 Modifier
                     .size(64.dp),
+                color = MaterialTheme.colorScheme.onTertiary,
+                shape = MaterialTheme.shapes.small
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.files),
+                    painter = painterResource(id = R.drawable.customer_support),
                     contentDescription = "discover",
                     modifier = Modifier
                         .padding(10.dp)
                         .size(32.dp))
             }
-            Text(text = stringResource(id = R.string.link_up),
+            Text(text = stringResource(id = R.string.customer_support),
                 fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 textAlign = TextAlign.Center)
         }
@@ -266,6 +268,8 @@ fun DiscoverSection(
             Surface(
                 Modifier
                     .size(64.dp),
+                color = MaterialTheme.colorScheme.onTertiary,
+                shape = MaterialTheme.shapes.small
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.forum),
@@ -274,7 +278,7 @@ fun DiscoverSection(
                         .padding(10.dp)
                         .size(32.dp))
             }
-            Text(text = stringResource(id = R.string.social),
+            Text(text = stringResource(id = R.string.explore),
                 fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 textAlign = TextAlign.Center)
         }
@@ -285,6 +289,8 @@ fun DiscoverSection(
             Surface(
                 Modifier
                     .size(64.dp),
+                color = MaterialTheme.colorScheme.onTertiary,
+                shape = MaterialTheme.shapes.small
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.events),
@@ -301,8 +307,8 @@ fun DiscoverSection(
     }
 }
 @Composable
-fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navController: NavController) {
-    val groupList = homeViewModel.suggestedGroupListLiveData.observeAsState().value
+fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navController: NavController) {
+    val groupList = groupViewModel.groupListLiveData.observeAsState().value
     ConstraintLayout(
         Modifier
             .padding(top = 16.dp)
@@ -310,7 +316,7 @@ fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel
     ) {
         val (header, list, showMore) = createRefs()
         Text(
-            text = stringResource(id = R.string.suggested),
+            text = stringResource(id = R.string.top_groups),
             Modifier
                 .constrainAs(header) {
                     start.linkTo(parent.start, margin = 8.dp)
@@ -328,7 +334,11 @@ fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel
                 }
             ) {
                 items(groupList) { group ->
-                    SuggestedGroupItem(group, groupViewModel, navController)
+                    var admins by rememberSaveable { mutableStateOf<List<Member>?>(null) }
+                    LaunchedEffect(key1 = 260) {
+                        admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
+                    }
+                    TopGroupItem(group, admins, groupViewModel, navController)
                 }
             }
         }
@@ -336,75 +346,105 @@ fun SuggestedGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel
 }
 
 @Composable
-fun SuggestedGroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
+fun TopGroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController) {
     val context = LocalContext.current
-    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 32
+    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
+    val coroutineScope = rememberCoroutineScope()
+
     Surface(
         Modifier
-            .size(itemWidth.dp)
-            .padding(bottom = 2.dp, start = 2.dp, end = 2.dp)
+            .width(itemWidth.dp)
+            .padding(horizontal = 4.dp)
+            .height(72.dp)
             .clickable {
-//                navController.navigate("group_detail") { launchSingleTop = true }
-//                groupViewModel.setSelectedGroupDetail(group)
+                coroutineScope.launch {
+                    groupViewModel.setSelectedGroupDetail(group)
+                }
+                navController.navigate("group_detail") { launchSingleTop = true }
             },
-        color = MaterialTheme.colorScheme.surfaceDim,
-        shape = MaterialTheme.shapes.extraSmall
+        color = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.small
     ) {
         ConstraintLayout(
             Modifier
                 .fillMaxWidth()) {
-            val (logo, name, memberCount, type) = createRefs()
+            val (logo, name, description, memberCount, memberIcons) = createRefs()
 
             Surface(
                 Modifier
                     .size(56.dp)
+                    .clip(CircleShape)
                     .constrainAs(logo) {
-                        top.linkTo(parent.top, margin = 4.dp)
-                        centerHorizontallyTo(parent)
+                        start.linkTo(parent.start, margin = 8.dp)
+                        centerVerticallyTo(parent)
                     },
-                shape = MaterialTheme.shapes.large,
                 color = Color.Transparent
             ) {
-                ImageLoader(group.logoUrl?: "", context, 64, 64, R.drawable.download)
+                ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.download)
             }
 
             Text(
                 text = group.groupName,
                 Modifier
-                    .padding(horizontal = 4.dp)
+                    .width((itemWidth - 20).dp)
                     .constrainAs(name) {
-                        top.linkTo(logo.bottom)
-                        centerHorizontallyTo(logo)
+                        top.linkTo(parent.top, margin = 12.dp)
+                        start.linkTo(logo.end, margin = 8.dp)
                     },
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Start
             )
 
-            Text(text = "Group type: ${group.groupType}",
+            Text(text = group.groupDescription?: "",
                 Modifier
-                    .padding(horizontal = 4.dp)
-                    .constrainAs(type) {
-                        top.linkTo(name.bottom)
-                        centerHorizontallyTo(logo)
+                    .width((itemWidth - 20).dp)
+                    .constrainAs(description) {
+                        bottom.linkTo(parent.bottom, margin = 12.dp)
+                        start.linkTo(logo.end, margin = 8.dp)
+
                     },
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground)
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start
+            )
 
-            Text(text = "${group.memberList?.size} members",
-                Modifier.constrainAs(memberCount) {
-                    top.linkTo(type.bottom)
-                    centerHorizontallyTo(logo)
+            Column(
+                Modifier.constrainAs(memberIcons) {
+                    top.linkTo(parent.top, margin = 8.dp)
+                    end.linkTo(parent.end, margin = 8.dp)
                 },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground)
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                admins?.forEach { admin ->
+                    Surface(
+                        Modifier.clip(CircleShape)
+                    ) {
+                        ImageLoader(admin.imageUrl?: "", context, 20, 20, R.drawable.placeholder) }
+                    }
+            }
+
+            Surface(
+                Modifier
+                    .constrainAs(memberCount) {
+                        top.linkTo(memberIcons.bottom, margin = 4.dp)
+                        centerHorizontallyTo(memberIcons)
+                    },
+                color = MaterialTheme.colorScheme.tertiary,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(text = "+${group.memberList?.size}",
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp))
+            }
         }
     }
 }
 
 @Composable
-fun FeedList(
+fun MessaageFeedList(
     homeViewModel: HomeViewModel,
     navController: NavController,
     groupViewModel: GroupViewModel,
@@ -572,79 +612,81 @@ fun HomeTopBar(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val coroutineScope = rememberCoroutineScope()
     val userData = authViewModel.userLideData.observeAsState().value
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp)
-    ) {
-        ProfilePictureLoader(userData)
-        TopAppBar(
-            title = {  Text(
-                text = "Welcome ${userData?.userName}!",
-                color = MaterialTheme.colorScheme.onBackground) } ,
-            modifier = Modifier.width((screenWidth - 40).dp),
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background),
-            actions = {
-                IconButton(
-                    onClick = { isExpanded = !isExpanded }) {
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu))
-                }
-                DropdownMenu(
-                    expanded = isExpanded,
-                    onDismissRequest = { isExpanded = false },
-                    modifier = Modifier.width(160.dp)
+    Surface {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp)
+        ) {
+            ProfilePictureLoader(userData)
+            TopAppBar(
+                title = {  Text(
+                    text = "Welcome ${userData?.userName}!",
+                    color = MaterialTheme.colorScheme.onBackground) } ,
+                modifier = Modifier.width((screenWidth - 40).dp),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface),
+                actions = {
+                    IconButton(
+                        onClick = { isExpanded = !isExpanded }) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu))
+                    }
+                    DropdownMenu(
+                        expanded = isExpanded,
+                        onDismissRequest = { isExpanded = false },
+                        modifier = Modifier.width(160.dp)
                     ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.settings)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        colors = MenuDefaults.itemColors(
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = R.string.settings)) },
+                            onClick = {
+                                isExpanded = false
+                            },
+                            colors = MenuDefaults.itemColors(
 
-                        ),
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(id = R.string.settings)
-                        ) }
-                    )
+                            ),
+                            leadingIcon = { Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = stringResource(id = R.string.settings)
+                            ) }
+                        )
 
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.privacy)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.PrivacyTip,
-                            contentDescription = stringResource(id = R.string.privacy)
-                        ) }
-                    )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = R.string.privacy)) },
+                            onClick = {
+                                isExpanded = false
+                            },
+                            leadingIcon = { Icon(
+                                imageVector = Icons.Default.PrivacyTip,
+                                contentDescription = stringResource(id = R.string.privacy)
+                            ) }
+                        )
 
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.about)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Details,
-                            contentDescription = stringResource(id = R.string.about)
-                        ) }
-                    )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = R.string.about)) },
+                            onClick = {
+                                isExpanded = false
+                            },
+                            leadingIcon = { Icon(
+                                imageVector = Icons.Default.Details,
+                                contentDescription = stringResource(id = R.string.about)
+                            ) }
+                        )
 
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.sign_out)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.ArrowOutward,
-                            contentDescription = stringResource(id = R.string.sign_out)
-                        ) }
-                    )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = R.string.sign_out)) },
+                            onClick = {
+                                isExpanded = false
+                            },
+                            leadingIcon = { Icon(
+                                imageVector = Icons.Default.ArrowOutward,
+                                contentDescription = stringResource(id = R.string.sign_out)
+                            ) }
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -661,7 +703,8 @@ fun ProfilePictureLoader(user: Member?) {
     )
     Surface(
         modifier = Modifier.size(40.dp),
-        shape = MaterialTheme.shapes.extraLarge
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.onTertiary
     ) {
         Image(
             painter = painter,

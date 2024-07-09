@@ -1,5 +1,6 @@
 package com.register.app.repositoryimpls
 
+import android.util.Log
 import com.register.app.api.UserService
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
@@ -21,24 +22,28 @@ import kotlin.coroutines.suspendCoroutine
 
 class AuthRepositoryImpl @Inject constructor(private val userService: UserService): AuthRepository {
     override suspend fun login(loginData: LoginUserModel): AuthResponseWrapper? {
-      return suspendCoroutine { continuation ->
-          val call = userService.signIn(loginData.email, loginData.password)
-          call.enqueue(object : Callback<AuthResponseWrapper> {
-              override fun onResponse(
-                  call: Call<AuthResponseWrapper>,
-                  response: Response<AuthResponseWrapper>
-              ) {
-                  if (response.isSuccessful) {
-                      continuation.resume(response.body())
-                  }
-              }
+        return suspendCoroutine { continuation ->
+            val call = userService.signIn(loginData.email, loginData.password)
+            call.enqueue(object : Callback<AuthResponseWrapper> {
+                override fun onResponse(
+                    call: Call<AuthResponseWrapper>,
+                    response: Response<AuthResponseWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        if (responseCode == 401) {
+                            continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
+                        }
+                    }
+                }
 
-              override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
-                  continuation.resumeWithException(t)
-              }
-
-          })
-      }
+                override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
     }
 
     override suspend fun signUp(userDetail: SignUpModel): AuthResponseWrapper? {
@@ -62,12 +67,46 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
         }
     }
 
-    override suspend fun sendOtp(senOtpModel: SendOtpModel): GenericResponse {
-        TODO("Not yet implemented")
+    override suspend fun sendOtp(email: String): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = userService.sendOtp(email)
+            call.enqueue(object : Callback<GenericResponse>{
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
     }
 
-    override suspend fun verifyOtp(verifyOtpModel: VerifyOtpModel): GenericResponse {
-        TODO("Not yet implemented")
+    override suspend fun verifyOtp(otp: Int, emailAddress: String): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = userService.verifyOtp(otp, emailAddress)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
     }
 
     override suspend fun getAllMembersForGroup(memberEmail: List<String>): MemberDetailWrapper? {

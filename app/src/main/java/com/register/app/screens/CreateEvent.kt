@@ -6,17 +6,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -33,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,7 +41,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,9 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.enums.EventType
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
-import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils
 import com.register.app.util.Utils.formatToYYYYMMDD
@@ -70,7 +69,6 @@ import com.register.app.util.Utils.toMills
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
-import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
 
@@ -126,6 +124,7 @@ fun CreateEventScreen(
     var activityDescription by rememberSaveable { mutableStateOf("")}
     var levyAmount by rememberSaveable { mutableStateOf("") }
     var eventDate by rememberSaveable { mutableStateOf("") }
+    var eventType by rememberSaveable { mutableStateOf(EventType.MANDATORY.name) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     var showCalender by rememberSaveable { mutableStateOf(false) }
     val imageList = activityViewModel.activityImageList.observeAsState().value
@@ -294,6 +293,41 @@ Surface(
                 )
             }
         }
+
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Row(
+                Modifier.clickable {
+                    eventType = EventType.MANDATORY.name
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = eventType == EventType.MANDATORY.name,
+                    onClick = { eventType = EventType.MANDATORY.name },
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+                Text(text = stringResource(id = R.string.event_type_mandatory))
+            }
+
+            Row(
+                Modifier.clickable {
+                    eventType = EventType.FREE_WILL.name
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = eventType == EventType.FREE_WILL.name,
+                    onClick = { eventType = EventType.FREE_WILL.name },
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+                Text(text = stringResource(id = R.string.event_type_freewill))
+            }
+        }
         
         Text(
             text = stringResource(id = R.string.upload_images),
@@ -329,7 +363,9 @@ Surface(
             Button(
                 onClick = { coroutineScope.launch {
                     val response = activityViewModel.createNewActivity(activityTitle,
-                        activityDescription, levyAmount.toDouble(),eventDate, group?.groupName!!, group.groupId  )
+                        activityDescription, levyAmount.toDouble(),eventDate,
+                        group?.groupName!!, group.groupId,
+                        eventType)
                     if (response.status) {
                         Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
                         navController.navigateUp()

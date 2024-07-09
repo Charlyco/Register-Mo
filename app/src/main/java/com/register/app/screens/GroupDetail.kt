@@ -1252,7 +1252,6 @@ fun SearchField(
                 ) {
                     items(members.filter { member -> member.fullName.contains(searchTag, ignoreCase = true) }) { member ->
                         MemberItem(member, group, navController, groupViewModel, authViewModel){function(it)}
-
                 }
             }
         }

@@ -4,24 +4,16 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.messaging.FirebaseMessaging
-import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
-import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.FirebaseTokenModel
-import com.register.app.dto.GenericResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
+import com.register.app.dto.VerifyOtpModel
 import com.register.app.model.Member
-import com.register.app.model.MembershipDto
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.invoke
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.concurrent.timer
 
@@ -37,8 +29,10 @@ class AuthViewModel @Inject constructor(
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
     private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
     val isOtpVerified: LiveData<Boolean> = _isOtpVerified
-    private val _otpLiveData: MutableLiveData<String> = MutableLiveData("")
-    val otpTimer: LiveData<String> = _otpLiveData
+    private val _otpTimer: MutableLiveData<String> = MutableLiveData("")
+    val otpTimer: LiveData<String> = _otpTimer
+    private val _otpLiveData: MutableLiveData<Int> = MutableLiveData()
+    val otpLiveData: LiveData<Int> = _otpLiveData
     private val _phoneNumber: MutableLiveData<String> = MutableLiveData("")
     val phoneNumber: LiveData<String> = _phoneNumber
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData("")
@@ -47,33 +41,28 @@ class AuthViewModel @Inject constructor(
     val userLideData: LiveData<Member?> = _userLiveData
     private val _intendingMemberLiveData: MutableLiveData<Member?> = MutableLiveData()
     val intendedMemberLiveData: LiveData<Member?> = _intendingMemberLiveData
+    private val _signUpModelLiveData: MutableLiveData<SignUpModel> = MutableLiveData()
+    val signUpModelLiveData: LiveData<SignUpModel> = _signUpModelLiveData
 
     suspend fun signUp(
-        firstName: String,
-        lastName: String,
-        email: String,
-        phone: String,
         username: String,
         password: String,
         rePassword: String,
         address: String
     ): Boolean {
-        if (firstName.isBlank()) {
-            _errorLiveData.value = "First name cannot be blank"
-        } else if (lastName.isBlank()) {
-            _errorLiveData.value = "Last name cannot be blank"
-        } else if (email.isBlank()) {
-            _errorLiveData.value = "Email is empty or invalid"
-        } else if (phone.isBlank()) {
-            _errorLiveData.value = "Phone number cannot be blank"
-        }else if (password.length < 6) {
+        if (password.length < 6) {
             _errorLiveData.value = "Password must be at least 6 characters"
         }else if (rePassword != password) {
             _errorLiveData.value = "Password mismatch"
-        } else {
+        } else if (username.isBlank()) {
+            _errorLiveData.value = "Username cannot be blank"
+        }else {
             _progressLiveData.value = true
-            val signUpModel = SignUpModel("$firstName $lastName", phone, email, username, password, address)
-                val response =  authRepository.signUp(signUpModel)
+            val signUpModel = signUpModelLiveData.value
+            signUpModel?.username = username
+            signUpModel?.address = address
+            signUpModel?.password = password
+                val response =  authRepository.signUp(signUpModel!!)
             if (response?.status == true) {
                 dataStoreManager.writeUserData(response.data?.member!!)
                 _progressLiveData.value = false
@@ -86,17 +75,38 @@ class AuthViewModel @Inject constructor(
         return false
     }
 
-    fun setOtpValue(otp: String) {
-        //Call repository method to verify otp
-        //onSuccess, set _isOtpVerified to true
-        //onError, set _errorLiveData to the value of the error
-        _isOtpVerified.value = true
+    suspend fun verifyOtp(otp: Int, email: String) {
+        _progressLiveData.value = true
+        val response = authRepository.verifyOtp(otp, email)
+        _isOtpVerified.value = response.status
+        _progressLiveData.value = false
     }
 
-    suspend fun sendOtp(phoneNumber: String): Boolean {
-        //this is placeholder implementation
-        countDownTimer(1)
-        return true
+    suspend fun sendOtp(
+        firstName: String,
+        lastName: String,
+        email: String,
+        phone: String,
+    ): Boolean {
+        if (firstName.isBlank()) {
+            _errorLiveData.value = "First name cannot be blank"
+        } else if (lastName.isBlank()) {
+            _errorLiveData.value = "Last name cannot be blank"
+        } else if (email.isBlank()) {
+            _errorLiveData.value = "Email is empty or invalid"
+        } else if (phone.isBlank()) {
+            _errorLiveData.value = "Phone number cannot be blank"
+        }else {
+            _progressLiveData.value = true
+            val signUpModel = SignUpModel("$firstName $lastName", phone, email, "", "", "")
+            val response = authRepository.sendOtp(email)
+            _signUpModelLiveData.value = signUpModel
+            _progressLiveData.value = false
+
+            countDownTimer(1)
+            return response?.status!!
+        }
+        return false
     }
 
     private fun countDownTimer(duration: Int) { //A function that creates a countdown timer for OTP value expiration
@@ -106,11 +116,11 @@ class AuthViewModel @Inject constructor(
         timer(period = 1000) {
             if (remainingTime > 0) {
                 val formattedTime = formatTime(remainingTime)
-                _otpLiveData.postValue(formattedTime)
+                _otpTimer.postValue(formattedTime)
                 remainingTime--
             } else if (remainingTime == 0) {
                 _shouldResendOtp.postValue(true)
-                _otpLiveData.postValue("Time Elapsed!")
+                _otpTimer.postValue("Time Elapsed!")
                 cancel()
             }
         }
@@ -172,6 +182,10 @@ class AuthViewModel @Inject constructor(
         val member = authRepository.getMemberDetails(email)
         _intendingMemberLiveData.value = member
         _progressLiveData.value = false
+    }
+
+    fun resendOtp(email: String) {
+        TODO("Not yet implemented")
     }
 
 

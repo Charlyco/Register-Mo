@@ -21,10 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +31,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -52,7 +48,7 @@ import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) {
+fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController, email: String?) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.primary
@@ -124,36 +120,18 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController) 
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = dimensionResource(id = R.dimen.default_elevation)
             ) {
-                LowerVerifySection(authViewModel, navController)
+                LowerVerifySection(authViewModel, navController, email!!)
             }
-
-            Text(
-                text = stringResource(id = R.string.change_number),
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onError,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .clickable {
-                        navController.navigate("otp") {
-                            launchSingleTop = true
-                            popUpTo("verify_otp") { inclusive = true }
-                        }
-                    }
-                    .constrainAs(changeNUmber) {
-                        centerHorizontallyTo(parent)
-                        top.linkTo(lowerSection.top, margin = 8.dp)
-                    }
-            )
         }
     }
 }
 
 @Composable
-fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavController) {
-    val timer = authViewModel.otpTimer?.observeAsState()?.value
+fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavController, email: String) {
+    val timer = authViewModel.otpTimer.observeAsState().value
     val enableResendButton =authViewModel.shouldResendOtp.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
-    var showIndicator by rememberSaveable { mutableStateOf(false) }
+    val showIndicator = authViewModel.progressLiveData.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     val isOtPVerified = authViewModel.isOtpVerified.observeAsState().value
 
@@ -186,13 +164,17 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                 },
             color = Color.Transparent
         ) {
-            OtpTextField(authViewModel = authViewModel)
+            OtpTextField(authViewModel = authViewModel, email = email)
         }
 
         if (enableResendButton == true) {
             Text(
                 text = stringResource(id = R.string.resend),
-                modifier = Modifier.constrainAs(timerText) {
+                modifier = Modifier
+                    .clickable {
+                        coroutineScope.launch {
+                            authViewModel.resendOtp(email)}}
+                    .constrainAs(timerText) {
                     top.linkTo(otpBox.bottom, margin = 4.dp)
                     end.linkTo(otpBox.end)
                 },
@@ -216,7 +198,7 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        navController.navigate("signup") {
+                        navController.navigate("sinup_cont") {
                             launchSingleTop = true
                         }
                     }
@@ -238,11 +220,11 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text(text = stringResource(id = R.string.next))
+                Text(text = stringResource(id = R.string.proceed))
             }
         }
 
-        if (showIndicator) {
+        if (showIndicator == true) {
             Surface(
                 modifier = Modifier.constrainAs(indicator) {
                     centerHorizontallyTo(parent)

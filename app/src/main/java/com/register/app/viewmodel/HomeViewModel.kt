@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.register.app.dto.ReactionType
 import com.register.app.dto.ScreenLoadState
+import com.register.app.enums.EventType
 import com.register.app.model.Event
 import com.register.app.model.EventCommentDto
 import com.register.app.model.EventReactionDto
@@ -40,7 +41,7 @@ init {
             Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", mutableListOf("", "", ""), listOf(
                 EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")
             ), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, listOf(), listOf(), "ACTIVE"),)
+                "Charles", "IHS-2008", 0, 0.0, 0.0, listOf(), listOf(), "ACTIVE", EventType.MANDATORY.name))
         _eventFeeds.value = events
     }
 
