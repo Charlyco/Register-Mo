@@ -32,9 +32,6 @@ import com.register.app.util.DataStoreManager
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -48,6 +45,10 @@ class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
     private val authRepository: AuthRepository): ViewModel(){
+        private val _complianceRate: MutableLiveData<ComplianceRate> = MutableLiveData()
+        val complianceRate: LiveData<ComplianceRate> = _complianceRate
+        private val _isAdminLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
+        val isUserAdminLiveData: LiveData<Boolean> = _isAdminLiveData
         private val _groupLogoLivedata: MutableLiveData<String> = MutableLiveData()
         val groupLogoLivedata: LiveData<String> = _groupLogoLivedata
         private val _selectedMember: MutableLiveData<MembershipDto?> = MutableLiveData()
@@ -83,6 +84,8 @@ class GroupViewModel @Inject constructor(
         val logoUrl: LiveData<String?> = _logoUrl
         private val _loadingState: MutableLiveData<Boolean?> = MutableLiveData(false)
         val loadingState: LiveData<Boolean?> = _loadingState
+    private val _paymentRateLiveData: MutableLiveData<RateData?> = MutableLiveData()
+    val paymentRateLiveData: LiveData<RateData?> = _paymentRateLiveData
 
     init {
         viewModelScope.launch { getAllGroupsForUser() }
@@ -128,11 +131,12 @@ class GroupViewModel @Inject constructor(
         //get user activity rate
         val activityRate = groupRepository.getMemberActivityRate(
             membershipId.value, member?.joinedDateTime, group.groupId).data
+        _paymentRateLiveData.value = activityRate
         _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
         //getMembershipId(group)
     }
 
-    private fun calculateActivityRate(activityRate: RateData): Float? {
+    private fun calculateActivityRate(activityRate: RateData): Float {
         return if (activityRate.eventsDue > 0) {
             ((activityRate.eventsPaid / activityRate.eventsDue) * 100).toFloat()
         } else {
@@ -144,13 +148,13 @@ class GroupViewModel @Inject constructor(
         return memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
     }
 
-    fun isUserAdmin(): Boolean {
-        var isAdmin: Boolean? = null
-        viewModelScope.launch {
-            //isAdmin = dataStoreManager.readUserRoleData()!! == MemberOffice.PRESIDENT.name ||
-                    //dataStoreManager.readUserRoleData() == MemberOffice.SECRETARY.name
+    suspend fun isUserAdmin() {
+        val isAdmin = groupAdminList.value.let {admins -> admins?.find {
+            it.emailAddress == dataStoreManager.readUserData()?.emailAddress } }
+        Log.d("IS ADMIN", "isUserAdmin: $isAdmin")
+        if (isAdmin != null) {
+            _isAdminLiveData.value = true
         }
-        return true //isAdmin?: false
     }
 
     fun getIndividualMembershipRequest(emailAddress: String) {
@@ -181,21 +185,6 @@ class GroupViewModel @Inject constructor(
             return member?.membershipId
     }
 
-    private suspend fun getMembershipIdByGroupId(groupId: Int){
-            //val grou
-            //val member = group?.memberList?.find { it.email == dataStoreManager.readUserEmailData() }
-            //member?.membershipId ?: ""
-            _membershipId.value = "2123"
-    }
-
-    fun getUserActivityRate(groupId: Int?) {
-        viewModelScope.launch {
-            val user = dataStoreManager.readUserData()
-            // get date registered and membership Id
-
-        }
-    }
-
     suspend fun saveGroupUpdate(
         groupId: Int,
         groupName: String,
@@ -221,10 +210,10 @@ class GroupViewModel @Inject constructor(
         return response
     }
 
-    fun getComplianceRate(contributionSize: Int?): ComplianceRate {
-        val groupSize = groupDetailLiveData.value?.memberList?.size
-        val percentage = (contributionSize?.div(groupSize!!))?.times(100)?.toDouble()!!
-        return ComplianceRate(contributionSize?: 0, groupSize!!, percentage)
+    suspend fun getComplianceRate(event: Event) {
+        val groupSize = groupListLiveData.value?.find { it.groupId == event.groupId }?.memberList?.size
+        val percentage = (event.contributions?.size?: 0.div(groupSize!!)).times(100).toDouble()
+        _complianceRate.value = ComplianceRate(event.contributions?.size?: 0, groupSize!!, percentage)
     }
 
     suspend fun uploadGroupLogo(
@@ -324,5 +313,9 @@ class GroupViewModel @Inject constructor(
         _loadingState.value = true
         Log.d("PULLREFRESH", "Refreshing")
         val response = groupRepository?.getGroupDetails(groupId)
+        _loadingState.value = false
+        if (response != null) {
+            setSelectedGroupDetail(response)
+        }
     }
 }

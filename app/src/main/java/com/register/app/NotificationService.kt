@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
@@ -33,5 +34,9 @@ class NotificationService : FirebaseMessagingService() {
                 Log.d("FCM", "Token: $token")
             }
         }
+    }
+
+    override fun onMessageReceived(message: RemoteMessage) {
+        super.onMessageReceived(message)
     }
 }

@@ -324,6 +324,7 @@ fun EventDetailTopBar(
 ) {
     //val topBarWidth = LocalConfiguration.current.screenWidthDp - 32
     //val payment = activityViewModel.unapprovedPayments.observeAsState().value
+    val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     val context = LocalContext.current
     Surface(
         Modifier
@@ -345,7 +346,7 @@ fun EventDetailTopBar(
                 contentDescription = "",
                 modifier = Modifier
                     .clickable {
-                        navController.navigate("group_detail")
+                        navController.navigateUp()
                     }
                     .constrainAs(navBtn) {
                         start.linkTo(parent.start, margin = 8.dp)
@@ -361,7 +362,7 @@ fun EventDetailTopBar(
                 }
             )
             
-            if (groupViewModel.isUserAdmin()) {
+            if (isUserAdmin == true) {
                  Box(
                      Modifier
                          .size(32.dp)
@@ -656,6 +657,7 @@ fun ViewEventDetails(
     val coroutineScope = rememberCoroutineScope()
     val hasUserPaid = activityViewModel.hasPaid.observeAsState().value
     var showPaidList by rememberSaveable { mutableStateOf(false) }
+    val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     Column(
         Modifier.fillMaxSize()
     ) {
@@ -825,7 +827,7 @@ fun ViewEventDetails(
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-        if (groupViewModel.isUserAdmin()) {
+        if (isUserAdmin == true) {
             AdminActions(event, groupViewModel, activityViewModel, navController)
         }
     }
@@ -835,10 +837,10 @@ fun ViewEventDetails(
 @Composable
 fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
     val context = LocalContext.current
-    val complianceRate = groupViewModel.getComplianceRate(event?.contributions?.size)
+    val complianceRate = groupViewModel.complianceRate.observeAsState().value
     val pieChatData = PieChartData(slices = listOf(
-        PieChartData.Slice("Paid", complianceRate.contributionSize.toFloat(), Color(context.getColor(R.color.teal_200))),
-        PieChartData.Slice("Not paid", (complianceRate.groupSize - complianceRate.contributionSize).toFloat(), Color(context.getColor(R.color.app_orange)))
+        PieChartData.Slice("Paid", complianceRate?.contributionSize?.toFloat()!!, Color(context.getColor(R.color.teal_200))),
+        PieChartData.Slice("Not paid", (complianceRate.groupSize.minus(complianceRate.contributionSize)).toFloat(), Color(context.getColor(R.color.app_orange)))
     ), plotType = PlotType.Donut
     )
     val pieChartConfig = PieChartConfig(

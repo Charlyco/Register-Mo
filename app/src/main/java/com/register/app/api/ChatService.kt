@@ -2,6 +2,7 @@ package com.register.app.api
 
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.UserChatMessages
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -13,4 +14,6 @@ interface ChatService {
     fun verifyFirebaseToken(@Body firebaseTokenModel: FirebaseTokenModel): Call<GenericResponse>
     @PUT("auth-service/api/v1/user/firebase/update")
     fun registerFirebaseToken(@Body firebaseTokenModel: FirebaseTokenModel): Call<GenericResponse>
+
+    fun getUserChatMessages(username: String): Call<UserChatMessages>
 }

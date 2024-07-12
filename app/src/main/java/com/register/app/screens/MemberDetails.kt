@@ -60,7 +60,6 @@ import com.register.app.model.Event
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.util.CircularIndicator
-import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
@@ -68,7 +67,6 @@ import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
-import retrofit2.Callback
 
 @Composable
 fun MemberDetails(groupViewModel: GroupViewModel, authViewModel: AuthViewModel,activityViewModel: ActivityViewModel, navController: NavController) {

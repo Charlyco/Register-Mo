@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,9 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -44,7 +40,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.BottomNavBar
 import com.register.app.util.ImageLoader
@@ -55,11 +51,12 @@ import com.register.app.viewmodel.GroupViewModel
 fun ProfileScreen(
     authViewModel: AuthViewModel,
     groupViewModel: GroupViewModel,
-    navController: NavHostController
+    navController: NavController
 ) {
     Scaffold(
         topBar = {},
-        bottomBar = { BottomNavBar(navController = navController)}
+        bottomBar = { BottomNavBar(navController = navController)},
+        containerColor = MaterialTheme.colorScheme.background
     ) {
         ProfileScreenUi(Modifier.padding(it), authViewModel, groupViewModel, navController)
     }
@@ -70,7 +67,7 @@ fun ProfileScreenUi(
     modifier: Modifier,
     authViewModel: AuthViewModel,
     groupViewModel: GroupViewModel,
-    navController: NavHostController
+    navController: NavController
 ) {
     val context = LocalContext.current
     val user = authViewModel.userLideData.observeAsState().value
@@ -84,19 +81,17 @@ fun ProfileScreenUi(
     ) {
         val (bgImage, profilePic, name, phone, address, card) = createRefs()
 
-        Image(
-            painter = painterResource(id = R.drawable.interior),
-            contentDescription = "",
-            contentScale = ContentScale.FillBounds,
+        Surface(
             modifier = Modifier
-                .height(240.dp)
+                .height(120.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 63.dp, bottomEnd = 64.dp))
+                .clip(RoundedCornerShape(bottomStart = 42.dp, bottomEnd = 42.dp))
                 .constrainAs(bgImage) {
                     top.linkTo(parent.top)
                     centerHorizontallyTo(parent)
-                }
-            )
+                },
+            color = MaterialTheme.colorScheme.primary
+            ){}
         Surface(
             Modifier
                 .size(160.dp)
@@ -105,9 +100,9 @@ fun ProfileScreenUi(
                     top.linkTo(bgImage.bottom, margin = (-70).dp)
                     centerHorizontallyTo(parent)
                 },
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
         ) {
-            ImageLoader(imageUrl = "", context = context, height = 158, width = 158, placeHolder = R.drawable.placeholder)
+            ImageLoader(imageUrl = user?.imageUrl?: "", context = context, height = 158, width = 158, placeHolder = R.drawable.placeholder)
         }
 
         Text(
@@ -166,7 +161,11 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable {  }
+                        .clickable {
+                            navController.navigate("edit_profile") {
+                                launchSingleTop = true
+                            }
+                        }
                 ) {
                     val (icon, label, arrow) = createRefs()
                     
@@ -343,7 +342,13 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp, bottom = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable {  }
+                        .clickable {
+                            navController.navigate("signin") {
+                                popUpTo("home") {
+                                    inclusive = true
+                                }
+                            }
+                        }
                 ) {
                     val (icon, label, arrow) = createRefs()
 

@@ -3,8 +3,10 @@ package com.register.app.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.register.app.dto.ReactionType
 import com.register.app.dto.ScreenLoadState
+import com.register.app.enums.EventStatus
 import com.register.app.enums.EventType
 import com.register.app.model.Event
 import com.register.app.model.EventCommentDto
@@ -12,13 +14,18 @@ import com.register.app.model.EventReactionDto
 import com.register.app.model.Group
 import com.register.app.model.MembershipDto
 import com.register.app.model.MembershipRequest
+import com.register.app.repository.GroupRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val dataStoreManager: DataStoreManager): ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val dataStoreManager: DataStoreManager,
+    private val groupRepository: GroupRepository
+): ViewModel() {
     private val _suggestedGroupLiveData: MutableLiveData<List<Group>> = MutableLiveData()
     val suggestedGroupListLiveData: LiveData<List<Group>> = _suggestedGroupLiveData
     private val _loadingState: MutableLiveData<ScreenLoadState>? = MutableLiveData()
@@ -27,8 +34,10 @@ class HomeViewModel @Inject constructor(private val dataStoreManager: DataStoreM
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
 
 init {
-    getEventFeeds()
-    getSuggestedGroups()
+    viewModelScope.launch {
+        getEventFeeds()
+        getSuggestedGroups()
+    }
 }
 
     private fun getSuggestedGroups() {
@@ -36,13 +45,19 @@ init {
         _suggestedGroupLiveData.value = groups
     }
 
-    private fun getEventFeeds() {
-        val events = listOf(
-            Event(12, "Birthday", "Isuikwuato High School 2008", LocalDateTime.now().toString(), "", mutableListOf("", "", ""), listOf(
-                EventCommentDto(1, "charlyco", LocalDateTime.now().toString(), " Nice one", listOf(), "Birthday")
-            ), listOf(EventReactionDto(0, "charlyco", "", ReactionType.LIKE.name, 1)),
-                "Charles", "IHS-2008", 0, 0.0, 0.0, listOf(), listOf(), "ACTIVE", EventType.MANDATORY.name))
-        _eventFeeds.value = events
+    private suspend fun getEventFeeds() {
+        val userGroups = dataStoreManager.readUserData()?.groupIds
+        val events = mutableListOf<Event>()
+        userGroups?.forEach { groupId ->
+            groupRepository.getAllActivitiesForGroup(groupId)?.forEach { event ->
+                if (event.eventStatus == EventStatus.CURRENT.name) {
+                    events.add(event)
+                }
+            }
+        }
+        if (events.isNotEmpty()) {
+            _eventFeeds.value = events
+        }
     }
 
     fun refreshHomeContents() {

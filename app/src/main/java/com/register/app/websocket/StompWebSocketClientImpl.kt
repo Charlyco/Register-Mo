@@ -1,0 +1,70 @@
+package com.register.app.websocket
+
+import android.util.Log
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import ua.naiksoftware.stomp.Stomp
+import com.google.gson.Gson
+import com.register.app.dto.ChatMessageResponse
+
+class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
+    private var client = Stomp.over(Stomp.ConnectionProvider.OKHTTP, url)
+
+    private val compositeDisposable = CompositeDisposable()
+
+    private var subscription: Disposable? = null
+
+    override suspend fun connect() {
+        client.connect()
+        client.withClientHeartbeat(1000 * 30)
+        val disposable = client.lifecycle().subscribe {
+            Log.d("STOMP", "LIFECYCLE --- ${it.type}: ${it?.exception?.message}")
+        }
+        compositeDisposable.add(disposable)
+    }
+
+    override suspend fun subscribe(path: String, callback: (topicMessage: ChatMessageResponse) -> Unit) {
+        if (subscription !=null) {
+            if (!subscription?.isDisposed!!) {
+                subscription?.dispose()
+            }
+        }
+        subscription = client.topic(path).subscribe({ message ->
+            val chatMessage = Gson().fromJson(message.payload, ChatMessageResponse::class.java)
+            callback(chatMessage)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+        })
+    }
+
+    override suspend fun sendMessage(
+        path: String,
+        message: String,
+        onSend: (path: String, message: String) -> Unit
+    ) {
+        val disposable = client.send(path, message).subscribe({
+            Log.d("IdeatellerStomp", "SENT")
+            onSend(path, message)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+        })
+        compositeDisposable.add(disposable)
+    }
+
+    override suspend fun close() {
+        client.disconnect()
+        compositeDisposable.dispose()
+    }
+
+    companion object {
+        private var INSTANCE: StompWebSocketClientImpl? = null
+
+        fun getInstance(socketUrl: String): StompWebSocketClientImpl {
+            if (INSTANCE == null) {
+                INSTANCE = StompWebSocketClientImpl(socketUrl)
+            }
+
+            return INSTANCE!!
+        }
+    }
+}

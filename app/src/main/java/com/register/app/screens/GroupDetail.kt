@@ -103,12 +103,13 @@ fun GroupDetail(
 ) {
     var showAllMembers by rememberSaveable{ mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     Scaffold(
         topBar = { GroupDetailTopBar(navController, group, groupViewModel){showAllMembers = it} },
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
-            AllMembersList(group, groupViewModel, authViewModel, navController) {shouldShow -> showAllMembers = shouldShow}
+            AllMembersList(group, groupViewModel, authViewModel, navController, isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
         }
     }
 }
@@ -123,6 +124,7 @@ fun GroupDetailTopBar(
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
     val coroutineScope = rememberCoroutineScope()
+    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     TopAppBar(
         title = { Text(
             text = group?.groupName!!,
@@ -155,7 +157,7 @@ fun GroupDetailTopBar(
             DropdownMenu(
                 expanded = isExpanded,
                 onDismissRequest = { isExpanded = false }) {
-                if (groupViewModel.isUserAdmin()) {
+                if (isAdmin == true) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.update_group)) },
                         onClick = {
@@ -269,10 +271,11 @@ fun GroupDetailScreen(
 fun ActivityRate(groupViewModel: GroupViewModel) {
     val context = LocalContext.current
     val activityRate = groupViewModel.activityRateLiveData.observeAsState().value
+    val paymentRate = groupViewModel.paymentRateLiveData.observeAsState().value
     val chartData = PieChartData(
         slices = listOf(
             PieChartData.Slice("Contributions made", activityRate!!, Color(color = context.getColor(R.color.teal_200))),
-            PieChartData.Slice("Contributions due", (100 - activityRate), Color(context.getColor(R.color.app_orange)))),
+            PieChartData.Slice("Contributions due", (100.minus(activityRate)), Color(context.getColor(R.color.app_orange)))),
         plotType = PlotType.Donut
     )
 
@@ -305,7 +308,7 @@ fun ActivityRate(groupViewModel: GroupViewModel) {
             fontSize = TextUnit(17.0f, TextUnitType.Sp)
             )
         Text(
-            text = "You have paid for 3/5 contribution",
+            text = "You have paid for ${paymentRate?.eventsPaid}/${paymentRate?.eventsDue} activities",
             modifier = Modifier.constrainAs(detail) {
                 top.linkTo(title.bottom, margin = 4.dp)
                 centerHorizontallyTo(parent)
@@ -1025,6 +1028,7 @@ fun GroupAdminHeader(group: Group?, groupViewModel: GroupViewModel, showAdminLis
 @Composable
 fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
     val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
+    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     if (group?.memberList?.isNotEmpty() == true) {
         val loadingState = groupViewModel.loadingState.observeAsState().value
         val adminList: List<Member>? = groupViewModel.groupAdminList.observeAsState().value
@@ -1056,14 +1060,18 @@ fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController:
                             AdminItem(admin, membershipDto)
                         }
                     }
-                    if (groupViewModel.isUserAdmin()) {
+                    if (isAdmin == true) {
                         item{
                             Surface(
                                 Modifier
                                     .height(200.dp)
                                     .width(itemWidth.dp)
                                     .padding(horizontal = 8.dp)
-                                    .clickable { TODO("to be implemented") },
+                                    .clickable {
+                                        navController.navigate("modify_admin") {
+                                            launchSingleTop = true
+                                        }
+                                    },
                                 shape = MaterialTheme.shapes.small,
                                 shadowElevation = dimensionResource(id = R.dimen.default_elevation),
                                 color = MaterialTheme.colorScheme.background
@@ -1173,6 +1181,7 @@ fun AllMembersList(
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
     navController: NavController,
+    isUserAdmin: Boolean?,
     function: (show: Boolean) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

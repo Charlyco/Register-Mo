@@ -94,7 +94,7 @@ BottomAppBar(
                         topStart = 24.dp
                     )
                 ),
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.tertiary,
             tonalElevation = 4.dp,
             windowInsets = BottomAppBarDefaults.windowInsets
         ) {
@@ -193,6 +193,11 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
                         text = { Text(text = stringResource(id = R.string.sign_out)) },
                         onClick = {
                             isExpanded = false
+                            navController.navigate("signin") {
+                                popUpTo("home") {
+                                    inclusive = true
+                                }
+                            }
                         },
                         leadingIcon = { Icon(
                             imageVector = Icons.Default.ArrowOutward,

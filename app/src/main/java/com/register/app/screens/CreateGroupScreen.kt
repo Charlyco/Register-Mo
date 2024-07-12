@@ -121,7 +121,8 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                    .fillMaxWidth()
                    .verticalScroll(scrollState)
            ) {
-               val (closeBtn, title, divider, name, nameBox, description, descriptionBox, office, officeSelector, logo, uploadBtn, type, createBtn, indicator) = createRefs()
+               val (closeBtn, title, divider, name, nameBox, description, descriptionBox,
+                   office, officeSelector, logo, uploadBtn, type, createBtn, indicator) = createRefs()
 
                Surface(
                    Modifier
@@ -364,6 +365,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                            if (response.groupName == groupName) {
                                Toast.makeText(context, "Group Created Successfully", Toast.LENGTH_SHORT).show()
                                groupViewModel.showCreateGroupSheet.postValue(false)
+                               groupViewModel.isUserAdmin() //grants the user admin rights
                                navController.navigate("group_detail")
                                groupViewModel.setSelectedGroupDetail(response)
                            }

@@ -74,7 +74,7 @@ fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager)
            Button(
                onClick = {
                    navController.navigate("signin") {
-                       popUpTo("splash") {
+                       popUpTo("onboard") {
                            inclusive = true }
                    }
                          },

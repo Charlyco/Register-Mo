@@ -151,7 +151,7 @@ fun HomeScreenContent(
         SearchSection(groupViewModel, navController)
         DiscoverSection(groupViewModel, homeViewModel, navController)
         TopGroups(homeViewModel, groupViewModel, navController)
-        MessaageFeedList(homeViewModel, navController, groupViewModel, activityViewModel)
+        ActivityFeedList(homeViewModel, navController, groupViewModel, activityViewModel)
     }
 }
 
@@ -359,6 +359,7 @@ fun TopGroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewM
             .clickable {
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
+                    groupViewModel.isUserAdmin()
                 }
                 navController.navigate("group_detail") { launchSingleTop = true }
             },
@@ -444,7 +445,7 @@ fun TopGroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewM
 }
 
 @Composable
-fun MessaageFeedList(
+fun ActivityFeedList(
     homeViewModel: HomeViewModel,
     navController: NavController,
     groupViewModel: GroupViewModel,
@@ -492,9 +493,12 @@ fun EventItem(
     Surface(
         modifier = Modifier
             .clickable {
+                coroutineScope.launch {
+                    activityViewModel.setSelectedEvent(eventFeed)
+                    groupViewModel.getComplianceRate(eventFeed)
+                }
                 navController.navigate(route = "event_detail") {
                     launchSingleTop = true
-                    coroutineScope.launch { activityViewModel.setSelectedEvent(eventFeed) }
                 }
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -693,7 +697,7 @@ fun HomeTopBar(
 @Composable
 fun ProfilePictureLoader(user: Member?) {
     val painter = rememberAsyncImagePainter(
-        ImageRequest.Builder(LocalContext.current).data(data = "imageUrl").apply(block = fun ImageRequest.Builder.() {
+        ImageRequest.Builder(LocalContext.current).data(data = user?.imageUrl?: "").apply(block = fun ImageRequest.Builder.() {
             transformations(CircleCropTransformation())
             crossfade(true)
             placeholder(R.drawable.placeholder)

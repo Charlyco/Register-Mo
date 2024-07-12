@@ -74,6 +74,7 @@ dependencies {
     //Dependency Injection
     // hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
+    implementation("com.google.android.libraries.places:places:3.5.0")
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
     // network
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")

@@ -3,13 +3,20 @@ package com.register.app.api
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.MemberDetailWrapper
 import com.register.app.dto.SignUpModel
+import com.register.app.dto.UpdateUserResponse
 import com.register.app.model.Member
+import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface UserService {
@@ -30,4 +37,10 @@ interface UserService {
 
     @POST("messaging-service/api/otp/verify")
     fun verifyOtp(@Query("otp") otp: Int, @Query("emailAddress") emailAddress: String): Call<GenericResponse>
+
+    @Multipart
+    @POST("event-service/api/v1/event/image/upload")
+    fun uploadImage(@Part file: MultipartBody.Part): Call<ImageUploadResponse>
+    @PUT("auth-service/api/v1/user/member/{memberId}/update")
+    fun updateUserData(@Path("memberId") memberId: Int, @Body updateData: Member): Call<UpdateUserResponse>
 }

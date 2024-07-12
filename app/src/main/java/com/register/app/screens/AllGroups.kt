@@ -142,7 +142,10 @@ fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavCo
             .fillMaxWidth()
             .padding(bottom = 2.dp, start = 8.dp, end = 8.dp)
             .clickable {
-                coroutineScope.launch { groupViewModel.setSelectedGroupDetail(group) }
+                coroutineScope.launch {
+                    groupViewModel.setSelectedGroupDetail(group)
+                    groupViewModel.isUserAdmin()
+                }
                 navController.navigate("group_detail") { launchSingleTop = true }
             },
         shadowElevation = dimensionResource(id = R.dimen.low_elevation),

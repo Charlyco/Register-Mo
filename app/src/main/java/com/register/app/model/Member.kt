@@ -5,12 +5,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Member(
     val userId: Int?,
-    val fullName: String,
-    val userName: String?,
-    val phoneNumber: String,
-    val emailAddress: String,
-    val address: String?,
-    val imageUrl: String?,
+    var fullName: String,
+    var userName: String?,
+    var phoneNumber: String,
+    var emailAddress: String,
+    var address: String?,
+    var imageUrl: String?,
     val status: String?,
     val memberPost: String?,
     val signupDateTime: String?,

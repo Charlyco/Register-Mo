@@ -137,4 +137,6 @@
     <string name="explore">Explore</string>
     <string name="customer_support">Support</string>
     <string name="top_groups">Top groups</string>
+    <string name="full_name">Full name</string>
+    <string name="message">Type your message here</string>
 </resources>

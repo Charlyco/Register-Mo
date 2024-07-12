@@ -144,7 +144,7 @@ fun GroupUpdateUi(
                 modifier = Modifier
                     .clickable {
                         val mimeType = imageMimeTypes.joinToString("image/jpg,image/png")
-                        filePicker.launch(mimeType)
+                        filePicker.launch("image/*")
                     }
                     .size(40.dp))
         }

@@ -135,7 +135,11 @@ fun EventFeedItem(
             .clickable {
                 navController.navigate("event_detail") {
                     launchSingleTop = true
-                    coroutineScope.launch { activityViewModel.setSelectedEvent(eventFeed) }
+                    coroutineScope.launch {
+                        activityViewModel.setSelectedEvent(eventFeed)
+                        groupViewModel.getComplianceRate(eventFeed) // calculate the compliance rate of this user and set the value to a liveData
+                        groupViewModel.isUserAdmin() //determine if this user is an admin in the group to which this activity belong
+                    }
                 }
             }
             .fillMaxWidth()

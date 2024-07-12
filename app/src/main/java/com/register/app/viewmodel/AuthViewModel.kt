@@ -6,14 +6,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FirebaseTokenModel
+import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
-import com.register.app.dto.VerifyOtpModel
+import com.register.app.dto.UpdateUserResponse
 import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.InputStream
 import javax.inject.Inject
 import kotlin.concurrent.timer
 
@@ -43,6 +47,8 @@ class AuthViewModel @Inject constructor(
     val intendedMemberLiveData: LiveData<Member?> = _intendingMemberLiveData
     private val _signUpModelLiveData: MutableLiveData<SignUpModel> = MutableLiveData()
     val signUpModelLiveData: LiveData<SignUpModel> = _signUpModelLiveData
+    private val _userProfileImage: MutableLiveData<String?> = MutableLiveData()
+    val userProfileImage: LiveData<String?> = _userProfileImage
 
     suspend fun signUp(
         username: String,
@@ -103,7 +109,7 @@ class AuthViewModel @Inject constructor(
             _signUpModelLiveData.value = signUpModel
             _progressLiveData.value = false
 
-            countDownTimer(1)
+            countDownTimer(2)
             return response?.status!!
         }
         return false
@@ -184,9 +190,42 @@ class AuthViewModel @Inject constructor(
         _progressLiveData.value = false
     }
 
-    fun resendOtp(email: String) {
-        TODO("Not yet implemented")
+    suspend fun resendOtp(email: String) {
+        _progressLiveData.value = true
+        authRepository.sendOtp(email)
+        _progressLiveData.value = false
+        countDownTimer(2)
     }
 
+    suspend fun uploadProfilePic(inputStream: InputStream, mimeType: String?, fileNameFromUri: String?): ImageUploadResponse {
+        val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
+        val response = authRepository.uploadImage(requestBody, fileNameFromUri!!)
+        _progressLiveData.value = true
+        _userProfileImage.value = response.data.secureUrl
+        _progressLiveData.value = false
+        return response
+    }
+
+    suspend fun updateUserData(user: Member?): UpdateUserResponse {
+        _progressLiveData.value = true
+        val response = authRepository.updateUserData(user?.userId!!, user)
+        if (response.status) {
+            _userLiveData.value = response.data
+            dataStoreManager.writeUserData(response.data!!)
+        }
+        _progressLiveData.value = false
+        return response
+    }
+
+    suspend fun updateUserProfilePic(user: Member?): UpdateUserResponse {
+        _progressLiveData.value = true
+        val response = authRepository.updateUserData(user?.userId!!, user)
+        if (response.status) {
+            _userLiveData.value = response.data
+            dataStoreManager.writeUserData(response.data!!)
+        }
+        _progressLiveData.value = false
+        return response
+    }
 
 }

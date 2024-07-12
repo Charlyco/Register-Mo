@@ -1,17 +1,22 @@
 package com.register.app.repositoryimpls
 
 import android.util.Log
+import androidx.core.content.contentValuesOf
 import com.register.app.api.UserService
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.MemberDetailWrapper
 import com.register.app.dto.SendOtpModel
 import com.register.app.dto.SignUpModel
+import com.register.app.dto.UpdateUserResponse
 import com.register.app.dto.VerifyOtpModel
 import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -140,6 +145,51 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                 }
 
                 override fun onFailure(call: Call<Member?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun uploadImage(
+        requestBody: RequestBody,
+        fileNameFromUri: String
+    ): ImageUploadResponse {
+        return suspendCoroutine { continuation ->
+            val file = MultipartBody.Part.createFormData("file", fileNameFromUri, requestBody)
+            val call = userService.uploadImage(file)
+            call.enqueue(object : Callback<ImageUploadResponse> {
+                override fun onResponse(
+                    call: Call<ImageUploadResponse>,
+                    response: Response<ImageUploadResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<ImageUploadResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun updateUserData(memberId: Int, updateData: Member): UpdateUserResponse {
+        return suspendCoroutine { continuation ->
+            val call = userService.updateUserData(memberId, updateData)
+            call.enqueue(object : Callback<UpdateUserResponse> {
+                override fun onResponse(
+                    call: Call<UpdateUserResponse>,
+                    response: Response<UpdateUserResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<UpdateUserResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
             })

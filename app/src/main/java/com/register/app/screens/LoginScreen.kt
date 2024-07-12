@@ -133,7 +133,7 @@ fun LoginScreen(
                         .size(18.dp)
                         .clickable {
                             navController.navigate("auth") {
-                                popUpTo("splash")
+                                popUpTo("splash") {inclusive = true}
                             }
                         },
                     tint = MaterialTheme.colorScheme.primary
@@ -241,7 +241,7 @@ fun LoginScreen(
                         }
                         if (response?.status == true) {
                             navController.navigate("home") {
-                                popUpTo("onboard") {inclusive = true}
+                                popUpTo("signin") {inclusive = true}
                             }
                         }else {
                             Toast.makeText(context, "Invalid login credentials", Toast.LENGTH_LONG).show()
