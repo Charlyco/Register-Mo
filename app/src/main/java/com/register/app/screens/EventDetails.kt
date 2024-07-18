@@ -68,12 +68,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -89,8 +92,7 @@ import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.dto.Payment
 import com.register.app.enums.AdminActions
 import com.register.app.enums.PaymentMethod
-import com.register.app.model.Member
-import com.register.app.util.DateFormatter
+import com.register.app.util.Utils
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
@@ -329,8 +331,8 @@ fun EventDetailTopBar(
     Surface(
         Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            .height(56.dp)
+            .padding(top = 16.dp, start = 8.dp, end = 8.dp),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.onPrimary,
         shadowElevation = dimensionResource(id = R.dimen.default_elevation)
@@ -430,27 +432,32 @@ fun EventDetailContent(
             Modifier
                 .fillMaxSize()) {
             val (eventImages, dotIndicator, evenDetails, tab,
-                commentTab, react) = createRefs()
+                commentTab, date) = createRefs()
 
-            HorizontalPager(
-                state = pageState,
-                contentPadding = PaddingValues(0.dp),
+            Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(horizontal = 8.dp)
                     .constrainAs(eventImages) {
                         top.linkTo(parent.top)
                         centerHorizontallyTo(parent)
-                    }
+                    },
+                shape = MaterialTheme.shapes.large
             ) {
-                event?.imageUrlList?.get(pageState.currentPage)
-                    ?.let { imageUrl  -> ImageLoader(
-                        imageUrl,
-                        context,
-                        280,
-                        screenWidth,
-                        R.drawable.event
-                    ) }
+                HorizontalPager(
+                    state = pageState,
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    event?.imageUrlList?.get(pageState.currentPage)
+                        ?.let { imageUrl  -> ImageLoader(
+                            imageUrl,
+                            context,
+                            280,
+                            screenWidth,
+                            R.drawable.event
+                        ) }
+                }
             }
 
             Row(
@@ -474,20 +481,36 @@ fun EventDetailContent(
             }
 
             Surface(
-                Modifier.constrainAs(react) {
+                Modifier.constrainAs(date) {
                     end.linkTo(eventImages.end, margin = 16.dp)
                     top.linkTo(eventImages.top, margin = 16.dp)
                 },
-                color = Color.Transparent
+                color = MaterialTheme.colorScheme.background,
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
             ) {
-                ReactToEvent(likeList, loveList)
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "",
+                        tint = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        text = Utils.formatToDDMMYYYY(event?.dateCreated!!),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = TextUnit(12.0f, TextUnitType.Sp)
+                        )
+                }
             }
 
             Surface(
                 Modifier
                     .fillMaxWidth()
                     .height(32.dp)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 8.dp)
                     .constrainAs(tab) {
                         top.linkTo(eventImages.bottom, margin = 8.dp)
                         centerHorizontallyTo(parent)
@@ -654,23 +677,58 @@ fun ViewEventDetails(
     activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val hasUserPaid = activityViewModel.hasPaid.observeAsState().value
-    var showPaidList by rememberSaveable { mutableStateOf(false) }
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
-    Column(
+    ConstraintLayout(
         Modifier.fillMaxSize()
     ) {
+        val (levyAmount, description, paymentData, compliance, adminActions) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .constrainAs(levyAmount) {
+                    top.linkTo(parent.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 4.dp)
+                },
+            color = MaterialTheme.colorScheme.primary,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Text(
+                text = "Levy: #${event?.levyAmount}",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+
+        Column(
+            modifier = Modifier.constrainAs(paymentData) {
+                top.linkTo(parent.top, margin = 2.dp)
+                end.linkTo(parent.end, margin = 4.dp)
+            },
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = "${event?.contributions?.size} paid",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+
+            Text(
+                text = "${(groupViewModel.groupDetailLiveData.value?.memberList?.size)?.minus((event?.contributions?.size!!))} unpaid",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+        }
+
         Column(
             Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 8.dp)
+                .fillMaxWidth()
+                .constrainAs(description) {
+                    top.linkTo(levyAmount.bottom, margin = 16.dp)
+                },
+            horizontalAlignment = Alignment.Start
         ) {
-            HorizontalDivider(
-                Modifier.padding(vertical = 8.dp)
-            )
             Text(
                 text = stringResource(id = R.string.description),
-                Modifier.paddingFromBaseline(bottom = 16.dp),
+                Modifier.paddingFromBaseline(bottom = 8.dp),
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
             )
@@ -678,92 +736,110 @@ fun ViewEventDetails(
             Text(
                 text = event?.eventDescription!!,
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                //modifier = Modifier.paddingFromBaseline(bottom = 16.dp)
             )
 
-            HorizontalDivider(
-                Modifier.padding(vertical = 8.dp)
-            )
         }
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .constrainAs(compliance) {
+                    top.linkTo(description.bottom, margin = 8.dp)
+                    //bottom.linkTo(parent.bottom, margin = 8.dp)
+                },
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Compliance(groupViewModel, activityViewModel, event, navController)
+        }
+        if (isUserAdmin == true) {
+            Surface(
+                modifier = Modifier
+                    .constrainAs(adminActions) {
+                        centerHorizontallyTo(parent)
+                        top.linkTo(compliance.bottom, margin = 16.dp)}
+            ){
+                AdminActions(event, groupViewModel, activityViewModel, navController)
+            }
+        }
+    }
+}
 
+@Composable
+fun Compliance(groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, event: Event?, navController: NavController) {
+    val hasUserPaid = activityViewModel.hasPaid.observeAsState().value
+    var showPaidList by rememberSaveable { mutableStateOf(false) }
+    val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val sliderWidth = LocalConfiguration.current.screenWidthDp - 140
+    val percent = (event?.contributions?.size?.times(100))?.div(group?.memberList?.size!!)
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.Start
+    ) {
         Text(
-            text = stringResource(id = R.string.other_details),
-            Modifier
-                .padding(start = 16.dp)
-                .paddingFromBaseline(bottom = 16.dp),
-            fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(16.0f, TextUnitType.Sp))
+            text = stringResource(id = R.string.compliance),
+            modifier = Modifier.paddingFromBaseline(bottom = 8.dp),
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
+        )
 
         Row(
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Group: ",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = event?.groupName!!,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Slider(
+                value = event?.contributions?.size?.toFloat()?: 0.0f,
+                onValueChange = {},
+                enabled = false ,
+                steps = group?.memberList?.size?.minus(1)!!,
+                valueRange = 0f .. group.memberList.size.toFloat(),
+                colors = SliderDefaults.colors(
+                    disabledThumbColor = Color.Transparent,
+                    disabledActiveTrackColor = MaterialTheme.colorScheme.primary,
+                    disabledInactiveTrackColor = MaterialTheme.colorScheme.surface,
+                    disabledActiveTickColor = MaterialTheme.colorScheme.primary,
+                    disabledInactiveTickColor = MaterialTheme.colorScheme.surface
+                ),
+                modifier = Modifier
+                    .width(sliderWidth.dp)
+                    .height(8.dp)
+            )
+
+            Text(
+                text = "${percent}% Compliance",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.progress),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground)
+
+            Text(
+                text = "${event?.amountRealized} realized",
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary)
         }
 
         Row(
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Activity created by:",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(event?.eventCreator!!,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-        }
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Created at:",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = DateFormatter.formatDateTime(event?.dateCreated!!),
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-        }
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Levy amount:",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = event?.levyAmount.toString(),
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-        }
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "No. that have paid:",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = event?.contributions?.size.toString(),
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-        }
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = "Amount realized so far:",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-            Text(text = event?.amountRealized.toString(),
-                fontSize = TextUnit(14.0f, TextUnitType.Sp))
-        }
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = if (hasUserPaid == true) {
@@ -790,11 +866,7 @@ fun ViewEventDetails(
                 Text(text = stringResource(id = R.string.pay_now))
             }
         }
-        HorizontalDivider(
-            Modifier.padding(vertical = 16.dp, horizontal = 16.dp)
-        )
 
-        ComplianceRate(event, groupViewModel)
         PaidListHeader(groupViewModel, event, showPaidList) {
             showPaidList = it
         }
@@ -826,50 +898,6 @@ fun ViewEventDetails(
                     fontSize = TextUnit(14.0f, TextUnitType.Sp))
             }
         }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-        if (isUserAdmin == true) {
-            AdminActions(event, groupViewModel, activityViewModel, navController)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun ComplianceRate(event: Event?, groupViewModel: GroupViewModel) {
-    val context = LocalContext.current
-    val complianceRate = groupViewModel.complianceRate.observeAsState().value
-    val pieChatData = PieChartData(slices = listOf(
-        PieChartData.Slice("Paid", complianceRate?.contributionSize?.toFloat()!!, Color(context.getColor(R.color.teal_200))),
-        PieChartData.Slice("Not paid", (complianceRate.groupSize.minus(complianceRate.contributionSize)).toFloat(), Color(context.getColor(R.color.app_orange)))
-    ), plotType = PlotType.Donut
-    )
-    val pieChartConfig = PieChartConfig(
-        sliceLabelTextColor = MaterialTheme.colorScheme.onBackground,
-        showSliceLabels = true,
-        labelFontSize = TextUnit(24.0f, TextUnitType.Sp),
-        labelColor = MaterialTheme.colorScheme.onBackground,
-        strokeWidth = 32f,
-        activeSliceAlpha = .9f,
-        labelVisible = true,
-        isAnimationEnable = true,
-        chartPadding = 16,
-        backgroundColor = MaterialTheme.colorScheme.background
-        )
-    Column(
-        Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(id = R.string.compliance),
-            fontSize = TextUnit(16.0f, TextUnitType.Sp),
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .fillMaxWidth()
-        )
-        Text(text = "${complianceRate.contributionSize} payments out of ${complianceRate.groupSize} members")
-        DonutPieChart(modifier = Modifier.size(200.dp), pieChartData = pieChatData, pieChartConfig = pieChartConfig)
     }
 }
 
@@ -881,7 +909,7 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
     Surface(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 8.dp)
             .clip(
                 RoundedCornerShape(
                     bottomEnd = 32.dp,
@@ -892,8 +920,7 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
     ) {
         Column(
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (showCompleteDialog) {
@@ -1048,9 +1075,16 @@ fun AdminActionDialog(
                             when (action) {
                                 AdminActions.COMPLETE.name -> {
                                     coroutineScope.launch {
-                                        val response = activityViewModel.markActivityCompleted(event)
-                                        if(response.status) {
-                                            Toast.makeText(context, "Activity completed", Toast.LENGTH_SHORT).show()
+                                        val response =
+                                            activityViewModel.markActivityCompleted(event)
+                                        if (response.status) {
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Activity completed",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
                                         }
                                         callback(false)
@@ -1060,8 +1094,14 @@ fun AdminActionDialog(
                                 AdminActions.ARCHIVE.name -> {
                                     coroutineScope.launch {
                                         val response = activityViewModel.archiveActivity(event)
-                                        if(response.status) {
-                                            Toast.makeText(context, "Activity archived", Toast.LENGTH_SHORT).show()
+                                        if (response.status) {
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Activity archived",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
                                         }
                                         callback(false)
@@ -1071,8 +1111,14 @@ fun AdminActionDialog(
                                 AdminActions.DELETE.name -> {
                                     coroutineScope.launch {
                                         val response = activityViewModel.deleteActivity(event)
-                                        if(response.status) {
-                                            Toast.makeText(context, "Activity deleted", Toast.LENGTH_SHORT).show()
+                                        if (response.status) {
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Activity deleted",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
                                         }
                                         callback(false)
@@ -1113,7 +1159,7 @@ fun PaidListHeader(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(vertical = 16.dp)
             .clickable { callback(!showPaidList) },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -1122,7 +1168,7 @@ fun PaidListHeader(
             text = stringResource(id = R.string.paid_list),
             fontSize = TextUnit(16.0f, TextUnitType.Sp),
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.tertiary
+            color = MaterialTheme.colorScheme.secondary
         )
         if (showPaidList) {
             Icon(
@@ -1131,7 +1177,7 @@ fun PaidListHeader(
                 Modifier
                     .size(16.dp)
                     .clickable { callback(false) },
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.secondary
             )
         }else {
             Icon(
@@ -1140,7 +1186,7 @@ fun PaidListHeader(
                 Modifier
                     .size(16.dp)
                     .clickable { callback(true) },
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.secondary
             )
         }
     }

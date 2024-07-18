@@ -82,7 +82,8 @@ class ActivityViewModel @Inject constructor(
         val imageUrl = paymentEvidence.value
         val eventTitle = selectedEvent.value?.eventTitle
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
-        val payment = Payment(imageUrl!!, membershipId, payerEmail!!, eventTitle!!, groupName)
+        val payerFullName = dataStoreManager.readUserData()?.fullName
+        val payment = Payment(imageUrl!!, membershipId, payerEmail!!, payerFullName!!, eventTitle!!, groupName)
         _loadingState.value = true
         val response = activityRepository.submitEvidenceOfPayment(payment)
         _loadingState.value = false

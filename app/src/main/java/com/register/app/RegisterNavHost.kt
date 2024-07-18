@@ -20,11 +20,13 @@ import com.register.app.screens.GroupUpdateScreen
 import com.register.app.screens.HomeScreen
 import com.register.app.screens.LoginScreen
 import com.register.app.screens.MemberDetails
+import com.register.app.screens.MembershipRequests
 import com.register.app.screens.ModifyAdmin
 import com.register.app.screens.ProfileScreen
 import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
+import com.register.app.screens.SuggestedGroups
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.ActivityViewModel
@@ -105,6 +107,16 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("modify_admin") {
             ModifyAdmin(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("suggested_groups") {
+            SuggestedGroups(groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("membership_request") {
+            MembershipRequests(
+                navController = navController,
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel
+            )
         }
     }
 }

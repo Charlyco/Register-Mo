@@ -7,15 +7,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -47,16 +51,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import co.yml.charts.common.model.PlotType
+import co.yml.charts.ui.piechart.charts.DonutPieChart
+import co.yml.charts.ui.piechart.models.PieChartConfig
+import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.RemoveMemberModel
 import com.register.app.enums.MemberStatus
 import com.register.app.model.Event
+import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.util.CircularIndicator
@@ -66,6 +76,7 @@ import com.register.app.util.UNPAID
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
+import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -231,7 +242,7 @@ fun MemberInfo(
                 },
             color = Color.Transparent
         ) {
-            ActivityRate(groupViewModel = groupViewModel)
+            MemberActivityRate(groupViewModel = groupViewModel)
         }
 
         if (authViewModel.isUserAdmin()) {
@@ -444,14 +455,34 @@ fun PaymentRecord(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     ModalBottomSheet(
         onDismissRequest = { callback(false) },
-        modifier = Modifier.height(screenHeight.dp),
+        modifier = Modifier
+            .verticalScroll(rememberScrollState(initial = 0))
+            .height(screenHeight.dp),
         sheetState = sheetState,
         sheetMaxWidth = screenWidth.dp,
         containerColor = MaterialTheme.colorScheme.background
     ) {
-        Column {
+        MemberActivities(groupViewModel, activityViewModel, navController)
+    }
+}
+
+@Composable
+fun MemberActivities(
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController,
+) {
+    var showPaid by rememberSaveable { mutableStateOf(true) }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        MemberActivitySwitch { showPaid = it }
+        if (showPaid) {
             PaidActivities(groupViewModel, activityViewModel, navController)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
+        }else {
             UnpaidActivities(groupViewModel, activityViewModel, navController)
         }
     }
@@ -463,23 +494,23 @@ fun UnpaidActivities(
     activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
-    val eventList = groupViewModel.unpaidActivities.observeAsState().value
+    val eventList = groupViewModel.memberUnpaidActivities.observeAsState().value
     ConstraintLayout (
         Modifier
             .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
         val (header, list, shoeAll) = createRefs()
-        Text(
-            text = stringResource(id = R.string.unpaid_activities),
-            Modifier.constrainAs(header) {
-                start.linkTo(parent.start)
-                top.linkTo(parent.top)
-            },
-            fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
+//        Text(
+//            text = stringResource(id = R.string.unpaid_activities),
+//            Modifier.constrainAs(header) {
+//                start.linkTo(parent.start)
+//                top.linkTo(parent.top)
+//            },
+//            fontWeight = FontWeight.SemiBold,
+//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+//            color = MaterialTheme.colorScheme.onBackground
+//        )
         if (eventList?.isNotEmpty() == true) {
             Column(
                 Modifier
@@ -493,19 +524,6 @@ fun UnpaidActivities(
                     ActivityItem(event, groupViewModel, activityViewModel, navController)
                 }
             }
-            Text(
-                text = stringResource(id = R.string.show_more),
-                Modifier
-                    .clickable {
-                        groupViewModel.populateActivities(UNPAID)
-                        navController.navigate("events/Unpaid Activities")
-                    }
-                    .constrainAs(shoeAll) {
-                        end.linkTo(parent.end)
-                        top.linkTo(list.bottom, margin = 4.dp)
-                    },
-                color = MaterialTheme.colorScheme.tertiary
-            )
         }else{
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -514,7 +532,9 @@ fun UnpaidActivities(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
-                        .padding(vertical = 16.dp))
+                        .size(56.dp),
+                    tint = MaterialTheme.colorScheme.secondary)
+                        //.padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.no_outstanding_activities))
             }
@@ -570,23 +590,23 @@ fun PaidActivities(
     activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
-    val eventList = groupViewModel.paidActivities.observeAsState().value
+    val eventList = groupViewModel.memberPaidActivities.observeAsState().value
     ConstraintLayout (
         Modifier
             .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
         val (header, list, shoeAll) = createRefs()
-        Text(
-            text = stringResource(id = R.string.paid_activities),
-            Modifier.constrainAs(header) {
-                start.linkTo(parent.start)
-                top.linkTo(parent.top)
-            },
-            fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
+//        Text(
+//            text = stringResource(id = R.string.paid_activities),
+//            Modifier.constrainAs(header) {
+//                start.linkTo(parent.start)
+//                top.linkTo(parent.top)
+//            },
+//            fontWeight = FontWeight.SemiBold,
+//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+//            color = MaterialTheme.colorScheme.onBackground
+//        )
         if (eventList?.isNotEmpty() == true) {
             Column(
                 Modifier
@@ -600,19 +620,6 @@ fun PaidActivities(
                     ActivityItem(event, groupViewModel, activityViewModel, navController)
                 }
             }
-            Text(
-                text = stringResource(id = R.string.show_more),
-                Modifier
-                    .clickable {
-                        groupViewModel.populateActivities(PAID)
-                        navController.navigate("events/Paid Activities")
-                    }
-                    .constrainAs(shoeAll) {
-                        end.linkTo(parent.end)
-                        top.linkTo(list.bottom, margin = 4.dp)
-                    },
-                color = MaterialTheme.colorScheme.tertiary
-            )
         }else{
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -621,10 +628,191 @@ fun PaidActivities(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
-                        .padding(vertical = 16.dp))
+                        .size(56.dp),
+                    tint = MaterialTheme.colorScheme.secondary)
                 Text(
                     text = stringResource(id = R.string.no_paid_activities))
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun MemberActivityRate(groupViewModel: GroupViewModel) {
+    val context = LocalContext.current
+    val paymentRate = groupViewModel.memberPaymentRateLiveData.observeAsState().value
+    val percentPaid = (paymentRate?.eventsPaid?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
+    val percentUnpaid = ((paymentRate?.eventsDue?.minus(paymentRate.eventsPaid))?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
+    val chartData = PieChartData(
+        slices = listOf(
+            PieChartData.Slice("Contributions made", percentPaid?: 0f, MaterialTheme.colorScheme.primary),
+            PieChartData.Slice("Contributions due", percentUnpaid?: 0f, MaterialTheme.colorScheme.surface)),
+        plotType = PlotType.Donut
+    )
+
+    val donutChartConfig = PieChartConfig(
+        sliceLabelTextColor = MaterialTheme.colorScheme.onBackground,
+        showSliceLabels = true,
+        labelFontSize = TextUnit(20.0f, TextUnitType.Sp),
+        labelColor = MaterialTheme.colorScheme.onBackground,
+        strokeWidth = 24f,
+        activeSliceAlpha = .9f,
+        labelVisible = true,
+        isAnimationEnable = true,
+        chartPadding = 16,
+        backgroundColor = MaterialTheme.colorScheme.background
+    )
+    ConstraintLayout(
+        Modifier
+            .padding(top = 4.dp, bottom = 8.dp)
+            .fillMaxWidth()
+    ) {
+        val (chart, title, detail, legend) = createRefs()
+
+        Text(
+            text = stringResource(id = R.string.chart_header),
+            modifier = Modifier.constrainAs(title) {
+                top.linkTo(parent.top, margin = 8.dp)
+                start.linkTo(parent.start, margin = 16.dp)
+            },
+            fontWeight = FontWeight.SemiBold,
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        DonutPieChart(
+            modifier = Modifier
+                .size(140.dp)
+                .constrainAs(chart) {
+                    start.linkTo(parent.start, margin = 16.dp)
+                    top.linkTo(title.bottom, margin = 16.dp)
+                },
+            pieChartData = chartData,
+            pieChartConfig = donutChartConfig
+        )
+        Column(
+            Modifier.constrainAs(legend) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                end.linkTo(parent.end, margin = 16.dp)
+            }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    Modifier
+                        .height(8.dp)
+                        .width(20.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.small
+                ) {}
+
+                Text(
+                    text = stringResource(id = R.string.paid_activities),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    Modifier
+                        .height(8.dp)
+                        .width(20.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.small
+                ) {}
+
+                Text(
+                    text = stringResource(id = R.string.unpaid_activities),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+        }
+
+        Text(
+            text = "You have paid for ${paymentRate?.eventsPaid}/${paymentRate?.eventsDue} activities",
+            modifier = Modifier.constrainAs(detail) {
+                top.linkTo(chart.bottom, margin = 16.dp)
+                centerHorizontallyTo(parent)
+            },
+            color = Color.Gray,
+            fontSize = TextUnit(14.0f, TextUnitType.Sp)
+        )
+
+    }
+}
+
+@Composable
+fun MemberActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp / 2
+    var showPaid by rememberSaveable { mutableStateOf(true)}
+    ConstraintLayout(
+        Modifier.fillMaxWidth()
+    ) {
+        val (paid, unPaid, paidLiner, unPaidLiner) = createRefs()
+        Text(
+            text = stringResource(id = R.string.paid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = true
+                    switchView(showPaid)
+                }
+                .constrainAs(paid) {
+                    start.linkTo(parent.start)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = stringResource(id = R.string.unpaid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = false
+                    switchView(showPaid)
+                }
+                .constrainAs(unPaid) {
+                    end.linkTo(parent.end)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(paidLiner) {
+                        start.linkTo(parent.start, margin = 1.dp)
+                        top.linkTo(paid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
+        }
+
+        if (!showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(unPaidLiner) {
+                        end.linkTo(parent.end, margin = 1.dp)
+                        top.linkTo(unPaid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
         }
     }
 }

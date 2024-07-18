@@ -32,7 +32,7 @@ data class MembershipDto(
 data class MembershipRequest(
     val id: Int,
     val memberEmail: String,
-    val memberFullName: String,
+    val memberFullName: String?,
     val groupId: Int,
     val timeOfRequest: String)
 

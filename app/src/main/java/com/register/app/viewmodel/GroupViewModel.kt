@@ -13,6 +13,8 @@ import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.EventComment
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.GroupsWrapper
+import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RateData
 import com.register.app.dto.ReactionType
@@ -45,47 +47,56 @@ class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
     private val authRepository: AuthRepository): ViewModel(){
+
         private val _complianceRate: MutableLiveData<ComplianceRate> = MutableLiveData()
-        val complianceRate: LiveData<ComplianceRate> = _complianceRate
-        private val _isAdminLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
-        val isUserAdminLiveData: LiveData<Boolean> = _isAdminLiveData
-        private val _groupLogoLivedata: MutableLiveData<String> = MutableLiveData()
-        val groupLogoLivedata: LiveData<String> = _groupLogoLivedata
-        private val _selectedMember: MutableLiveData<MembershipDto?> = MutableLiveData()
-        val selectedMember: LiveData<MembershipDto?> = _selectedMember
-        private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
-        val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
-        private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
-        val groupDetailLiveData: LiveData<Group> = _groupDetailLiveData
-        private val _bankDetails: MutableLiveData<BankDetail?> = MutableLiveData()
-        val bankDetails: LiveData<BankDetail?> = _bankDetails
-        private val _groupListLiveDate: MutableLiveData<List<Group>?> = MutableLiveData()
-        val groupListLiveData: MutableLiveData<List<Group>?> = _groupListLiveDate
-        val showCreateGroupSheet: MutableLiveData<Boolean> = MutableLiveData(false)
-        private val _groupAdminList: MutableLiveData<List<Member>?> = MutableLiveData()
-        val groupAdminList: LiveData<List<Member>?> = _groupAdminList
-        private val _pendingMembershipDetail: MutableLiveData<Member> = MutableLiveData()
-        val pendingMemberLiveData: LiveData<Member> = _pendingMembershipDetail
-        private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
-        val groupEvents: LiveData<List<Event>?> = _groupEvents
-        private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
-        val paidActivities: LiveData<List<Event>?> = _paidActivities
-        private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
-        val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
-        private val _eventCommentLideData: MutableLiveData<List<EventComment>> = MutableLiveData()
-        val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
-        private val _membershipId: MutableLiveData<String?> = MutableLiveData("")
-        val membershipId: LiveData<String?> = _membershipId
-        private val _memberDetails: MutableLiveData<List<Member>?> = MutableLiveData()
-        val memberDetailsList: LiveData<List<Member>?> = _memberDetails
-        private val _logoUrl: MutableLiveData<String?> = MutableLiveData()
-        private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
-        val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
-        val logoUrl: LiveData<String?> = _logoUrl
-        private val _loadingState: MutableLiveData<Boolean?> = MutableLiveData(false)
-        val loadingState: LiveData<Boolean?> = _loadingState
+    val complianceRate: LiveData<ComplianceRate> = _complianceRate
+    private val _isAdminLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
+    val isUserAdminLiveData: LiveData<Boolean> = _isAdminLiveData
+    private val _groupLogoLivedata: MutableLiveData<String> = MutableLiveData()
+    val groupLogoLivedata: LiveData<String> = _groupLogoLivedata
+    private val _selectedMember: MutableLiveData<MembershipDto?> = MutableLiveData()
+    val selectedMember: LiveData<MembershipDto?> = _selectedMember
+    private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
+    val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
+    private val _groupDetailLiveData: MutableLiveData<Group> = MutableLiveData()
+    val groupDetailLiveData: LiveData<Group> = _groupDetailLiveData
+    private val _bankDetails: MutableLiveData<BankDetail?> = MutableLiveData()
+    val bankDetails: LiveData<BankDetail?> = _bankDetails
+    private val _groupListLiveDate: MutableLiveData<List<Group>?> = MutableLiveData()
+    val groupListLiveData: MutableLiveData<List<Group>?> = _groupListLiveDate
+    val showCreateGroupSheet: MutableLiveData<Boolean> = MutableLiveData(false)
+    private val _groupAdminList: MutableLiveData<List<Member>?> = MutableLiveData()
+    val groupAdminList: LiveData<List<Member>?> = _groupAdminList
+    private val _pendingMembershipDetail: MutableLiveData<Member> = MutableLiveData()
+    val pendingMemberLiveData: LiveData<Member> = _pendingMembershipDetail
+    private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
+    val groupEvents: LiveData<List<Event>?> = _groupEvents
+    private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val paidActivities: LiveData<List<Event>?> = _paidActivities
+    private val _memberUnpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val memberUnpaidActivities: LiveData<List<Event>?> = _memberUnpaidActivities
+    private val _memberPaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val memberPaidActivities: LiveData<List<Event>?> = _memberPaidActivities
+    private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
+    private val _eventCommentLideData: MutableLiveData<List<EventComment>> = MutableLiveData()
+    val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
+    private val _membershipId: MutableLiveData<String?> = MutableLiveData("")
+    val membershipId: LiveData<String?> = _membershipId
+    private val _memberDetails: MutableLiveData<List<Member>?> = MutableLiveData()
+    val memberDetailsList: LiveData<List<Member>?> = _memberDetails
+    private val _logoUrl: MutableLiveData<String?> = MutableLiveData()
+    private val _groupMemberLiveData: MutableLiveData<Member> = MutableLiveData()
+    val groupMemberLiveData: LiveData<Member> = _groupMemberLiveData
+    val logoUrl: LiveData<String?> = _logoUrl
+    private val _loadingState: MutableLiveData<Boolean?> = MutableLiveData(false)
+    val loadingState: LiveData<Boolean?> = _loadingState
     private val _paymentRateLiveData: MutableLiveData<RateData?> = MutableLiveData()
     val paymentRateLiveData: LiveData<RateData?> = _paymentRateLiveData
+    private val _memberPaymentRateLiveData: MutableLiveData<RateData?> = MutableLiveData()
+    val memberPaymentRateLiveData: LiveData<RateData?> = _memberPaymentRateLiveData
+    private val _suggestedGroupList: MutableLiveData<List<Group>?> = MutableLiveData()
+    val suggestedGroupList: LiveData<List<Group>?> = _suggestedGroupList
 
     init {
         viewModelScope.launch { getAllGroupsForUser() }
@@ -129,11 +140,15 @@ class GroupViewModel @Inject constructor(
         _unpaidActivities.value = unpaidActivities
 
         //get user activity rate
+        getActivityRate(membershipId.value, member?.joinedDateTime, group.groupId)
+        //getMembershipId(group)
+    }
+
+     suspend fun getActivityRate(membershipId: String?, joinedDateTime: String?, groupId: Int) {
         val activityRate = groupRepository.getMemberActivityRate(
-            membershipId.value, member?.joinedDateTime, group.groupId).data
+            membershipId, joinedDateTime, groupId).data
         _paymentRateLiveData.value = activityRate
         _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
-        //getMembershipId(group)
     }
 
     private fun calculateActivityRate(activityRate: RateData): Float {
@@ -157,22 +172,15 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun getIndividualMembershipRequest(emailAddress: String) {
-        _pendingMembershipDetail.value =
-            Member(1,
-                "Uche Egemba",
-                "Urchman",
-                "+2347037590923",
-                "charlyco835@gmail.com",
-                "", "",
-                "ACTIVE",
-                "President",
-                "",
-                "USER", listOf())
+    suspend fun getIndividualMembershipRequest(emailAddress: String) {
+        _pendingMembershipDetail.value = authRepository.getMemberDetails(emailAddress)
     }
 
-    fun approveMembershipRequest(membershipRequest: MembershipRequest) {
-        
+    suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse {
+        _loadingState.value = true
+        val response = groupRepository.approveMembershipRequest(membershipRequest)
+        _loadingState.value = false
+        return response
     }
 
     fun getAllEventsForGroup(groupName: String?) {
@@ -210,10 +218,10 @@ class GroupViewModel @Inject constructor(
         return response
     }
 
-    suspend fun getComplianceRate(event: Event) {
+    fun getComplianceRate(event: Event) {
         val groupSize = groupListLiveData.value?.find { it.groupId == event.groupId }?.memberList?.size
-        val percentage = (event.contributions?.size?: 0.div(groupSize!!)).times(100).toDouble()
-        _complianceRate.value = ComplianceRate(event.contributions?.size?: 0, groupSize!!, percentage)
+        val percentage = ((event.contributions?.size?: 0.times(100)).div(groupSize!!)).toDouble()
+        _complianceRate.value = ComplianceRate(event.contributions?.size?: 0, groupSize, percentage)
     }
 
     suspend fun uploadGroupLogo(
@@ -240,8 +248,23 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun setSelectedMembership(member: MembershipDto) {
+    suspend fun setSelectedMembership(member: MembershipDto) {
         _selectedMember.value = member
+        getMemberActivityRate(member.membershipId, member.joinedDateTime, groupDetailLiveData.value?.groupId!!)
+    }
+    suspend fun setSelectedMember(member: Member) {
+        _groupMemberLiveData.value = member
+        val group = groupDetailLiveData.value
+        val groupEvents = groupRepository.getAllActivitiesForGroup(group?.groupId!!)
+        val paidActivities = groupEvents?.filter { event ->
+            event.contributions?.any { it.memberEmail == member.emailAddress } == true }
+        _memberPaidActivities.value = paidActivities
+        //filter unpaid activities
+        val unpaidActivities = groupEvents?.filter { event ->
+            event.contributions?.none { it.memberEmail == member.emailAddress } == true  && (
+                    (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "COMPLETED") ||
+                            (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "ARCHIVED")) }
+        _memberUnpaidActivities.value = unpaidActivities
     }
 
     suspend fun createNewGroup(groupName: String, groupDescription: String, memberOffice: String, groupType: String): Group {
@@ -282,11 +305,21 @@ class GroupViewModel @Inject constructor(
         _loadingState.value = true
         val response = groupRepository.addMemberToGroup(groupId, emailAddress)
         _loadingState.value = false
+        if (response.status) {
+            reloadGroup(groupId) // refresh group details
+        }
         return response.status
     }
 
-    fun setSelectedMember(member: Member) {
-        _groupMemberLiveData.value = member
+    private suspend fun getMemberActivityRate(
+        membershipId: String?,
+        joinedDateTime: String?,
+        groupId: Int
+    ) {
+        val activityRate = groupRepository.getMemberActivityRate(
+            membershipId, joinedDateTime, groupId).data
+        _memberPaymentRateLiveData.value = activityRate
+        //_activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
     }
 
     suspend fun changeMemberStatus(
@@ -305,6 +338,9 @@ class GroupViewModel @Inject constructor(
     suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse {
         _loadingState.value = true
         val response = groupRepository.expelMember(removeMemberModel)
+        if (response.status) {
+            reloadGroup(removeMemberModel.groupId) // refresh group details
+        }
         _loadingState.value = false
         return response
     }
@@ -312,10 +348,27 @@ class GroupViewModel @Inject constructor(
     suspend fun reloadGroup(groupId: Int?) {
         _loadingState.value = true
         Log.d("PULLREFRESH", "Refreshing")
-        val response = groupRepository?.getGroupDetails(groupId)
+        val response = groupRepository.getGroupDetails(groupId)?.data
+        Log.d("PULLREFRESH", response?.groupName?: "Null")
         _loadingState.value = false
         if (response != null) {
             setSelectedGroupDetail(response)
         }
+    }
+
+    suspend fun searchGroupByName(searchTag: String): GroupsWrapper? {
+        _loadingState.value = true
+        val response = groupRepository.searchGroupByName(searchTag)
+        _suggestedGroupList.value = response?.data
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun requestToJoinGroup(selectedGroup: Group): GenericResponse {
+        _loadingState.value = true
+        val userInfo = JoinGroupDto(dataStoreManager.readUserData()?.emailAddress!!, dataStoreManager.readUserData()?.fullName!!)
+        val response = groupRepository.requestToJoinGroup(selectedGroup.groupId, userInfo)
+        _loadingState.value = false
+        return response
     }
 }

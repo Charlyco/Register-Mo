@@ -11,6 +11,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 object Utils {
@@ -53,6 +54,12 @@ object Utils {
     // Define an extension function to format LocalDate
     fun LocalDate.formatToYYYYMMDD(): String {
         return this.toString()
+    }
+
+    fun formatToDDMMYYYY(time: String): String {
+        val date = LocalDateTime.parse(time)
+        val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy")
+        return date.format(formatter)
     }
 
     suspend fun createDeviceId(dataStoreManager: DataStoreManager) {

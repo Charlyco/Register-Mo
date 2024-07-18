@@ -2,11 +2,15 @@ package com.register.app.screens
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,20 +23,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -70,7 +70,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import co.yml.charts.common.model.PlotType
@@ -78,11 +77,10 @@ import co.yml.charts.ui.piechart.charts.DonutPieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
-import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
-import com.register.app.model.MembershipRequest
+import com.register.app.util.EventItem
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
@@ -92,7 +90,6 @@ import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun GroupDetail(
     navController: NavController,
@@ -132,10 +129,10 @@ fun GroupDetailTopBar(
             ) },
         navigationIcon = {
             Icon(
-                painter = painterResource(id = R.drawable.caret_back_circle),
+                imageVector = Icons.Default.ArrowBackIosNew,
                 contentDescription = "",
                 Modifier
-                    .size(48.dp)
+                    .size(20.dp)
                     .clickable {
                         navController.navigate("home") {
                             popUpTo("groups") { inclusive = true }
@@ -143,17 +140,38 @@ fun GroupDetailTopBar(
                     }
             ) },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = Color.White,
-            navigationIconContentColor = Color.White
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            navigationIconContentColor = MaterialTheme.colorScheme.onBackground
         ),
         actions = {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        navController.navigate("membership_request") {
+                            launchSingleTop = true
+                        }
+                    },
+                contentAlignment = Alignment.TopEnd
+            ) {
+               Icon(
+                   painter = painterResource(id = R.drawable.invite_members),
+                   contentDescription = "",
+                   modifier = Modifier.size(32.dp),
+                   tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = group?.pendingMemberRequests?.size.toString(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 4.dp))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "menu",
                 Modifier.clickable { isExpanded = !isExpanded },
-                tint = Color.White)
-
+                tint = MaterialTheme.colorScheme.onBackground)
+            
             DropdownMenu(
                 expanded = isExpanded,
                 onDismissRequest = { isExpanded = false }) {
@@ -215,7 +233,7 @@ fun GroupDetailScreen(
 ) {
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
     var showAdminList by rememberSaveable { mutableStateOf(false) }
-    var showRequests by rememberSaveable { mutableStateOf(false) }
+    var showActivities by rememberSaveable { mutableStateOf(true) }
     val verticalScrollState = rememberScrollState(initial = 0)
     val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
     val coroutineScope = rememberCoroutineScope()
@@ -238,30 +256,27 @@ fun GroupDetailScreen(
                 .fillMaxWidth()
         ) {
             TopSection(group, groupViewModel)
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
             ActivityRate(groupViewModel)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            UnpaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
+            ActivitiesHeader(group, showActivities) { showActivities = it}
+            if (showActivities) {
+                Activities(groupViewModel, homeViewModel, activityViewModel, navController, group!!)
+            }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
             GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it}
             if (showProfileDetail) {
                 GroupProfile(group, groupViewModel)
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+            HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
             GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it}
 
             if (showAdminList) {
                 GroupAdminList(group, groupViewModel, navController)
             }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
-            if (authViewModel.isUserAdmin()) {
-                PendingMembershipRequestHeader(group, showRequests) { showRequests = it}
-            }
-            if (showRequests) {
-                MembershipRequestList(group, groupViewModel)
-            }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
+
+            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
         }
     }
 }
@@ -272,19 +287,21 @@ fun ActivityRate(groupViewModel: GroupViewModel) {
     val context = LocalContext.current
     val activityRate = groupViewModel.activityRateLiveData.observeAsState().value
     val paymentRate = groupViewModel.paymentRateLiveData.observeAsState().value
+    val percentPaid = (paymentRate?.eventsPaid?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
+    val percentUnpaid = ((paymentRate?.eventsDue?.minus(paymentRate.eventsPaid))?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
     val chartData = PieChartData(
         slices = listOf(
-            PieChartData.Slice("Contributions made", activityRate!!, Color(color = context.getColor(R.color.teal_200))),
-            PieChartData.Slice("Contributions due", (100.minus(activityRate)), Color(context.getColor(R.color.app_orange)))),
+            PieChartData.Slice("Contributions made", percentPaid?: 0f, MaterialTheme.colorScheme.primary),
+            PieChartData.Slice("Contributions due", percentUnpaid?: 0f, MaterialTheme.colorScheme.surface)),
         plotType = PlotType.Donut
     )
 
     val donutChartConfig = PieChartConfig(
         sliceLabelTextColor = MaterialTheme.colorScheme.onBackground,
         showSliceLabels = true,
-        labelFontSize = TextUnit(24.0f, TextUnitType.Sp),
+        labelFontSize = TextUnit(20.0f, TextUnitType.Sp),
         labelColor = MaterialTheme.colorScheme.onBackground,
-        strokeWidth = 42f,
+        strokeWidth = 24f,
         activeSliceAlpha = .9f,
         labelVisible = true,
         isAnimationEnable = true,
@@ -293,39 +310,149 @@ fun ActivityRate(groupViewModel: GroupViewModel) {
     )
     ConstraintLayout(
         Modifier
-            .padding(vertical = 16.dp)
+            .padding(top = 4.dp, bottom = 8.dp)
             .fillMaxWidth()
     ) {
-        val (chart, title, detail) = createRefs()
+        val (chart, title, detail, legend) = createRefs()
 
         Text(
             text = stringResource(id = R.string.chart_header),
             modifier = Modifier.constrainAs(title) {
                 top.linkTo(parent.top, margin = 8.dp)
-                centerHorizontallyTo(parent)
+                start.linkTo(parent.start, margin = 16.dp)
             },
             fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(17.0f, TextUnitType.Sp)
+            fontSize = TextUnit(16.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.onBackground
             )
+
+        DonutPieChart(
+            modifier = Modifier
+                .size(140.dp)
+                .constrainAs(chart) {
+                    start.linkTo(parent.start, margin = 16.dp)
+                    top.linkTo(title.bottom, margin = 16.dp)
+                },
+            pieChartData = chartData,
+            pieChartConfig = donutChartConfig
+        )
+        Column(
+            Modifier.constrainAs(legend) {
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+                end.linkTo(parent.end, margin = 16.dp)
+            }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    Modifier
+                        .height(8.dp)
+                        .width(20.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.small
+                ) {}
+
+                Text(
+                    text = stringResource(id = R.string.paid_activities),
+                    modifier = Modifier.padding(start = 8.dp)
+                    )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    Modifier
+                        .height(8.dp)
+                        .width(20.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.small
+                ) {}
+
+                Text(
+                    text = stringResource(id = R.string.unpaid_activities),
+                    modifier = Modifier.padding(start = 8.dp)
+                    )
+            }
+            
+        }
+
         Text(
             text = "You have paid for ${paymentRate?.eventsPaid}/${paymentRate?.eventsDue} activities",
             modifier = Modifier.constrainAs(detail) {
-                top.linkTo(title.bottom, margin = 4.dp)
+                top.linkTo(chart.bottom, margin = 16.dp)
                 centerHorizontallyTo(parent)
             },
             color = Color.Gray,
             fontSize = TextUnit(14.0f, TextUnitType.Sp)
-            )
-        DonutPieChart(
-            modifier = Modifier
-                .size(160.dp)
-                .constrainAs(chart) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(detail.bottom, margin = 16.dp)
-                },
-            pieChartData = chartData,
-            pieChartConfig = donutChartConfig)
+        )
 
+    }
+}
+
+
+@Composable
+fun ActivitiesHeader(
+    group: Group?,
+    showActivities: Boolean,
+    callback: (Boolean) -> Unit
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clickable { callback(!showActivities) },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(id = R.string.activities),
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showActivities) {
+            Icon(
+                painter = painterResource(id = R.drawable.up_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { callback(false) }
+            )
+        }else {
+            Icon(
+                painter = painterResource(id = R.drawable.forward_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { callback(true) }
+            )
+        }
+    }
+}
+
+@Composable
+fun Activities(
+    groupViewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController,
+    group: Group) {
+    var showPaid by rememberSaveable { mutableStateOf(true) }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        ActivitySwitch { showPaid = it }
+        if (showPaid) {
+            PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
+        }else {
+            UnpaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
+        }
     }
 }
 
@@ -340,31 +467,21 @@ fun PaidEvents(
     val eventList = groupViewModel.paidActivities.observeAsState().value
     ConstraintLayout (
         Modifier
-            .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
         val (header, list, shoeAll) = createRefs()
-        Text(
-            text = stringResource(id = R.string.paid_activities),
-            Modifier.constrainAs(header) {
-                start.linkTo(parent.start)
-                top.linkTo(parent.top)
-            },
-            fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.onBackground
-            )
+
         if (eventList?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
                     .constrainAs(list) {
-                        top.linkTo(header.bottom, margin = 16.dp)
+                        top.linkTo(parent.top, margin = 16.dp)
                         start.linkTo(parent.start)
                     }
                 ) {
                    eventList.forEach { event ->
-                       EventItem(event, groupViewModel, homeViewModel, activityViewModel, navController)
+                       EventItem(event, group!!, groupViewModel, activityViewModel, navController)
                    }
                 }
             Text(
@@ -388,6 +505,7 @@ fun PaidEvents(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
+                        .size(32.dp)
                         .padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.empty_event))
@@ -407,31 +525,21 @@ fun UnpaidEvents(
     val eventList = groupViewModel.unpaidActivities.observeAsState().value
     ConstraintLayout (
         Modifier
-            .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
-        val (header, list, shoeAll) = createRefs()
-        Text(
-            text = stringResource(id = R.string.unpaid_activities),
-            Modifier.constrainAs(header) {
-                start.linkTo(parent.start)
-                top.linkTo(parent.top)
-            },
-            fontWeight = FontWeight.SemiBold,
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        val (list, shoeAll) = createRefs()
+
         if (eventList?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
                     .constrainAs(list) {
-                        top.linkTo(header.bottom, margin = 16.dp)
+                        top.linkTo(parent.top, margin = 16.dp)
                         start.linkTo(parent.start)
                     }
             ) {
                 eventList.forEach { event ->
-                    EventItem(event, groupViewModel, homeViewModel, activityViewModel, navController)
+                    EventItem(event, group!!, groupViewModel, activityViewModel, navController)
                 }
             }
             Text(
@@ -455,280 +563,11 @@ fun UnpaidEvents(
                     imageVector = Icons.Default.ErrorOutline,
                     contentDescription ="",
                     Modifier
+                        .size(32.dp)
                         .padding(vertical = 16.dp))
                 Text(
                     text = stringResource(id = R.string.no_unpaid_activities))
             }
-        }
-    }
-}
-
-@Composable
-fun EventItem(
-    event: Event,
-    groupViewModel: GroupViewModel,
-    homeViewModel: HomeViewModel,
-    activityViewModel: ActivityViewModel,
-    navController: NavController
-) {
-    val coroutineScope = rememberCoroutineScope()
-    Row(
-        Modifier
-            .clickable {
-                navController.navigate("event_detail") {
-                    launchSingleTop = true
-                    coroutineScope.launch { activityViewModel.setSelectedEvent(event) }
-                }
-            }
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            Modifier
-                .padding(end = 16.dp)
-                .size(36.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = MaterialTheme.shapes.extraSmall,
-            ) {
-               Icon(
-                   imageVector = Icons.Default.EventAvailable,
-                   contentDescription = "",
-                   Modifier
-                       .size(20.dp)
-                       .padding(8.dp),
-                   tint = MaterialTheme.colorScheme.secondary)
-            }
-
-            Text(
-                text = event.eventTitle,
-                fontSize = TextUnit(16.0f, TextUnitType.Sp)
-            )
-    }
-}
-
-@Composable
-fun MembershipRequestList(group: Group?, groupViewModel: GroupViewModel) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp - 64
-    var showDetail by rememberSaveable { mutableStateOf(false) }
-    var selectedRequest: MembershipRequest? = null
-    if (group?.pendingMemberRequests?.isNotEmpty() == true) {
-        Column {
-            if(showDetail) {
-                MembershipRequestDetail(groupViewModel, selectedRequest) {
-                    showDetail = it
-                }
-            }
-            group.pendingMemberRequests.forEach {request ->
-                MembershipRequestItem(request, groupViewModel) { shouldShow ->
-                    showDetail = shouldShow
-                    selectedRequest = request
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MembershipRequestItem(
-    request: MembershipRequest,
-    groupViewModel: GroupViewModel,
-    function: (show: Boolean) -> Unit
-) {
-    val context = LocalContext.current
-    Surface(
-        Modifier
-            .padding(horizontal = 8.dp)
-            .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background
-
-    ) {
-        Surface(
-            Modifier.padding(vertical = 1.dp),
-            border = BorderStroke(1.dp, Color.Gray),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            ConstraintLayout {
-                val (name, time, email, showDetails, approveBtn) = createRefs()
-
-                Text(
-                    text = request.memberFullName,
-                    Modifier.constrainAs(name) {
-                        start.linkTo(parent.start, margin = 8.dp)
-                        top.linkTo(parent.top, margin = 8.dp)
-                    })
-
-                Text(
-                    text = "Email: ${request.memberEmail}",
-                    Modifier.constrainAs(email) {
-                        start.linkTo(parent.start, margin = 8.dp)
-                        top.linkTo(name.bottom, margin = 8.dp)
-                    })
-
-                Text(
-                    text = "Request sent on: ${request.timeOfRequest}",
-                    Modifier.constrainAs(time) {
-                        start.linkTo(parent.start, margin = 8.dp)
-                        top.linkTo(email.bottom, margin = 8.dp)
-                    })
-
-                Button(
-                    onClick = {
-                        function(true)
-                              groupViewModel.getIndividualMembershipRequest(request.memberEmail)},
-                    Modifier
-                        .padding(horizontal = 4.dp)
-                        .constrainAs(showDetails) {
-                            start.linkTo(parent.start, margin = 8.dp)
-                            top.linkTo(email.bottom, margin = 8.dp)
-                            bottom.linkTo(parent.bottom, margin = 4.dp)
-                        },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.show_detail),
-                        Modifier.padding(end = 4.dp)
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        groupViewModel.approveMembershipRequest(request) },
-                    Modifier
-                        .padding(horizontal = 4.dp)
-                        .constrainAs(approveBtn) {
-                            end.linkTo(parent.end, margin = 8.dp)
-                            top.linkTo(email.bottom, margin = 8.dp)
-                            bottom.linkTo(parent.bottom, margin = 4.dp)
-                        }
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.approve),
-                        Modifier.padding(end = 4.dp)
-                    )
-                    Icon(imageVector = Icons.Default.Check, contentDescription = "")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MembershipRequestDetail(
-    groupViewModel: GroupViewModel,
-    selectedRequest: MembershipRequest?,
-    showDialog: (show: Boolean) -> Unit
-) {
-    val requestDetail = groupViewModel.pendingMemberLiveData.observeAsState().value
-    val context = LocalContext.current
-    Dialog(
-        onDismissRequest = { showDialog(false) },
-    ) {
-        Surface(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ImageLoader(
-                    imageUrl = requestDetail?.imageUrl?: "",
-                    context = context,
-                    height = 120,
-                    width = 120,
-                    placeHolder = R.drawable.placeholder
-                )
-
-                Text(
-                    text = requestDetail?.fullName!!,
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
-                    )
-
-                Text(
-                    text = requestDetail.phoneNumber,
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
-                )
-
-                Text(
-                    text = requestDetail.emailAddress,
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
-                )
-
-                Text(
-                    text = "Time of request: ${selectedRequest?.timeOfRequest}",
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
-                )
-
-                Button(
-                    onClick = {
-                        groupViewModel.approveMembershipRequest(selectedRequest!!) },
-                    Modifier
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.approve),
-                        Modifier.padding(end = 4.dp)
-                    )
-                    Icon(imageVector = Icons.Default.Check, contentDescription = "")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PendingMembershipRequestHeader(
-    group: Group?,
-    showRequests: Boolean,
-    callback: (Boolean) -> Unit
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-            .clickable { callback(!showRequests) },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(id = R.string.membership_request),
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            fontWeight = FontWeight.SemiBold
-        )
-        if (showRequests) {
-            Icon(
-                painter = painterResource(id = R.drawable.up_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable { callback(false) }
-            )
-        }else {
-            Icon(
-                painter = painterResource(id = R.drawable.forward_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable { callback(true) }
-            )
         }
     }
 }
@@ -773,63 +612,63 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val membershipId = groupViewModel.membershipId.observeAsState().value
-    Surface(
-        Modifier
-            .fillMaxWidth()
-            .clip(
-                RoundedCornerShape(
-                    bottomStart = 32.dp,
-                    bottomEnd = 32.dp
-                )
-            ),
-        color = MaterialTheme.colorScheme.primary,
-        shadowElevation = dimensionResource(id = R.dimen.low_elevation)
-    ) {
-        ConstraintLayout(
-            Modifier.fillMaxSize()
-        ) {
-            val (logo, description, id) = createRefs()
 
-            Surface(
-                Modifier
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .constrainAs(logo) {
-                        top.linkTo(parent.top, margin = 64.dp)
-                        centerHorizontallyTo(parent)
-                    },
-                color = MaterialTheme.colorScheme.background
-            ) {
-                ImageLoader(
-                    imageUrl = group?.logoUrl!!,
-                    context = context,
-                    height = 80,
-                    width = 80,
-                    placeHolder = R.drawable.download
-                )
-            }
-            Text(
-                text = group?.groupDescription!!,
-                modifier = Modifier
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                    .constrainAs(description) {
-                        top.linkTo(logo.bottom, margin = 8.dp)
-                        centerHorizontallyTo(parent)
-                    },
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "Your membership ID: ${groupViewModel.membershipId.value}",
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(id) {
-                        start.linkTo(parent.start, margin = 16.dp)
-                        top.linkTo(description.bottom, margin = 16.dp)
-                    },
-                fontSize = TextUnit(17.0f, TextUnitType.Sp)
+    ConstraintLayout(
+        Modifier.fillMaxSize()
+    ) {
+        val (logo, description, id, groupSize) = createRefs()
+
+        Surface(
+            Modifier
+                .size(88.dp)
+                .clip(CircleShape)
+                .constrainAs(logo) {
+                    top.linkTo(parent.top, margin = 64.dp)
+                    centerHorizontallyTo(parent)
+                },
+            color = MaterialTheme.colorScheme.onTertiary
+        ) {
+            ImageLoader(
+                imageUrl = group?.logoUrl!!,
+                context = context,
+                height = 80,
+                width = 80,
+                placeHolder = R.drawable.download
             )
         }
+
+        Text(
+            text = "${group?.memberList?.size} members",
+            modifier = Modifier
+                .constrainAs(groupSize) {
+                    centerHorizontallyTo(parent)
+                    top.linkTo(logo.bottom, margin = 4.dp) },
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            color = Color.Gray
+        )
+
+        Text(
+            text = "Membership ID: ${groupViewModel.membershipId.value}",
+            modifier = Modifier
+                .constrainAs(id) {
+                    centerHorizontallyTo(parent)
+                    top.linkTo(groupSize.bottom, margin = 8.dp) },
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = group?.groupDescription!!,
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .constrainAs(description) {
+                    top.linkTo(id.bottom, margin = 8.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -1277,23 +1116,26 @@ fun MemberItem(
     displayCallback: (showState: Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .clickable {
-                groupViewModel.setSelectedMember(member)
-                /*
-                * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
-                * I need to match each detail with the corresponding membershipDto*/
-                val membershipDto =
-                    group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
-                groupViewModel.setSelectedMembership(membershipDto!!)
-                Log.d("MEMBERSHIP", membershipDto.toString())
-                navController.navigate("member_detail") {
-                    launchSingleTop = true
+                coroutineScope.launch {
+                    groupViewModel.setSelectedMember(member)
+                    /*
+                    * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
+                    * I need to match each detail with the corresponding membershipDto*/
+                    val membershipDto =
+                        group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
+                    groupViewModel.setSelectedMembership(membershipDto!!)
+                    Log.d("MEMBERSHIP", membershipDto.toString())
+                    navController.navigate("member_detail") {
+                        launchSingleTop = true
+                    }
+                    displayCallback(false)
                 }
-                displayCallback(false)
             },
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small
@@ -1331,3 +1173,74 @@ fun MemberItem(
     }
 }
 
+@Composable
+fun ActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp / 2
+    var showPaid by rememberSaveable { mutableStateOf(true)}
+    ConstraintLayout(
+        Modifier.fillMaxSize()
+    ) {
+        val (paid, unPaid, paidLiner, unPaidLiner) = createRefs()
+        Text(
+            text = stringResource(id = R.string.paid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .fillMaxHeight()
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = true
+                    switchView(showPaid)
+                }
+                .constrainAs(paid) {
+                    start.linkTo(parent.start)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = stringResource(id = R.string.unpaid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .fillMaxHeight()
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = false
+                    switchView(showPaid)
+                }
+                .constrainAs(unPaid) {
+                    end.linkTo(parent.end)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(paidLiner) {
+                        start.linkTo(parent.start, margin = 1.dp)
+                        top.linkTo(paid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
+        }
+
+        if (!showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(unPaidLiner) {
+                        end.linkTo(parent.end, margin = 1.dp)
+                        top.linkTo(unPaid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
+        }
+    }
+}

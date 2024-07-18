@@ -1,5 +1,6 @@
 package com.register.app.repositoryimpls
 
+import android.graphics.Paint.Join
 import com.register.app.api.ActivityService
 import com.register.app.api.GroupService
 import com.register.app.dto.ActivityRate
@@ -7,12 +8,16 @@ import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
+import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
 import com.register.app.model.Event
 import com.register.app.model.Group
+import com.register.app.model.MembershipRequest
 import com.register.app.repository.GroupRepository
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -218,7 +223,91 @@ class GroupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getGroupDetails(groupId: Int?): Group? {
-        return null
+    override suspend fun getGroupDetails(groupId: Int?): GroupDetailWrapper? {
+        return suspendCoroutine { continuation ->
+            val call = groupService.getGroupDetails(groupId)
+            call.enqueue(object : Callback<GroupDetailWrapper> {
+                override fun onResponse(
+                    call: Call<GroupDetailWrapper>,
+                    response: Response<GroupDetailWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GroupDetailWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun searchGroupByName(searchTag: String): GroupsWrapper? {
+        return suspendCoroutine { continuation ->
+            val call = groupService.searchGroupByName(searchTag)
+            call.enqueue(object : Callback<GroupsWrapper?> {
+                override fun onResponse(
+                    call: Call<GroupsWrapper?>,
+                    response: Response<GroupsWrapper?>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else {
+                        continuation.resume(GroupsWrapper(response.message(), false, null))
+                    }
+                }
+
+                override fun onFailure(call: Call<GroupsWrapper?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun requestToJoinGroup(
+        groupId: Int,
+        userInfo: JoinGroupDto
+    ): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.requestToJoinGroup(groupId, userInfo)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.approveMembershipRequest(membershipRequest)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
     }
 }

@@ -24,8 +24,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,9 +47,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.model.Group
+import com.register.app.model.Member
 import com.register.app.util.DataStoreManager
 import com.register.app.util.DateFormatter
 import com.register.app.util.GenericTopBar
+import com.register.app.util.GroupItem
 import com.register.app.util.GroupSearchBox
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
@@ -125,91 +132,14 @@ fun GroupsScreenContent(
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(groupList) { group ->
-                        GroupItem(group, groupViewModel, navController)
+                        var admins by rememberSaveable { mutableStateOf<List<Member>?>(null) }
+                        LaunchedEffect(key1 = 260) {
+                            admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
+                        }
+                        GroupItem(group, admins, groupViewModel, navController)
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun GroupItem(group: Group, groupViewModel: GroupViewModel, navController: NavController) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    Surface(
-        Modifier
-            .fillMaxWidth()
-            .padding(bottom = 2.dp, start = 8.dp, end = 8.dp)
-            .clickable {
-                coroutineScope.launch {
-                    groupViewModel.setSelectedGroupDetail(group)
-                    groupViewModel.isUserAdmin()
-                }
-                navController.navigate("group_detail") { launchSingleTop = true }
-            },
-        shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-        color = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.extraSmall
-    ) {
-        ConstraintLayout(
-            Modifier
-                .fillMaxWidth()) {
-            val (logo, name, memberCount, type, dateCreated) = createRefs()
-
-            Surface(
-                Modifier
-                    .size(120.dp)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start, margin = 4.dp)
-                        centerVerticallyTo(parent)
-                    },
-                shape = MaterialTheme.shapes.large,
-                color = Color.Transparent
-            ) {
-                ImageLoader(group.logoUrl?: "", context, 120, 120, R.drawable.download)
-            }
-
-            Text(
-                text = group.groupName,
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(name) {
-                        top.linkTo(parent.top, margin = 4.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(text = "Group type: ${group.groupType}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(type) {
-                        top.linkTo(name.bottom, margin = 8.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "Created on: ${DateFormatter.formatDateTime(group.dateCreated)}",
-                Modifier
-                    .padding(end = 8.dp)
-                    .constrainAs(dateCreated) {
-                        top.linkTo(type.bottom, margin = 8.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
-
-            Text(text = "${group.memberList?.size} members",
-                Modifier.constrainAs(memberCount) {
-                    top.linkTo(dateCreated.bottom, margin = 8.dp)
-                    start.linkTo(logo.end, margin = 8.dp)
-                },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                color = Color.DarkGray)
         }
     }
 }

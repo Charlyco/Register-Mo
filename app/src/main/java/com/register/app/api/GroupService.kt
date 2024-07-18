@@ -5,11 +5,15 @@ import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
+import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
 import com.register.app.model.Group
+import com.register.app.model.MembershipRequest
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -45,4 +49,12 @@ interface GroupService {
 
     @PUT("group-service/api/v1/group/member/remove")
     fun expelMember(@Body removeMemberModel: RemoveMemberModel): Call<GenericResponse>
+    @GET("group-service/api/v1/group/groupName")
+    fun searchGroupByName(@Query("groupName") searchTag: String): Call<GroupsWrapper>
+    @POST("group-service/api/v1/group/{groupId}/request")
+    fun requestToJoinGroup(@Path("groupId") groupId: Int, @Body userInfo: JoinGroupDto): Call<GenericResponse>
+    @PUT("group-service/api/v1/group/membershipRequest/approve")
+    fun approveMembershipRequest(@Body membershipRequest: MembershipRequest): Call<GenericResponse>
+    @GET("group-service/api/v1/group/{groupId}")
+    fun getGroupDetails(@Path("groupId") groupId: Int?): Call<GroupDetailWrapper>
 }

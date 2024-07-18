@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -41,6 +42,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -78,7 +81,7 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
-import com.register.app.util.GroupSearchBox
+import com.register.app.util.GroupItem
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
@@ -168,6 +171,8 @@ fun WelcomeNote() {
 @Composable
 fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
+    var searchTag by rememberSaveable { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
     Row(
         Modifier
             .width(screenWidth.dp)
@@ -175,7 +180,9 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        GroupSearchBox(groupViewModel = groupViewModel, navController = navController, screenWidth - 92)
+        HomeSearchBox(screenWidth - 92, searchTag){
+            searchTag = it
+        }
         Surface(
             shape = MaterialTheme.shapes.medium,
             shadowElevation = dimensionResource(id = R.dimen.low_elevation),
@@ -184,13 +191,59 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
                 .size(55.dp),
             color = MaterialTheme.colorScheme.primary
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.search),
+            Icon(painter = painterResource(id = R.drawable.search),
                 contentDescription = "",
-                Modifier.padding(16.dp),
+                Modifier
+                    .clickable {
+                        coroutineScope.launch {
+                            val response = groupViewModel.searchGroupByName(searchTag)
+                            if (response?.status == true) {
+                                navController.navigate("suggested_groups")
+                            }
+                        }
+                    }
+                    .padding(16.dp),
                 tint = MaterialTheme.colorScheme.onPrimary
                 )
         }
+    }
+}
+
+@Composable
+fun HomeSearchBox(
+    width: Int,
+    searchTag: String,
+    function: (searchTag: String) -> Unit
+) {
+    Surface(
+        Modifier
+            .padding(horizontal = 8.dp)
+            .width(width.dp),
+        color = MaterialTheme.colorScheme.onPrimary,
+        shadowElevation = dimensionResource(id = R.dimen.low_elevation),
+        shape = MaterialTheme.shapes.large
+    ) {
+        TextField(
+            value = searchTag,
+            onValueChange = { function(it) },
+            modifier = Modifier
+                .height(55.dp),
+            placeholder = { Text(
+                text = stringResource(id = R.string.search_group),
+                color = Color.Gray) },
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent
+            ),
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "",
+                    tint = Color.Gray)
+            }
+        )
     }
 }
 
@@ -338,107 +391,8 @@ fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navC
                     LaunchedEffect(key1 = 260) {
                         admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                     }
-                    TopGroupItem(group, admins, groupViewModel, navController)
+                    GroupItem(group, admins, groupViewModel, navController)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun TopGroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController) {
-    val context = LocalContext.current
-    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
-    val coroutineScope = rememberCoroutineScope()
-
-    Surface(
-        Modifier
-            .width(itemWidth.dp)
-            .padding(horizontal = 4.dp)
-            .height(72.dp)
-            .clickable {
-                coroutineScope.launch {
-                    groupViewModel.setSelectedGroupDetail(group)
-                    groupViewModel.isUserAdmin()
-                }
-                navController.navigate("group_detail") { launchSingleTop = true }
-            },
-        color = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.small
-    ) {
-        ConstraintLayout(
-            Modifier
-                .fillMaxWidth()) {
-            val (logo, name, description, memberCount, memberIcons) = createRefs()
-
-            Surface(
-                Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start, margin = 8.dp)
-                        centerVerticallyTo(parent)
-                    },
-                color = Color.Transparent
-            ) {
-                ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.download)
-            }
-
-            Text(
-                text = group.groupName,
-                Modifier
-                    .width((itemWidth - 20).dp)
-                    .constrainAs(name) {
-                        top.linkTo(parent.top, margin = 12.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Start
-            )
-
-            Text(text = group.groupDescription?: "",
-                Modifier
-                    .width((itemWidth - 20).dp)
-                    .constrainAs(description) {
-                        bottom.linkTo(parent.bottom, margin = 12.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Start
-            )
-
-            Column(
-                Modifier.constrainAs(memberIcons) {
-                    top.linkTo(parent.top, margin = 8.dp)
-                    end.linkTo(parent.end, margin = 8.dp)
-                },
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                admins?.forEach { admin ->
-                    Surface(
-                        Modifier.clip(CircleShape)
-                    ) {
-                        ImageLoader(admin.imageUrl?: "", context, 20, 20, R.drawable.placeholder) }
-                    }
-            }
-
-            Surface(
-                Modifier
-                    .constrainAs(memberCount) {
-                        top.linkTo(memberIcons.bottom, margin = 4.dp)
-                        centerHorizontallyTo(memberIcons)
-                    },
-                color = MaterialTheme.colorScheme.tertiary,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(text = "+${group.memberList?.size}",
-                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp))
             }
         }
     }
@@ -470,7 +424,7 @@ fun ActivityFeedList(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 feedList.forEach { eventFeed ->
-                    EventItem(navController, groupViewModel, activityViewModel, eventFeed)
+                    EventItemHome(navController, groupViewModel, activityViewModel, eventFeed)
                 }
             }
         }
@@ -479,7 +433,7 @@ fun ActivityFeedList(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EventItem(
+fun EventItemHome(
     navController: NavController,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
@@ -494,11 +448,15 @@ fun EventItem(
         modifier = Modifier
             .clickable {
                 coroutineScope.launch {
+                    groupViewModel.reloadGroup(eventFeed.groupId) // load group details
                     activityViewModel.setSelectedEvent(eventFeed)
                     groupViewModel.getComplianceRate(eventFeed)
-                }
-                navController.navigate(route = "event_detail") {
-                    launchSingleTop = true
+                    if (groupViewModel.groupDetailLiveData.value != null) {
+                        groupViewModel.isUserAdmin() // check if user is admin for the group that owns the selected activity
+                        navController.navigate(route = "event_detail") {
+                            launchSingleTop = true
+                        }
+                    }
                 }
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -558,7 +516,7 @@ fun EventItem(
             }
 
             Text(
-                text = eventFeed.eventTitle!!,
+                text = eventFeed.eventTitle,
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.constrainAs(eventTitle) {

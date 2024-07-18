@@ -46,6 +46,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.ReactionType
 import com.register.app.model.Event
+import com.register.app.util.EventItem
 import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ActivityViewModel
@@ -95,13 +96,16 @@ fun EventScreenDetail(
 @Composable
 fun EventList(navController: NavController, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel) {
     val feedList = groupViewModel.groupEvents.observeAsState().value
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
     if (feedList?.isNotEmpty() == true) {
         LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .fillMaxWidth(),
             rememberLazyListState()
         ) {
             items(feedList) {eventFeed ->
-                EventFeedItem(navController, groupViewModel, activityViewModel, eventFeed)
+                EventItem(eventFeed, group!!, groupViewModel, activityViewModel,  navController)
             }
         }
     }

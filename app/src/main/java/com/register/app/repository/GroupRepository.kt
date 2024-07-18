@@ -5,12 +5,16 @@ import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
+import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
+import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
 import com.register.app.model.Event
 import com.register.app.model.Group
+import com.register.app.model.MembershipRequest
 import okhttp3.RequestBody
 
 interface GroupRepository {
@@ -24,5 +28,8 @@ interface GroupRepository {
     suspend fun uploadImage(image: RequestBody, name: String): ImageUploadResponse
     suspend fun changeMemberStatus(membershipId: String, changeMemberStatusDto: ChangeMemberStatusDto): MembershipDtoWrapper
     suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse
-    suspend fun getGroupDetails(groupId: Int?): Group?
+    suspend fun getGroupDetails(groupId: Int?): GroupDetailWrapper?
+    suspend fun searchGroupByName(searchTag: String): GroupsWrapper?
+    suspend fun requestToJoinGroup(groupId: Int, userInfo: JoinGroupDto): GenericResponse
+    suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse
 }

@@ -1,18 +1,23 @@
 package com.register.app.util
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PrivacyTip
@@ -30,6 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -39,6 +46,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +61,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -60,10 +69,13 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import coil.transform.CircleCropTransformation
 import com.register.app.R
+import com.register.app.model.Event
 import com.register.app.model.Group
+import com.register.app.model.Member
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun CircularIndicator() {
@@ -262,5 +274,210 @@ fun GroupSearchBox(groupViewModel: GroupViewModel, navController: NavController,
                     tint = Color.Gray)
             }
         )
+    }
+}
+
+@Composable
+fun EventItem(
+    event: Event,
+    group: Group,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val percent = (event.contributions?.size?.times(100))?.div(group.memberList?.size!!)
+    val sliderWidth = LocalConfiguration.current.screenWidthDp - 140
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                coroutineScope.launch {
+                    activityViewModel.setSelectedEvent(event)
+                    groupViewModel.getComplianceRate(event) // calculate the compliance rate of this user and set the value to a liveData
+                    groupViewModel.isUserAdmin() //determine if this user is an admin in the group to which this activity belong
+                }
+                navController.navigate("event_detail") {
+                    launchSingleTop = true
+                }
+            },
+        shape = MaterialTheme.shapes.extraSmall,
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.onTertiary),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        ConstraintLayout(
+            Modifier
+                .fillMaxSize()
+        ) {
+            val (eventTitle, date, rate) = createRefs()
+
+            Text(
+                text = event.eventTitle,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.constrainAs(eventTitle) {
+                    start.linkTo(parent.start, margin = 8.dp)
+                    top.linkTo(parent.top, margin = 8.dp)
+                }
+            )
+            Row(
+                modifier = Modifier.constrainAs(date) {
+                    end.linkTo(parent.end, margin = 8.dp)
+                    top.linkTo(parent.top, margin = 8.dp)
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = "",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(18.dp))
+
+                Text(
+                    text = Utils.formatToDDMMYYYY(event.dateCreated),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = Color.Gray,
+                )
+            }
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(end = 8.dp)
+                    .constrainAs(rate) {
+                        centerHorizontallyTo(parent)
+                        top.linkTo(eventTitle.bottom, margin = 8.dp)
+                        bottom.linkTo(parent.bottom, margin = 8.dp)
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Slider(
+                    value = event.contributions?.size?.toFloat()?: 0.0f,
+                    onValueChange = {},
+                    enabled = false ,
+                    steps = group.memberList?.size?.minus(1)!!,
+                    valueRange = 0f .. group.memberList.size.toFloat(),
+                    colors = SliderDefaults.colors(
+                        disabledThumbColor = Color.Transparent,
+                        disabledActiveTrackColor = MaterialTheme.colorScheme.primary,
+                        disabledInactiveTrackColor = MaterialTheme.colorScheme.surface,
+                        disabledActiveTickColor = MaterialTheme.colorScheme.primary,
+                        disabledInactiveTickColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier
+                        .width(sliderWidth.dp)
+                        .height(8.dp)
+                )
+
+                Text(
+                    text = "${percent}% Compliance",
+                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController) {
+    val context = LocalContext.current
+    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
+    val coroutineScope = rememberCoroutineScope()
+
+    Surface(
+        Modifier
+            .width(itemWidth.dp)
+            .padding(horizontal = 4.dp)
+            .height(72.dp)
+            .clickable {
+                coroutineScope.launch {
+                    groupViewModel.setSelectedGroupDetail(group)
+                    groupViewModel.isUserAdmin()
+                }
+                navController.navigate("group_detail") { launchSingleTop = true }
+            },
+        color = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.small
+    ) {
+        ConstraintLayout(
+            Modifier
+                .fillMaxWidth()) {
+            val (logo, name, description, memberCount, memberIcons) = createRefs()
+
+            Surface(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .constrainAs(logo) {
+                        start.linkTo(parent.start, margin = 8.dp)
+                        centerVerticallyTo(parent)
+                    },
+                color = Color.Transparent
+            ) {
+                ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.download)
+            }
+
+            Text(
+                text = group.groupName,
+                Modifier
+                    .width((itemWidth - 20).dp)
+                    .constrainAs(name) {
+                        top.linkTo(parent.top, margin = 12.dp)
+                        start.linkTo(logo.end, margin = 8.dp)
+                    },
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start
+            )
+
+            Text(text = group.groupDescription?: "",
+                Modifier
+                    .width((itemWidth - 20).dp)
+                    .constrainAs(description) {
+                        bottom.linkTo(parent.bottom, margin = 12.dp)
+                        start.linkTo(logo.end, margin = 8.dp)
+
+                    },
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start
+            )
+
+            Row(
+                Modifier.constrainAs(memberIcons) {
+                    top.linkTo(parent.top, margin = 8.dp)
+                    end.linkTo(parent.end, margin = 8.dp)
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                admins?.forEach { admin ->
+                    Surface(
+                        Modifier.clip(CircleShape)
+                    ) {
+                        ImageLoader(admin.imageUrl?: "", context, 20, 20, R.drawable.placeholder) }
+                }
+            }
+
+            Surface(
+                Modifier
+                    .constrainAs(memberCount) {
+                        top.linkTo(memberIcons.bottom, margin = 4.dp)
+                        centerHorizontallyTo(memberIcons)
+                    },
+                color = MaterialTheme.colorScheme.tertiary,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(text = "+${group.memberList?.size}",
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
     }
 }

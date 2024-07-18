@@ -367,6 +367,7 @@ Surface(
                         group?.groupName!!, group.groupId,
                         eventType)
                     if (response.status) {
+                        groupViewModel.reloadGroup(group.groupId) // Refresh group details
                         Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
                         navController.navigateUp()
                     }
