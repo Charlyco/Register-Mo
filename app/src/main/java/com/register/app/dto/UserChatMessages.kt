@@ -1,19 +1,16 @@
 package com.register.app.dto
 
-import com.google.gson.annotations.SerializedName
 
-class UserChatMessages(
+data class UserChatMessages(
     val message: String,
-    val code: Int,
-    val data: List<MessageData>?,
-    val status: Boolean
+    val status: Boolean,
+    val data: List<MessageData>?
 )
 
 data class MessageData(
-    val url: String?,
-    val time: String,
-    val id: String,
     val message: String?,
-    val username: String,
-    val mine: Boolean
+    val membershipId: String?,
+    val senderName: String?,
+    val imageUrl: String?,
+    val sendTime: String?,
 )

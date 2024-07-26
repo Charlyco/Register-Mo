@@ -1,17 +1,21 @@
 package com.register.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.register.app.dto.ChatMessage
 import com.register.app.dto.ChatMessageResponse
+import com.register.app.dto.GroupStateItem
+import com.register.app.dto.JoinChatPayload
+import com.register.app.dto.MessageData
+import com.register.app.dto.MessagePayload
+import com.register.app.model.Group
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,30 +23,41 @@ class ForumViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
-    private val _chatMessages: MutableLiveData<List<ChatMessageResponse>> = MutableLiveData()
-    val chatMessages: LiveData<List<ChatMessageResponse>> = _chatMessages
+    private val _chatMessages: MutableLiveData<List<MessageData>> = MutableLiveData()
+    val chatMessages: LiveData<List<MessageData>> = _chatMessages
     private val _remoteChatMessages: MutableLiveData<ChatMessageResponse?> = MutableLiveData()
     val remoteChatMessages: MutableLiveData<ChatMessageResponse?> = _remoteChatMessages
+    private val _selectedGroup: MutableLiveData<Group?> = MutableLiveData()
+    val selectedGroup: LiveData<Group?> = _selectedGroup
 
     private val _currentRemoteUser: MutableLiveData<String?> = MutableLiveData()
     val currentRemoteUser: LiveData<String?> = _currentRemoteUser
 
+    init {
+        viewModelScope.launch {
+            val initialGroup = dataStoreManager.readUserData()?.groupIds?.get(0)
+            val payload = JoinChatPayload(dataStoreManager.readUserData()?.fullName!!, initialGroup!!)
+            loadGroupChats(initialGroup)
+            connectToChat(payload)
+        }
+    }
+
+
     suspend fun fetUserChats() {
-        val userChats = currentRemoteUser.value?.let { chatRepository.fetchUserChats(it) }
-        if (userChats?.data?.isNotEmpty() == true) {
+        val userChats = chatRepository.fetchUserChats(selectedGroup.value?.groupId!!)
+        if (userChats.data?.isNotEmpty() == true) {
             val data = userChats.data
             val messageList = _chatMessages.value
-            val newMessageList = mutableListOf<ChatMessageResponse>()
+            val newMessageList = mutableListOf<MessageData>()
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
             data.forEach {
                 newMessageList.add(
-                    ChatMessageResponse(
-                        it.url,
-                        it.time,
-                        it.id,
+                    MessageData(
                         it.message,
-                        it.username,
-                        it.mine
+                        it.membershipId,
+                        it.senderName,
+                        it.imageUrl,
+                        it.sendTime
                     )
                 )
             }
@@ -50,40 +65,36 @@ class ForumViewModel @Inject constructor(
         }
     }
 
-    suspend fun connectToChat(username: String?) {
-        chatRepository.connectToChat()
-        if (username != null) {
-            chatRepository.subscribe("/topic/messages/", username) {
-                val messageList = _chatMessages.value
-                val newMessageList = mutableListOf<ChatMessageResponse>()
-                newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
-                newMessageList.add(
-                    ChatMessageResponse(
-                        it.url,
-                        LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")).toString(),
-                        it.id,
-                        it.message,
-                        it.username,
-                        it.isMine
-                    )
+    suspend fun connectToChat(payload: JoinChatPayload) {
+        dataStoreManager.readTokenData()?.let { chatRepository.connectToChat(it) }
+        chatRepository.subscribe("/app/chat/joinChat", payload) {
+            val messageList = _chatMessages.value
+            val newMessageList = mutableListOf<MessageData>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            newMessageList.add(
+                MessageData(
+                    it.message,
+                    it.membershipId,
+                    it.senderName,
+                    it.imageUrl,
+                    it.sendTime
                 )
-                _chatMessages.postValue(newMessageList)
-            }
+            )
+            _chatMessages.postValue(newMessageList)
         }
     }
 
-    private fun transformToChatMessage(it: ChatMessageResponse) {
+    private fun transformToChatMessage(it: MessageData) {
         val messageList = _chatMessages.value
-        val newMessageList = mutableListOf<ChatMessageResponse>()
+        val newMessageList = mutableListOf<MessageData>()
         newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
         newMessageList.add(
-            ChatMessageResponse(
-                it.url,
-                it.time,
-                it.id,
+            MessageData(
                 it.message,
-                it.username,
-                it.isMine
+                it.membershipId,
+                it.senderName,
+                it.imageUrl,
+                it.sendTime
             )
         )
         _chatMessages.postValue(newMessageList)
@@ -95,11 +106,46 @@ class ForumViewModel @Inject constructor(
         }
     }
 
-    suspend fun sendMessage(toUsername: String, message: String) {
-        val chatMessage = ChatMessage(message, dataStoreManager.readUserData()?.userName!!, "", toUsername)
-        chatRepository.sendMessage(toUsername, chatMessage) {
-            transformToChatMessage(it)
+    suspend fun sendMessage(membershipId: String, message: String, group: Group?) {
+        val groupId = selectedGroup.value?.groupId?: group?.groupId  //if the user has not selected a group, use the default group
+        val groupName = selectedGroup.value?.groupName?: group?.groupName
+        val chatMessage = MessagePayload(
+            message,
+            membershipId,
+            dataStoreManager.readUserData()?.fullName!!,
+            dataStoreManager.readUserData()?.imageUrl?: "",
+            groupName!!,
+            groupId!!,
+            LocalDateTime.now().toString())
+        chatRepository.sendMessage(groupId, chatMessage) {
+            //Log.d("SEND_MESSAGE", it.toString())
+            //transformToChatMessage(it)
         }
     }
 
+    suspend fun loadGroupChats(groupId: Int?) {
+        val groupChats = groupId.let { chatRepository.fetchUserChats(it!!) }
+        if (groupChats.data?.isNotEmpty() == true) {
+            val data = groupChats.data
+            val messageList = _chatMessages.value
+            val newMessageList = mutableListOf<MessageData>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+//            data.forEach {
+//                MessageData(
+//                    it.message,
+//                    it.membershipId,
+//                    it.senderName,
+//                    it.imageUrl,
+//                    it.sendTime
+//                )
+//            }
+            newMessageList.addAll(data)
+            _chatMessages.value = newMessageList
+        }
+    }
+
+    suspend fun setSelectedGroup(selectedGroup: Group?) {
+        _selectedGroup.value = selectedGroup
+        loadGroupChats(selectedGroup?.groupId)
+    }
 }

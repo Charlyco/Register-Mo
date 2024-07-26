@@ -3,18 +3,17 @@ package com.register.app.repositoryimpls
 import android.util.Log
 import com.google.gson.Gson
 import com.register.app.api.ChatService
-import com.register.app.dto.ChatMessage
-import com.register.app.dto.ChatMessageResponse
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.JoinChatPayload
+import com.register.app.dto.MessageData
+import com.register.app.dto.MessagePayload
 import com.register.app.dto.UserChatMessages
 import com.register.app.repository.ChatRepository
 import com.register.app.websocket.StompWebSocketClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -65,33 +64,34 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun connectToChat() {
-        stompWebSocketClient.connect()
+    override suspend fun connectToChat(jwtToken: String) {
+        stompWebSocketClient.connect(jwtToken)
     }
 
-    override suspend fun subscribe(path: String,
-                                   toUsername: String,
-                                   callback: (ChatMessageResponse) -> Unit) {
-        stompWebSocketClient.subscribe("$path$toUsername") { chatMessage ->
+    override suspend fun subscribe(
+        path: String,
+        payload: JoinChatPayload,
+        callback: (MessageData) -> Unit) {
+        stompWebSocketClient.subscribe(path, payload) { chatMessage ->
             //val newMessage = Gson().fromJson(stompMessage, ChatMessageModel::class.java)
             callback(chatMessage)
         }
     }
-    override suspend fun sendMessage(username: String,
-                                     message: ChatMessage,
-                                     callback: (ChatMessageResponse) -> Unit?) {
+    override suspend fun sendMessage(
+        groupId: Int,
+        message: MessagePayload,
+        callback: (MessageData) -> Unit?) {
         val jsonString = Gson().toJson(message)
-        stompWebSocketClient.sendMessage("/app/chat/$username", jsonString) { topic1, message1 ->
-            val response = Gson().fromJson(message1, ChatMessageResponse::class.java)
+        stompWebSocketClient.sendMessage("/app/chat/newMessage", jsonString) { topic1, message1 ->
+            val response = Gson().fromJson(message1, MessageData::class.java)
             Log.d("MESSAGE", response.toString())
             callback(
-                ChatMessageResponse(
-                    response.url,
-                    LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")).toString(),
-                    response.id,
+                MessageData(
                     response.message,
-                    response.username,
-                    true,
+                    response.membershipId,
+                    response.senderName,
+                    response.imageUrl,
+                    response.sendTime,
                 )
             )
         }
@@ -101,9 +101,9 @@ class ChatRepositoryImpl @Inject constructor(
         stompWebSocketClient.close()
     }
 
-    override suspend fun fetchUserChats(username: String): UserChatMessages {
+    override suspend fun fetchUserChats(groupId: Int): UserChatMessages {
         return suspendCoroutine { continuation ->
-            val call = chatService.getUserChatMessages(username)
+            val call = chatService.getUserChatMessages(groupId)
             call.enqueue(object : Callback<UserChatMessages> {
                 override fun onResponse(
                     call: Call<UserChatMessages>,

@@ -1,11 +1,14 @@
 package com.register.app.websocket
 
 import android.util.Log
+import com.google.gson.Gson
+import com.register.app.dto.JoinChatPayload
+import com.register.app.dto.MessageData
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import ua.naiksoftware.stomp.Stomp
-import com.google.gson.Gson
-import com.register.app.dto.ChatMessageResponse
+import ua.naiksoftware.stomp.dto.StompHeader
+
 
 class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
     private var client = Stomp.over(Stomp.ConnectionProvider.OKHTTP, url)
@@ -14,8 +17,10 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
 
     private var subscription: Disposable? = null
 
-    override suspend fun connect() {
-        client.connect()
+    override suspend fun connect(jwtToken: String) {
+        val headers: MutableList<StompHeader> = ArrayList()
+        headers.add(StompHeader("Authorization", "Bearer $jwtToken"))
+        client.connect(headers)
         client.withClientHeartbeat(1000 * 30)
         val disposable = client.lifecycle().subscribe {
             Log.d("STOMP", "LIFECYCLE --- ${it.type}: ${it?.exception?.message}")
@@ -23,18 +28,24 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         compositeDisposable.add(disposable)
     }
 
-    override suspend fun subscribe(path: String, callback: (topicMessage: ChatMessageResponse) -> Unit) {
+    override suspend fun subscribe(
+        path: String,
+        payload: JoinChatPayload,
+        callback: (topicMessage: MessageData) -> Unit
+    ) {
         if (subscription !=null) {
             if (!subscription?.isDisposed!!) {
                 subscription?.dispose()
             }
         }
-        subscription = client.topic(path).subscribe({ message ->
-            val chatMessage = Gson().fromJson(message.payload, ChatMessageResponse::class.java)
+        subscription = client.topic("/forum/${payload.groupId}").subscribe({ message ->
+            val chatMessage = Gson().fromJson(message.payload, MessageData::class.java)
             callback(chatMessage)
         }, { throwable ->
             Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+            client.send(path, Gson().toJson(payload))
         })
+
     }
 
     override suspend fun sendMessage(
@@ -43,7 +54,7 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         onSend: (path: String, message: String) -> Unit
     ) {
         val disposable = client.send(path, message).subscribe({
-            Log.d("IdeatellerStomp", "SENT")
+            Log.d("REGISTER_STOMP", "SENT")
             onSend(path, message)
         }, { throwable ->
             Log.d("STOMPERROR", throwable.message ?: "Unknown error")

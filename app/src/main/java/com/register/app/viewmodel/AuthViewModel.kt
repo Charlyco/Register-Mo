@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.InputStream
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.concurrent.timer
 
@@ -143,6 +144,8 @@ class AuthViewModel @Inject constructor(
         if (authResponse?.status == true) {
             dataStoreManager.writeUserData(authResponse.data?.member!!)
             dataStoreManager.writeTokenData(authResponse.data.authToken)
+            dataStoreManager.writeRefreshTokenData(authResponse.data.refreshToken)
+            dataStoreManager.writeLoginTime(LocalDateTime.now())
             updateFirebaseToken(dataStoreManager.readDeviceId(), dataStoreManager.readFirebaseToken())
             _progressLiveData.value = false
             _userLiveData.value = authResponse.data.member
@@ -226,6 +229,30 @@ class AuthViewModel @Inject constructor(
         }
         _progressLiveData.value = false
         return response
+    }
+
+    suspend fun shouldLogin(): Boolean {
+        if (dataStoreManager.readRefreshToken() != null) {
+            val issueDate = LocalDateTime.parse(dataStoreManager.readRefreshToken()?.issueDate)
+            val validity = dataStoreManager.readRefreshToken()?.validity
+            return LocalDateTime.now() > validity?.div(1000)?.let { issueDate.plusSeconds(it) }
+        } else return true
+    }
+
+    suspend fun refreshToken() {
+        _progressLiveData.value = true
+        val refreshToken = dataStoreManager.readRefreshToken()?.refreshToken
+        val response = authRepository.getRefreshToken("Bearer ${refreshToken!!}")
+        if (response.status) {
+            dataStoreManager.writeTokenData(response.data?.authToken!!)
+            dataStoreManager.writeLoginTime(LocalDateTime.now())
+        }
+        _progressLiveData.value = false
+    }
+
+    suspend fun shouldRefreshToken(): Boolean {
+        val loginTime = dataStoreManager.readLoginTime()
+        return LocalDateTime.now() > loginTime?.plusSeconds(2700) // refresh token evey 45 mins
     }
 
 }

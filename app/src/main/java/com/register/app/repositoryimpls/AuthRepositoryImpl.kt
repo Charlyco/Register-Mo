@@ -196,4 +196,10 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
         }
     }
 
+    override suspend fun getRefreshToken(refreshToken: String): AuthResponseWrapper {
+        return suspendCoroutine { continuation ->
+            val call = userService.getRefreshToken(refreshToken)
+        }
+    }
+
 }

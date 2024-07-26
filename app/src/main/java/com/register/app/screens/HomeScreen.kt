@@ -452,6 +452,7 @@ fun EventItemHome(
                     activityViewModel.setSelectedEvent(eventFeed)
                     groupViewModel.getComplianceRate(eventFeed)
                     if (groupViewModel.groupDetailLiveData.value != null) {
+                        groupViewModel.reloadGroup(eventFeed.groupId) // Load the details of the group that owns the activity
                         groupViewModel.isUserAdmin() // check if user is admin for the group that owns the selected activity
                         navController.navigate(route = "event_detail") {
                             launchSingleTop = true
@@ -461,7 +462,7 @@ fun EventItemHome(
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceDim,
+        color = MaterialTheme.colorScheme.background,
     ) {
         ConstraintLayout(
             modifier = Modifier

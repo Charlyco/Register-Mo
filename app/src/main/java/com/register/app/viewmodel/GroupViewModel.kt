@@ -108,6 +108,8 @@ class GroupViewModel @Inject constructor(
         if (!dataStoreManager.readUserData()?.groupIds.isNullOrEmpty()) {
             val groups: List<Group>? = groupRepository.getAllGroupsForUser(dataStoreManager.readUserData()?.groupIds)
             _groupListLiveDate.value = groups
+            _groupDetailLiveData.value = groups?.get(0) // temporarily set a default group till  the user selects a group
+            getMembershipId(groups?.get(0))
             _loadingState.value = false
         } else {
             _loadingState.value = false
@@ -129,15 +131,20 @@ class GroupViewModel @Inject constructor(
         val userEmail = dataStoreManager.readUserData()?.emailAddress
 
         //filter paid activities
-        val paidActivities = groupEvents?.filter { event ->
+        val paid = groupEvents?.filter { event ->
             event.contributions?.any { it.memberEmail == userEmail } == true }
-        _paidActivities.value = paidActivities
+        _paidActivities.value = paid
         //filter unpaid activities
-        val unpaidActivities = groupEvents?.filter { event ->
-            event.contributions?.none { it.memberEmail == userEmail } == true  && (
-                    (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "COMPLETED") ||
-                    (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "ARCHIVED")) }
-        _unpaidActivities.value = unpaidActivities
+        val unpaid = groupEvents?.filter { event ->
+            event.contributions.isNullOrEmpty() || event.contributions.none { it.memberEmail == userEmail }}?.toMutableList()
+        //Remove freewill donations that are completed or archived
+        unpaid?.forEach { event ->
+            if ((event.eventType == EventType.FREE_WILL.name && event.eventStatus == "COMPLETED") ||
+                (event.eventType == EventType.FREE_WILL.name && event.eventStatus == "ARCHIVED")) {
+                unpaid.remove(event)
+            }
+        }
+        _unpaidActivities.value = unpaid
 
         //get user activity rate
         getActivityRate(membershipId.value, member?.joinedDateTime, group.groupId)
@@ -164,12 +171,12 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun isUserAdmin() {
-        val isAdmin = groupAdminList.value.let {admins -> admins?.find {
+        val isAdmin = groupAdminList.value.let {admins -> admins?.any {
             it.emailAddress == dataStoreManager.readUserData()?.emailAddress } }
         Log.d("IS ADMIN", "isUserAdmin: $isAdmin")
-        if (isAdmin != null) {
+        if (isAdmin == true) {
             _isAdminLiveData.value = true
-        }
+        } else _isAdminLiveData.value = false
     }
 
     suspend fun getIndividualMembershipRequest(emailAddress: String) {
@@ -188,9 +195,9 @@ class GroupViewModel @Inject constructor(
 
 
 
-    private suspend fun getMembershipId(group: Group?): String?{
+    private suspend fun getMembershipId(group: Group?) {
             val member = group?.memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
-            return member?.membershipId
+            _membershipId.value = member?.membershipId
     }
 
     suspend fun saveGroupUpdate(

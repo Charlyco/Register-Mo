@@ -3,7 +3,9 @@ package com.register.app.dto
 data class ConfirmPaymentModel(
     val membershipId: String,
     val payerEmail: String,
+    val payerName: String,
     val eventTitle: String,
+    val eventId: Int,
     val groupId: Int,
     val groupName: String,
     val amountPaid: Double,

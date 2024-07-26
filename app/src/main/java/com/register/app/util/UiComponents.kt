@@ -291,6 +291,7 @@ fun EventItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 2.dp)
             .clickable {
                 coroutineScope.launch {
                     activityViewModel.setSelectedEvent(event)

@@ -26,10 +26,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -77,6 +79,7 @@ import co.yml.charts.ui.piechart.charts.DonutPieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
+import com.register.app.dto.JoinChatPayload
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
@@ -86,6 +89,7 @@ import com.register.app.util.PAID
 import com.register.app.util.UNPAID
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
+import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
@@ -95,6 +99,7 @@ fun GroupDetail(
     navController: NavController,
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
+    forumViewModel: ForumViewModel,
     homeViewModel: HomeViewModel,
     activityViewModel: ActivityViewModel
 ) {
@@ -102,7 +107,7 @@ fun GroupDetail(
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     Scaffold(
-        topBar = { GroupDetailTopBar(navController, group, groupViewModel){showAllMembers = it} },
+        topBar = { GroupDetailTopBar(navController, group, groupViewModel, forumViewModel){showAllMembers = it} },
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
@@ -117,6 +122,7 @@ fun GroupDetailTopBar(
     navController: NavController,
     group: Group?,
     groupViewModel: GroupViewModel,
+    forumViewModel: ForumViewModel,
     viewAllMembers: (show: Boolean) -> Unit
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
@@ -145,27 +151,59 @@ fun GroupDetailTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onBackground
         ),
         actions = {
-            Box(
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Message,
+                contentDescription = "",
                 modifier = Modifier
-                    .clip(CircleShape)
+                    .padding(end = 16.dp)
                     .clickable {
-                        navController.navigate("membership_request") {
-                            launchSingleTop = true
+                        coroutineScope.launch {
+                            navController.navigate("forum") {
+                                launchSingleTop = true
+                            }
+                            forumViewModel.connectToChat(JoinChatPayload(group?.groupName!!, group.groupId))
+                            forumViewModel.setSelectedGroup(group)
                         }
-                    },
-                contentAlignment = Alignment.TopEnd
-            ) {
-               Icon(
-                   painter = painterResource(id = R.drawable.invite_members),
-                   contentDescription = "",
-                   modifier = Modifier.size(32.dp),
-                   tint = MaterialTheme.colorScheme.primary)
-                Text(
-                    text = group?.pendingMemberRequests?.size.toString(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 4.dp))
+                    }
+                )
+
+            if (isAdmin == true) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            navController.navigate("membership_request") {
+                                launchSingleTop = true
+                            }
+                        },
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.invite_members),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .padding(end = 14.dp)
+                            .size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        modifier = Modifier
+                            //.clip(CircleShape)
+                            //.size(24.dp)
+                            .padding(4.dp)
+                    ) {
+                        Text(
+                            text = group?.pendingMemberRequests?.size.toString(),
+                            color = Color.White,
+                            modifier = Modifier.width(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "menu",

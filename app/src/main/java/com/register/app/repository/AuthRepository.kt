@@ -23,4 +23,5 @@ interface AuthRepository {
     suspend fun getMemberDetails(email: String): Member?
     suspend fun uploadImage(requestBody: RequestBody, fileNameFromUri: String): ImageUploadResponse
     suspend fun updateUserData(memberId: Int, updateData: Member): UpdateUserResponse
+    suspend fun getRefreshToken(refreshToken: String): AuthResponseWrapper
 }

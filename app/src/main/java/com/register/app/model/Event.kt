@@ -35,6 +35,7 @@ data class ContributionDto(
     val id: Int?,
     val membershipId: String?,
     val memberEmail: String?,
+    val payerName: String,
     val eventId: Int?,
     val groupId: Int?,
     val groupName: String?,

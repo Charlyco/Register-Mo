@@ -81,9 +81,10 @@ class ActivityViewModel @Inject constructor(
     suspend fun submitEvidenceOfPayment(groupName: String, membershipId: String): GenericResponse {
         val imageUrl = paymentEvidence.value
         val eventTitle = selectedEvent.value?.eventTitle
+        val eventId = selectedEvent.value?.eventId
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
         val payerFullName = dataStoreManager.readUserData()?.fullName
-        val payment = Payment(imageUrl!!, membershipId, payerEmail!!, payerFullName!!, eventTitle!!, groupName)
+        val payment = Payment(imageUrl!!, membershipId, payerEmail!!, payerFullName!!, eventTitle!!, eventId!!, groupName)
         _loadingState.value = true
         val response = activityRepository.submitEvidenceOfPayment(payment)
         _loadingState.value = false
@@ -140,7 +141,9 @@ class ActivityViewModel @Inject constructor(
         val contribution = ConfirmPaymentModel(
             selectedPayment?.membershipId!!,
             selectedPayment.payerEmail,
+            selectedPayment.payerFullName,
             selectedPayment.eventTitle,
+            selectedPayment.eventId,
             groupId,
             selectedPayment.groupName,
             amountPaid,

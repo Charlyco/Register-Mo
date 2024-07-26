@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -31,9 +32,20 @@ fun SplashScreen(
     ) {
         LaunchedEffect(key1 = SPLASH_SCREEN_KEY) {
             delay(3000)
-            if (dataStoreManager.readUserData() != null) {
-                navController.navigate("signin") {
-                    popUpTo("splash") {inclusive = true}
+            if (dataStoreManager.readUserData()?.userId != null) {
+                Log.d("USER:", dataStoreManager.readUserData().toString())
+                if (authViewModel.shouldLogin()) {
+                    navController.navigate("signin") {
+                        popUpTo("splash") {inclusive = true}
+                    }
+                }else {
+                    authViewModel.getUserDetails()
+                    navController.navigate("home") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                    if(authViewModel.shouldRefreshToken()) {
+                        authViewModel.refreshToken()
+                    }
                 }
             } else {
                 navController.navigate("onboard") {

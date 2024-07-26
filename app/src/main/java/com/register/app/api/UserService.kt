@@ -12,6 +12,7 @@ import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -43,4 +44,6 @@ interface UserService {
     fun uploadImage(@Part file: MultipartBody.Part): Call<ImageUploadResponse>
     @PUT("auth-service/api/v1/user/member/{memberId}/update")
     fun updateUserData(@Path("memberId") memberId: Int, @Body updateData: Member): Call<UpdateUserResponse>
+    @POST("auth-service/api/v1/auth/refreshToken")
+    fun getRefreshToken(@Header("refreshToken") refreshToken: String): Call<AuthResponseWrapper>
 }

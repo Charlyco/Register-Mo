@@ -79,7 +79,12 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel, activityViewModel = activityViewModel)
         }
         composable("group_detail") {
-            GroupDetail(navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, homeViewModel = homeViewModel, activityViewModel = activityViewModel)
+            GroupDetail(navController = navController,
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
+                forumViewModel = forumViewModel,
+                homeViewModel = homeViewModel,
+                activityViewModel = activityViewModel)
         }
         composable("profile") {
             ProfileScreen(authViewModel, groupViewModel, navController)

@@ -78,7 +78,7 @@ fun SignUpCont(authViewModel: AuthViewModel,
                     .fillMaxSize()
                     .verticalScroll(scrollState),
             ) {
-                val (backBtn, header, inputSection, alternate) = createRefs()
+                val (backBtn,topBg, header, inputSection, alternate) = createRefs()
 
                 Image(painter = painterResource(
                     id = R.drawable.auth_bg2),
@@ -86,7 +86,7 @@ fun SignUpCont(authViewModel: AuthViewModel,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(320.dp)
-                        .constrainAs(header) {
+                        .constrainAs(topBg) {
                             top.linkTo(parent.top, margin = 0.dp)
                             centerHorizontallyTo(parent)
                         },
@@ -115,6 +115,17 @@ fun SignUpCont(authViewModel: AuthViewModel,
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
+
+                Text(
+                    text = stringResource(id = R.string.complete_info),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = TextUnit(48.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.constrainAs(header) {
+                        top.linkTo(backBtn.bottom, margin = 40.dp)
+                        start.linkTo(parent.start, margin = 16.dp)
+                    }
+                )
 
                 Surface(
                     color = Color.Transparent,

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Register</string>
     <string name="app_logo">This is app logo</string>
-    <string name="splash_text">Cloud-powered \nRecord keeping \nfor your Organization</string>
+    <string name="splash_text">THE REGISTER…\nTrack your association \ndues and levies on the go</string>
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
     <string name="email">Email address</string>
@@ -143,4 +143,6 @@
     <string name="request_to_join">Request to join</string>
     <string name="join_group">Join group</string>
     <string name="progress">progress</string>
+    <string name="get_started">Get\n\nstarted</string>
+    <string name="complete_info">Complete\n\ninformation</string>
 </resources>

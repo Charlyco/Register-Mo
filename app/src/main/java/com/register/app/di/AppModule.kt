@@ -23,6 +23,6 @@ object AppModule {
     @Singleton
     @Provides
     fun providesStompClient(): StompWebSocketClient {
-        return StompWebSocketClientImpl.getInstance("wss://ideateller-user-94b44f536cc1.herokuapp.com/chat") //URL to be changed
+        return StompWebSocketClientImpl.getInstance("ws://34.105.170.3:8084/ws")
     }
 }
