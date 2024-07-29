@@ -10,6 +10,7 @@ import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
 import com.register.app.screens.AuthScreen
+import com.register.app.screens.BulkPayment
 import com.register.app.screens.CreateEvent
 import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EditProfile
@@ -121,6 +122,14 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 navController = navController,
                 groupViewModel = groupViewModel,
                 authViewModel = authViewModel
+            )
+        }
+        composable("bulk_payment/{totalAmount}") { backStackEntry ->
+            BulkPayment(
+                navController = navController,
+                groupViewModel = groupViewModel,
+                activityViewModel = activityViewModel,
+                totalAmount = backStackEntry.arguments?.getString("totalAmount")?.toDouble() ?: 0.0
             )
         }
     }

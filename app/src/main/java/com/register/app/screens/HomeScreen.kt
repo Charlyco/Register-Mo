@@ -14,13 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MenuDefaults
@@ -69,15 +70,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.register.app.R
-import com.register.app.dto.ScreenLoadState
 import com.register.app.model.Event
-import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
@@ -97,45 +97,23 @@ fun HomeScreen(
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
     activityViewModel: ActivityViewModel) {
-    val loadingState = homeViewModel.loadingState?.observeAsState()?.value
-    val isRefreshing by rememberSaveable { mutableStateOf(false)}
-    val refreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
-        onRefresh = { homeViewModel.refreshHomeContents() },
-        refreshThreshold = 84.dp,
-        refreshingOffset = 64.dp)
+
     Scaffold(
         topBar = { HomeTopBar(navController, homeViewModel, authViewModel) },
-        bottomBar = { BottomNavBar(navController) }
+        bottomBar = { BottomNavBar(navController) },
     ) {
-        when (loadingState) {
-            ScreenLoadState.LOADING -> { CircularIndicator() }
-            ScreenLoadState.ERROR -> { ErrorState(homeViewModel) }
-            else -> {
-                Surface(
-                    modifier = Modifier
-                        .padding(top = 64.dp, bottom = 64.dp)
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState(initial = 0))
-                        .pullRefresh(refreshState),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    HomeScreenContent(
-                        modifier = Modifier.padding(it),
-                        homeViewModel,
-                    groupViewModel,
-                    activityViewModel,
-                    navController
-                )
-                    CreateGroupScreen(groupViewModel = groupViewModel, navController) { show ->
-                    groupViewModel.showCreateGroupSheet.postValue(show)
-                }
-            }
-        }
-        }
+            HomeScreenContent(
+                Modifier.padding(it),
+                homeViewModel,
+                groupViewModel,
+                activityViewModel,
+                navController
+            )
+
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreenContent(
     modifier: Modifier,
@@ -144,17 +122,36 @@ fun HomeScreenContent(
     activityViewModel: ActivityViewModel,
     navController: NavController
 ) {
-    val scrollState = rememberScrollState(initial = 0)
-    val height = LocalConfiguration.current.screenHeightDp - 64
-    Column(
-        Modifier
+    val loadingState = homeViewModel.loadingState.observeAsState()?.value
+    val screenHeight = LocalConfiguration.current.screenHeightDp - 64
+    val isRefreshing by rememberSaveable { mutableStateOf(false)}
+    val refreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { homeViewModel.refreshHomeContents() },
+        refreshThreshold = 84.dp,
+        refreshingOffset = 64.dp)
+    Surface(
+        modifier = Modifier
+            .height(screenHeight.dp)
             .fillMaxWidth()
+
     ) {
-        WelcomeNote()
-        SearchSection(groupViewModel, navController)
-        DiscoverSection(groupViewModel, homeViewModel, navController)
-        TopGroups(homeViewModel, groupViewModel, navController)
-        ActivityFeedList(homeViewModel, navController, groupViewModel, activityViewModel)
+        if (loadingState == true) {
+            CircularIndicator()
+        }
+        LazyColumn(
+            Modifier
+                .padding(top = 64.dp)
+                .fillMaxSize()
+                .pullRefresh(refreshState),
+            rememberLazyListState()
+        ) {
+            item { WelcomeNote() }
+            item{ SearchSection(groupViewModel, navController) }
+            item {DiscoverSection(groupViewModel, homeViewModel, navController) }
+            item {TopGroups(homeViewModel, groupViewModel, navController) }
+            item {ActivityFeedList(homeViewModel, navController, groupViewModel, activityViewModel) }
+        }
     }
 }
 

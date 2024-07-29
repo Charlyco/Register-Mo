@@ -82,7 +82,7 @@ fun ChatTopBar(
     groupList?.forEach {
         groupSaverList.add(GroupStateItem(it.groupId, it.groupName))
     }
-    val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value
+    val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupViewModel.groupDetailLiveData.observeAsState().value
 
     //var selectedGroup by rememberSaveable { mutableStateOf(groupList?.get(0)) }
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -145,7 +145,7 @@ fun ChatTopBar(
                               coroutineScope.launch {
                                   val groupDetail = groupList.find { it.groupId == group.groupId } // Find the group that matches the selected item
                                   expanded = false
-                                  forumViewModel?.connectToChat(JoinChatPayload(groupDetail?.groupName!!, groupDetail?.groupId!!))
+                                  forumViewModel?.connectToChat(JoinChatPayload(groupDetail?.groupName!!, groupDetail.groupId!!))
                                   forumViewModel?.setSelectedGroup(groupDetail)
                               }
                           }

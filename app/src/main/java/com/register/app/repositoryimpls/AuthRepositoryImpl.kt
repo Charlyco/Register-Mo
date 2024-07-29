@@ -199,6 +199,21 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
     override suspend fun getRefreshToken(refreshToken: String): AuthResponseWrapper {
         return suspendCoroutine { continuation ->
             val call = userService.getRefreshToken(refreshToken)
+            call.enqueue(object : Callback<AuthResponseWrapper> {
+                override fun onResponse(
+                    call: Call<AuthResponseWrapper>,
+                    response: Response<AuthResponseWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
         }
     }
 

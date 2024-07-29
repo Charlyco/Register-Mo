@@ -28,15 +28,17 @@ class HomeViewModel @Inject constructor(
 ): ViewModel() {
     private val _suggestedGroupLiveData: MutableLiveData<List<Group>> = MutableLiveData()
     val suggestedGroupListLiveData: LiveData<List<Group>> = _suggestedGroupLiveData
-    private val _loadingState: MutableLiveData<ScreenLoadState>? = MutableLiveData()
-    val loadingState: LiveData<ScreenLoadState>? = _loadingState
+    private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
+    val loadingState: LiveData<Boolean> = _loadingState
     private val _eventFeeds: MutableLiveData<List<Event>?> = MutableLiveData()
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
 
 init {
     viewModelScope.launch {
+        _loadingState.value = true
         getEventFeeds()
         getSuggestedGroups()
+        _loadingState.value = false
     }
 }
 
@@ -61,7 +63,12 @@ init {
     }
 
     fun refreshHomeContents() {
-        //TODO("Not yet implemented")
+        viewModelScope.launch {
+            _loadingState.value = true
+            getSuggestedGroups()
+            getEventFeeds()
+            _loadingState.value = false
+        }
     }
 
 //    fun setSelectedEvent(eventFeed: Event) {

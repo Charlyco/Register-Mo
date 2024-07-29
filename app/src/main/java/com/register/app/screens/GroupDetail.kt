@@ -83,6 +83,7 @@ import com.register.app.dto.JoinChatPayload
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
+import com.register.app.util.CircularIndicator
 import com.register.app.util.EventItem
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
@@ -161,7 +162,12 @@ fun GroupDetailTopBar(
                             navController.navigate("forum") {
                                 launchSingleTop = true
                             }
-                            forumViewModel.connectToChat(JoinChatPayload(group?.groupName!!, group.groupId))
+                            forumViewModel.connectToChat(
+                                JoinChatPayload(
+                                    group?.groupName!!,
+                                    group.groupId
+                                )
+                            )
                             forumViewModel.setSelectedGroup(group)
                         }
                     }
@@ -272,6 +278,7 @@ fun GroupDetailScreen(
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
     var showAdminList by rememberSaveable { mutableStateOf(false) }
     var showActivities by rememberSaveable { mutableStateOf(true) }
+    val loadingState = groupViewModel.loadingState.observeAsState().value
     val verticalScrollState = rememberScrollState(initial = 0)
     val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
     val coroutineScope = rememberCoroutineScope()
@@ -280,41 +287,43 @@ fun GroupDetailScreen(
         onRefresh = { coroutineScope.launch { groupViewModel.reloadGroup(group?.groupId) } })
     Surface(
         Modifier
-            .fillMaxSize()
-            .verticalScroll(
-                state = verticalScrollState,
-                enabled = true,
-                reverseScrolling = false
-            )
-            .pullRefresh(refreshState, true),
+            .fillMaxSize(),
+//            .verticalScroll(
+//                state = verticalScrollState,
+//                enabled = true,
+//                reverseScrolling = false
+//            ),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
+        if (loadingState == true) {
+            CircularIndicator()
+        }
+        LazyColumn(
             Modifier
                 .fillMaxWidth()
+                .pullRefresh(refreshState, true),
+            state = rememberLazyListState()
         ) {
-            TopSection(group, groupViewModel)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
-            ActivityRate(groupViewModel)
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
-            ActivitiesHeader(group, showActivities) { showActivities = it}
+            item{ TopSection(group, groupViewModel) }
+            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
+            item{ ActivityRate(groupViewModel) }
+            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
+            item{ ActivitiesHeader(group, showActivities) { showActivities = it} }
             if (showActivities) {
-                Activities(groupViewModel, homeViewModel, activityViewModel, navController, group!!)
+                item{ Activities(groupViewModel, homeViewModel, activityViewModel, navController, group!!) }
             }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
-            GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it}
+            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
+            item{ GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it} }
             if (showProfileDetail) {
-                GroupProfile(group, groupViewModel)
+                item{ GroupProfile(group, groupViewModel) }
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
-            GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it}
+            item{ HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
+            item{ GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it} }
 
             if (showAdminList) {
-                GroupAdminList(group, groupViewModel, navController)
+                item{ GroupAdminList(group, groupViewModel, navController) }
             }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
-
-            HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary)
+            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
         }
     }
 }
@@ -503,6 +512,7 @@ fun PaidEvents(
     group: Group?
 ) {
     val eventList = groupViewModel.paidActivities.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
     ConstraintLayout (
         Modifier
             .fillMaxWidth(),
@@ -526,7 +536,10 @@ fun PaidEvents(
                 text = stringResource(id = R.string.show_more),
                 Modifier
                     .clickable {
-                        groupViewModel.populateActivities(PAID)
+                        coroutineScope.launch {
+                            groupViewModel.populateActivities(PAID)
+                            activityViewModel.getBulkPayments(group?.groupId)
+                        }
                         navController.navigate("events/Paid Activities")
                     }
                     .constrainAs(shoeAll) {
@@ -561,6 +574,7 @@ fun UnpaidEvents(
     group: Group?
 ) {
     val eventList = groupViewModel.unpaidActivities.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
     ConstraintLayout (
         Modifier
             .fillMaxWidth(),
@@ -584,7 +598,10 @@ fun UnpaidEvents(
                 text = stringResource(id = R.string.show_more),
                 Modifier
                     .clickable {
-                        groupViewModel.populateActivities(UNPAID)
+                        coroutineScope.launch {
+                            groupViewModel.populateActivities(UNPAID)
+                            activityViewModel.getBulkPayments(group?.groupId)
+                        }
                         navController.navigate("events/Unpaid Activities")
                     }
                     .constrainAs(shoeAll) {

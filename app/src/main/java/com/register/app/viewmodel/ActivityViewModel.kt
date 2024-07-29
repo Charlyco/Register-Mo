@@ -4,11 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.CommentReply
+import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.EventComment
 import com.register.app.dto.EventDetailWrapper
+import com.register.app.dto.EventItemDto
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
@@ -30,6 +33,10 @@ class ActivityViewModel @Inject constructor(
     private val activityRepository: ActivityRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _pendingBulkPayments: MutableLiveData<List<BulkPaymentModel>?> = MutableLiveData(listOf())
+    val pendingBulkPayments: LiveData<List<BulkPaymentModel>?> = _pendingBulkPayments
+    private val _bulkPaymentSelection: MutableLiveData<List<Event>> = MutableLiveData(listOf())
+    val bulkPaymentSelection: LiveData<List<Event>> = _bulkPaymentSelection
     private val _fileName: MutableLiveData<String?> = MutableLiveData()
     val fileName: LiveData<String?> = _fileName
     private val _paymentEvidence: MutableLiveData<String?> = MutableLiveData()
@@ -189,6 +196,57 @@ class ActivityViewModel @Inject constructor(
         _loadingState.value = true
         val response = activityRepository.deleteActivity(event.eventId)
         _loadingState.value = false
+        return response
+    }
+
+    fun setBulkPaymentSelection(selectedEvents: MutableList<Event>) {
+        _bulkPaymentSelection.value = selectedEvents
+    }
+
+    suspend fun submitBulkPaymentEvidence(
+        groupName: String,
+        groupId: Int,
+        membershipId: String,
+        totalAmount: Double
+    ): GenericResponse {
+        val eventList = mutableSetOf<EventItemDto>()
+        bulkPaymentSelection.value?.forEach { item ->
+            eventList.add(EventItemDto(item.eventTitle, item.eventId, item.levyAmount?: 0.0))
+        }
+
+        val imageUrl = paymentEvidence.value
+        val payerEmail = dataStoreManager.readUserData()?.emailAddress;
+        val payerFullName = dataStoreManager.readUserData()?.fullName
+        val payment = BulkPaymentModel(null, imageUrl!!, eventList, membershipId, payerEmail!!, payerFullName!!, groupName, groupId, totalAmount)
+        _loadingState.value = true
+        val response = activityRepository.submitBulkPaymentEvidence(payment)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun getBulkPayments(groupId: Int?) {
+        _loadingState.value = true
+            val response = activityRepository.getPendingBulkPayments(groupId)
+            _pendingBulkPayments.value = response.data
+            _loadingState.value = false
+    }
+
+    suspend fun confirmBulkPayment(selectedPayment: BulkPaymentModel?, paymentMethod: String): GenericResponse {
+        val eventList = mutableListOf<EventItemDto>()
+        selectedPayment?.eventItemDtos?.let { eventList.addAll(it) }
+        val confirmPaymentModel = ConfirmBulkPaymentDto(
+            selectedPayment?.id!!,
+            selectedPayment.membershipId,
+            selectedPayment.payerEmail,
+            selectedPayment.payerFullName,
+            eventList,
+            selectedPayment.groupId,
+            selectedPayment.groupName,
+            0.0,
+            paymentMethod,
+            dataStoreManager.readUserData()?.fullName!!)
+        _loadingState.value = true
+        val response = activityRepository.confirmBulkPayment(confirmPaymentModel)
         return response
     }
 }

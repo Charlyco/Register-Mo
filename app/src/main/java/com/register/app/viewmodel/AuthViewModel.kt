@@ -242,7 +242,9 @@ class AuthViewModel @Inject constructor(
     suspend fun refreshToken() {
         _progressLiveData.value = true
         val refreshToken = dataStoreManager.readRefreshToken()?.refreshToken
+        Log.d("REFRESH", refreshToken.toString())
         val response = authRepository.getRefreshToken("Bearer ${refreshToken!!}")
+        Log.d("REFRESH", response.toString())
         if (response.status) {
             dataStoreManager.writeTokenData(response.data?.authToken!!)
             dataStoreManager.writeLoginTime(LocalDateTime.now())

@@ -39,12 +39,17 @@ fun SplashScreen(
                         popUpTo("splash") {inclusive = true}
                     }
                 }else {
-                    authViewModel.getUserDetails()
-                    navController.navigate("home") {
-                        popUpTo("splash") { inclusive = true }
-                    }
                     if(authViewModel.shouldRefreshToken()) {
                         authViewModel.refreshToken()
+                        authViewModel.getUserDetails()
+                        navController.navigate("home") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    } else {
+                        authViewModel.getUserDetails()
+                        navController.navigate("home") {
+                            popUpTo("splash") { inclusive = true }
+                        }
                     }
                 }
             } else {

@@ -145,4 +145,8 @@
     <string name="progress">progress</string>
     <string name="get_started">Get\n\nstarted</string>
     <string name="complete_info">Complete\n\ninformation</string>
+    <string name="select_all">Select all</string>
+    <string name="pay_all">Offset all debt</string>
+    <string name="pay_selection">Pay for selection</string>
+    <string name="list_of_activities_paid">List of activities paid for</string>
 </resources>

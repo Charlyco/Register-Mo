@@ -1,5 +1,8 @@
 package com.register.app.repository
 
+import com.register.app.dto.BulkPaymentModel
+import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.EventDetailWrapper
@@ -18,4 +21,7 @@ interface ActivityRepository {
     suspend fun getMemberDetails(memberEmail: String?): Member?
     suspend fun changeEventStatus(eventId: Int, status: String): EventDetailWrapper
     suspend fun deleteActivity(eventId: Int): GenericResponse
+    suspend fun submitBulkPaymentEvidence(payment: BulkPaymentModel): GenericResponse
+    suspend fun getPendingBulkPayments(groupId: Int?): BulkPaymentWrapper
+    suspend fun confirmBulkPayment(confirmBulkPaymentDto: ConfirmBulkPaymentDto): GenericResponse
 }

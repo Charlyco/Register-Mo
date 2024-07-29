@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -77,15 +78,22 @@ import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
 
+
 @Composable
 fun CircularIndicator() {
-    CircularProgressIndicator(
-        modifier = Modifier.size(64.dp),
-        color = MaterialTheme.colorScheme.primary,
-        strokeCap = StrokeCap.Butt,
-        strokeWidth = dimensionResource(id = R.dimen.progress_indicator_stroke),
-        trackColor = MaterialTheme.colorScheme.secondary
-    )
+    Dialog(onDismissRequest = {  }) {
+        Surface(
+            color = Color.Transparent
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(64.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeCap = StrokeCap.Butt,
+                strokeWidth = dimensionResource(id = R.dimen.progress_indicator_stroke),
+                trackColor = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
 }
 
 @Composable
@@ -399,8 +407,8 @@ fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewMode
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
                     groupViewModel.isUserAdmin()
+                    navController.navigate("group_detail") { launchSingleTop = true }
                 }
-                navController.navigate("group_detail") { launchSingleTop = true }
             },
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small

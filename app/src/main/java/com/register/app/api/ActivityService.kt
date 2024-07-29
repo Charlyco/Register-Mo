@@ -1,6 +1,9 @@
 package com.register.app.api
 
 import android.app.Activity
+import com.register.app.dto.BulkPaymentModel
+import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.EventDetailWrapper
@@ -38,5 +41,11 @@ interface ActivityService {
     fun changeEventStatus(@Path("eventId") eventId: Int, @Query("status") status: String): Call<EventDetailWrapper>
     @DELETE("event-service/api/v1/event/{eventId}")
     fun deleteActivity(@Path("eventId") eventId: Int): Call<GenericResponse>
+    @POST("event-service/api/v1/event/payment/bulk")
+    fun submitBulkPaymentEvidence(@Body payment: BulkPaymentModel): Call<GenericResponse>
+    @GET("event-service/api/v1/event/payment/bulk")
+    fun getPendingBulkPayments(@Query("groupId") groupId: Int?): Call<BulkPaymentWrapper>
+    @PUT("event-service/api/v1/event/payment/bulk")
+    fun confirmBulkPayment(@Body confirmBulkPaymentDto: ConfirmBulkPaymentDto): Call<GenericResponse>
 
 }

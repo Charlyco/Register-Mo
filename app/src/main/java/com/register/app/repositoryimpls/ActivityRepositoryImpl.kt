@@ -2,6 +2,9 @@ package com.register.app.repositoryimpls
 
 import com.register.app.api.ActivityService
 import com.register.app.api.UserService
+import com.register.app.dto.BulkPaymentModel
+import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.EventDetailWrapper
@@ -17,6 +20,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import javax.inject.Inject
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -167,4 +171,67 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun submitBulkPaymentEvidence(payment: BulkPaymentModel): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.submitBulkPaymentEvidence(payment)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getPendingBulkPayments(groupId: Int?): BulkPaymentWrapper {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getPendingBulkPayments(groupId)
+            call.enqueue(object : Callback<BulkPaymentWrapper> {
+                override fun onResponse(
+                    call: Call<BulkPaymentWrapper>,
+                    response: Response<BulkPaymentWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<BulkPaymentWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun confirmBulkPayment(confirmBulkPaymentDto: ConfirmBulkPaymentDto):
+            GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.confirmBulkPayment(confirmBulkPaymentDto)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }
