@@ -1,9 +1,12 @@
 package com.register.app.api
 
 import com.register.app.dto.ActivityRate
+import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.ChangeMemberStatusDto
+import com.register.app.dto.Contestant
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
+import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
@@ -12,6 +15,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.VoteDto
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
 import okhttp3.MultipartBody
@@ -57,4 +61,23 @@ interface GroupService {
     fun approveMembershipRequest(@Body membershipRequest: MembershipRequest): Call<GenericResponse>
     @GET("group-service/api/v1/group/{groupId}")
     fun getGroupDetails(@Path("groupId") groupId: Int?): Call<GroupDetailWrapper>
+
+    @POST("election-service/api/v1/create")
+    fun createElection(@Body election: Election): Call<GenericResponse>
+    @GET("election-service/api/v1/{groupId}/all")
+    fun getElections(@Path("groupId") groupId: Int?): Call<List<Election>>
+    @POST("election-service/api/v1/vote")
+    fun castVote(@Body voteModel: VoteDto): Call<GenericResponse>
+    @PUT("election-service/api/v1/{electionId}/{contestantId}")
+    fun removeContestant(@Path("contestantId") contestantId: Long?, @Path("electionId") electionId: Int?): Call<GenericResponse>
+    @GET("election-service/api/v1/election/{electionId}")
+    fun getElectionDetails(@Path("electionId") electionId: Int): Call<Election?>
+    @PUT("election-service/api/v1/{electionId}/add")
+    fun addContestant(@Body contestant: Contestant, @Path("electionId") electionId: Int): Call<AddContestantResponse>
+    @GET("election-service/api/v1/{electionId}")
+    fun checkIfUserHasVoted(@Path("electionId") electionId: Int?, @Query("voterName") user: String?,): Call<GenericResponse>
+    @PUT("election-service/api/v1/{electionId}/start")
+    fun startElection(@Path("electionId") electionId: Int?): Call<GenericResponse>
+    @PUT("election-service/api/v1/{electionId}/end")
+    fun endElection(@Path("electionId") electionId: Int?): Call<GenericResponse>
 }

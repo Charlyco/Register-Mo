@@ -1,8 +1,11 @@
 package com.register.app.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Parcelize
 data class Member(
     val userId: Int?,
     var fullName: String,
@@ -16,4 +19,4 @@ data class Member(
     val signupDateTime: String?,
     val role: String?,
     val groupIds: List<Int>?
-  )
+  ) : Parcelable

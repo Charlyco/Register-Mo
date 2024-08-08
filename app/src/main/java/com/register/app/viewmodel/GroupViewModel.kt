@@ -4,12 +4,13 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.BankDetail
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.ComplianceRate
+import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
+import com.register.app.dto.Election
 import com.register.app.dto.EventComment
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupUpdateDto
@@ -17,13 +18,14 @@ import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RateData
-import com.register.app.dto.ReactionType
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.VoteDto
+import com.register.app.enums.ContestantStatus
 import com.register.app.enums.Designation
+import com.register.app.enums.ElectionStatus
 import com.register.app.enums.EventType
+import com.register.app.enums.VoteStatus
 import com.register.app.model.Event
-import com.register.app.model.EventCommentDto
-import com.register.app.model.EventReactionDto
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
@@ -35,7 +37,6 @@ import com.register.app.util.PAID
 import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.InputStream
@@ -47,8 +48,13 @@ class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
     private val authRepository: AuthRepository): ViewModel(){
-
-        private val _complianceRate: MutableLiveData<ComplianceRate> = MutableLiveData()
+        private val _electionsLideData: MutableLiveData<List<Election>?> = MutableLiveData()
+    val electionsLiveData: LiveData<List<Election>?> = _electionsLideData
+    private val _electionDetail: MutableLiveData<Election?> = MutableLiveData()
+    val electionDetail: LiveData<Election?> = _electionDetail
+    private val _contestantList: MutableLiveData<List<Member>?> = MutableLiveData(mutableListOf())
+    val contestantList: LiveData<List<Member>?> = _contestantList
+    private val _complianceRate: MutableLiveData<ComplianceRate> = MutableLiveData()
     val complianceRate: LiveData<ComplianceRate> = _complianceRate
     private val _isAdminLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     val isUserAdminLiveData: LiveData<Boolean> = _isAdminLiveData
@@ -236,10 +242,12 @@ class GroupViewModel @Inject constructor(
         mimeType: String?,
         fileNameFromUri: String?
     ): String {
+        _loadingState.value = true
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response = groupRepository.uploadImage(requestBody, fileNameFromUri!!)
         _groupLogoLivedata.value = response.data.secureUrl
         //Log.d("UPLOAD IMAGE", "uploadGroupLogo: $file")
+        _loadingState.value = false
         return response.data.secureUrl
     }
 
@@ -377,5 +385,157 @@ class GroupViewModel @Inject constructor(
         val response = groupRepository.requestToJoinGroup(selectedGroup.groupId, userInfo)
         _loadingState.value = false
         return response
+    }
+
+    fun getMembershipIdForMember(emailAddress: String): String? {
+        val group = groupDetailLiveData.value
+        val member = group?.memberList?.find { it.emailAddress == emailAddress }
+        return member?.membershipId
+    }
+
+    suspend fun createElection(
+        electionTitle: String,
+        electionDescription: String,
+        electionDate: String,
+        office: String
+    ): GenericResponse {
+        val contestants = mutableListOf<Contestant>()
+        contestantList.value?.forEach { contestant ->
+            contestants.add(Contestant(
+                null,
+                contestant.fullName,
+                contestant.imageUrl,
+                getMembershipIdForMember(contestant.emailAddress),
+                contestant.emailAddress,
+                electionTitle,
+                null,
+                office,
+                ContestantStatus.UNDECIDED.name,
+                ""
+            ))
+        }
+        val group = groupDetailLiveData.value
+        val admin = dataStoreManager.readUserData()?.fullName
+        val election = Election(
+            null,electionTitle,
+            electionDate, electionDescription,
+            office, contestants,
+            group?.groupId, group?.groupName,
+            admin, null, ElectionStatus.FUTURISTIC.name)
+
+        _loadingState.value = true
+        val response = groupRepository.createElection(election)
+        _loadingState.value = false
+        return response
+    }
+
+    fun addToContestants(member: Member) {
+        val members = contestantList.value?.toMutableList()
+        members?.add(member)
+        _contestantList.value = members
+    }
+
+    fun removeFromContestants(contestant: Member) {
+        val members = contestantList.value?.toMutableList()
+        members?.remove(contestant)
+        _contestantList.value = members
+    }
+
+    fun clearContestants() {
+        val members = contestantList.value?.toMutableList()
+        members?.clear()
+        _contestantList.value = members
+    }
+
+    fun getGroupElections(groupId: Int?) {
+        _loadingState.value = true
+        viewModelScope.launch {
+            val response = groupRepository.getGroupElections(groupId)
+            _electionsLideData.value = response
+            _loadingState.value = false
+        }
+    }
+
+    fun setSelectedElection(election: Election) {
+        _electionDetail.value = election
+    }
+
+    suspend fun castVote(election: Election, contestant: Contestant?): GenericResponse {
+        _loadingState.value = true
+        val user = dataStoreManager.readUserData()?.fullName
+        val voteModel = VoteDto(null, user, election.groupId, contestant?.contestantName, contestant?.id,
+            election.electionId, contestant?.office, LocalDateTime.now().toString(), VoteStatus.VALID.name)
+        val response = groupRepository.castVote(voteModel)
+        if (response.status) {
+            getElectionDetails(election.electionId!!)
+        }
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun checkIfUserHasVoted(election: Election): Boolean {
+        val user = dataStoreManager.readUserData()?.fullName
+        val response = groupRepository.checkIfUserHasVoted(user, election.electionId)
+        return response.status
+    }
+
+    suspend fun removeContestant(contestantId: Long?, electionId: Int?): GenericResponse {
+        _loadingState.value = true
+        val response = groupRepository.removeContestant(contestantId, electionId)
+        _loadingState.value = false
+        return response
+    }
+
+    fun getElectionDetails(electionId: Int) {
+        _loadingState.value = true
+        viewModelScope.launch {
+            val response = groupRepository.getElectionDetails(electionId)
+            _electionDetail.value = response
+            _loadingState.value = false
+        }
+    }
+
+    suspend fun addContestant(contestant: Member, election: Election) {
+        val newContestant = Contestant(
+            null,
+            contestant.fullName,
+            contestant.imageUrl,
+            getMembershipIdForMember(contestant.emailAddress),
+            contestant.emailAddress,
+            election.electionTitle,
+            null,
+            election.office,
+            ContestantStatus.UNDECIDED.name,
+            ""
+        )
+        _loadingState.value = true
+        val response = groupRepository.addContestant(newContestant, election.electionId!!)
+        if (response.status) {
+            getElectionDetails(election.electionId)
+        }
+        _loadingState.value = false
+        //return response
+    }
+
+    suspend fun startElection(election: Election) {
+        if (election.electionStatus != ElectionStatus.COMPLETED.name) {
+            _loadingState.value = true
+            val response = groupRepository.startElection(election.electionId)
+            if (response.status) {
+                getElectionDetails(election.electionId!!)
+            }
+            _loadingState.value = false
+        }
+    }
+
+    suspend fun endElection(election: Election) {
+        if (election.electionStatus == ElectionStatus.ACTIVE.name) {
+            _loadingState.value = true
+            val response = groupRepository.endElection(election.electionId)
+            if (response.status) {
+                getElectionDetails(election.electionId!!)
+            }
+            _loadingState.value = false
+        }
     }
 }

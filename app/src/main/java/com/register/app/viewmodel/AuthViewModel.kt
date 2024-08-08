@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.dto.ImageUploadResponse
@@ -15,6 +16,7 @@ import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.InputStream
@@ -105,13 +107,18 @@ class AuthViewModel @Inject constructor(
             _errorLiveData.value = "Phone number cannot be blank"
         }else {
             _progressLiveData.value = true
-            val signUpModel = SignUpModel("$firstName $lastName", phone, email, "", "", "")
-            val response = authRepository.sendOtp(email)
-            _signUpModelLiveData.value = signUpModel
-            _progressLiveData.value = false
-
-            countDownTimer(2)
-            return response?.status!!
+            val isTaken = authRepository.checkEmailAndPhone(email, phone)
+            if (isTaken.status) {
+                val signUpModel = SignUpModel("$firstName $lastName", phone, email, "", "", "")
+                val response = authRepository.sendOtp(email)
+                _signUpModelLiveData.value = signUpModel
+                _progressLiveData.value = false
+                countDownTimer(2)
+                return response?.status!!
+            } else {
+                _errorLiveData.value = isTaken.message
+                _progressLiveData.value = false
+            }
         }
         return false
     }
@@ -185,12 +192,13 @@ class AuthViewModel @Inject constructor(
 
     }
 
-    suspend fun getMemberDetails(email: String) {
+    suspend fun getMemberDetails(email: String): Member {
         _progressLiveData.value = true
         Log.d("Member", "fetching member details")
         val member = authRepository.getMemberDetails(email)
         _intendingMemberLiveData.value = member
         _progressLiveData.value = false
+        return member!!
     }
 
     suspend fun resendOtp(email: String) {
@@ -246,7 +254,8 @@ class AuthViewModel @Inject constructor(
         val response = authRepository.getRefreshToken("Bearer ${refreshToken!!}")
         Log.d("REFRESH", response.toString())
         if (response.status) {
-            dataStoreManager.writeTokenData(response.data?.authToken!!)
+            dataStoreManager.writeUserData(response.data?.member!!)
+            dataStoreManager.writeTokenData(response.data.authToken)
             dataStoreManager.writeLoginTime(LocalDateTime.now())
         }
         _progressLiveData.value = false
@@ -255,6 +264,13 @@ class AuthViewModel @Inject constructor(
     suspend fun shouldRefreshToken(): Boolean {
         val loginTime = dataStoreManager.readLoginTime()
         return LocalDateTime.now() > loginTime?.plusSeconds(2700) // refresh token evey 45 mins
+    }
+
+    suspend fun reloadUserData() {
+            _progressLiveData.value = true
+            val userData: Member = authRepository.reloadUserData(dataStoreManager.readUserData()?.emailAddress)
+            dataStoreManager.writeUserData(userData)
+            _progressLiveData.value = false
     }
 
 }

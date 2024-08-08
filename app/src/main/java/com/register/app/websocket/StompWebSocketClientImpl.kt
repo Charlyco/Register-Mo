@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
+import com.register.app.dto.SupportMessageDto
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import ua.naiksoftware.stomp.Stomp
@@ -48,6 +49,25 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
 
     }
 
+    override suspend fun subscribeToSupport(
+        payload: SupportMessageDto,
+        callback: (supportMessageDto: SupportMessageDto) -> Unit
+    ) {
+        if (subscription !=null) {
+            if (!subscription?.isDisposed!!) {
+                subscription?.dispose()
+            }
+        }
+        subscription = client.topic("/support/${payload.email}").subscribe({ message ->
+            val chatMessage = Gson().fromJson(message.payload, SupportMessageDto::class.java)
+            callback(chatMessage)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+            client.send("/app/customer/newTicket", Gson().toJson(payload))
+        })
+
+    }
+
     override suspend fun sendMessage(
         path: String,
         message: String,
@@ -62,10 +82,26 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         compositeDisposable.add(disposable)
     }
 
+    override suspend fun sendSupportMessage(
+        message: String,
+        onSend: (path: String, message: String) -> Unit
+    ) {
+        val path = "/app/customer/sendMessage"
+        val disposable = client.send(path, message).subscribe({
+            Log.d("REGISTER_STOMP", "SENT")
+            onSend(path, message)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+        })
+        compositeDisposable.add(disposable)
+    }
+
     override suspend fun close() {
         client.disconnect()
         compositeDisposable.dispose()
     }
+
+
 
     companion object {
         private var INSTANCE: StompWebSocketClientImpl? = null

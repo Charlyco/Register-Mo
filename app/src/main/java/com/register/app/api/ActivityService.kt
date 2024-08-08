@@ -10,9 +10,12 @@ import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
+import com.register.app.dto.RejectBulkPaymentDto
+import com.register.app.dto.RejectedPayment
 import com.register.app.dto.RemoveMemberModel
 import com.register.app.model.Event
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -47,5 +50,10 @@ interface ActivityService {
     fun getPendingBulkPayments(@Query("groupId") groupId: Int?): Call<BulkPaymentWrapper>
     @PUT("event-service/api/v1/event/payment/bulk")
     fun confirmBulkPayment(@Body confirmBulkPaymentDto: ConfirmBulkPaymentDto): Call<GenericResponse>
-
+    @PUT("event-service/api/v1/event/payment/bulk/reject")
+    fun rejectBulkPayment(@Body rejectedBulkPaymentDto: RejectBulkPaymentDto): Call<GenericResponse>
+    @PUT("event-service/api/v1/event/payment/reject")
+    fun rejectPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
+    @GET("event-service/api/v1/event/{activityId}/report")
+    fun generateReport(@Path("activityId") eventId: Int?): Call<ResponseBody>
 }

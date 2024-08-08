@@ -10,7 +10,10 @@ import com.register.app.dto.GroupStateItem
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
+import com.register.app.dto.SupportMessageDto
+import com.register.app.enums.MessageType
 import com.register.app.model.Group
+import com.register.app.model.Member
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +26,8 @@ class ForumViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _supportMessages: MutableLiveData<List<SupportMessageDto>?> = MutableLiveData()
+    val supportMessages: LiveData<List<SupportMessageDto>?> = _supportMessages
     private val _chatMessages: MutableLiveData<List<MessageData>> = MutableLiveData()
     val chatMessages: LiveData<List<MessageData>> = _chatMessages
     private val _remoteChatMessages: MutableLiveData<ChatMessageResponse?> = MutableLiveData()
@@ -35,10 +40,16 @@ class ForumViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val initialGroup = dataStoreManager.readUserData()?.groupIds?.get(0)
-            val payload = JoinChatPayload(dataStoreManager.readUserData()?.fullName!!, initialGroup!!)
-            loadGroupChats(initialGroup)
-            connectToChat(payload)
+            var initialGroupId: Int? = null
+            val groups = dataStoreManager.readUserData()?.groupIds
+            if (groups?.isNotEmpty() == true) {
+                initialGroupId = groups[0]
+            }
+            if (initialGroupId != null) {
+                val payload = JoinChatPayload(dataStoreManager.readUserData()?.fullName!!, initialGroupId!!)
+                loadGroupChats(initialGroupId)
+                connectToChat(payload)
+            }
         }
     }
 
@@ -147,5 +158,30 @@ class ForumViewModel @Inject constructor(
     suspend fun setSelectedGroup(selectedGroup: Group?) {
         _selectedGroup.value = selectedGroup
         loadGroupChats(selectedGroup?.groupId)
+    }
+
+    suspend fun sendSupportMessage(userData: Member?, message: String) {
+        val messagePayload = SupportMessageDto(
+            userData?.emailAddress!!,
+            userData.fullName,
+            message,
+            MessageType.MESSAGE.name, LocalDateTime.now().toString())
+        chatRepository.sendSupportMessage(messagePayload){
+            val messageList = _supportMessages.value
+            val newMessageList = mutableListOf<SupportMessageDto>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            newMessageList.add(it)
+            _supportMessages.postValue(newMessageList)
+        }
+    }
+
+    suspend fun subscribeToSupport(supportMessageDto: SupportMessageDto) {
+        chatRepository.subscribeToSupport(supportMessageDto) {
+            val messageList = _supportMessages.value
+            val newMessageList = mutableListOf<SupportMessageDto>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            newMessageList.add(it)
+            _supportMessages.value = newMessageList
+        }
     }
 }

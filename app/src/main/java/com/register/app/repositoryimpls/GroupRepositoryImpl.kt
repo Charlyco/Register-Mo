@@ -4,9 +4,12 @@ import android.graphics.Paint.Join
 import com.register.app.api.ActivityService
 import com.register.app.api.GroupService
 import com.register.app.dto.ActivityRate
+import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.ChangeMemberStatusDto
+import com.register.app.dto.Contestant
 import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
+import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
@@ -15,6 +18,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.VoteDto
 import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
@@ -294,6 +298,192 @@ class GroupRepositoryImpl @Inject constructor(
     override suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse {
         return suspendCoroutine { continuation ->
             val call = groupService.approveMembershipRequest(membershipRequest)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun createElection(election: Election): GenericResponse {
+        return  suspendCoroutine { continuation ->
+            val call = groupService.createElection(election)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getGroupElections(groupId: Int?): List<Election>? {
+        return suspendCoroutine { continuation ->
+            val call = groupService.getElections(groupId)
+            call.enqueue(object : Callback<List<Election>?> {
+                override fun onResponse(
+                    call: Call<List<Election>?>,
+                    response: Response<List<Election>?>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }
+                }
+
+                override fun onFailure(call: Call<List<Election>?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun castVote(voteModel: VoteDto): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.castVote(voteModel)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun removeContestant(contestantId: Long?, electionId: Int?): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.removeContestant(contestantId, electionId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getElectionDetails(electionId: Int): Election? {
+        return suspendCoroutine { continuation ->
+            val call = groupService.getElectionDetails(electionId)
+            call.enqueue(object : Callback<Election?> {
+                override fun onResponse(call: Call<Election?>, response: Response<Election?>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }
+                }
+
+                override fun onFailure(call: Call<Election?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun addContestant(
+        contestant: Contestant,
+        electionId: Int
+    ): AddContestantResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.addContestant(contestant, electionId)
+            call.enqueue(object : Callback<AddContestantResponse> {
+                override fun onResponse(
+                    call: Call<AddContestantResponse>,
+                    response: Response<AddContestantResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<AddContestantResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun checkIfUserHasVoted(user: String?, electionId: Int?): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.checkIfUserHasVoted(electionId, user)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun startElection(electionId: Int?): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.startElection(electionId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun endElection(electionId: Int?): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.endElection(electionId)
             call.enqueue(object : Callback<GenericResponse> {
                 override fun onResponse(
                     call: Call<GenericResponse>,

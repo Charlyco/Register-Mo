@@ -80,7 +80,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
     var groupType by rememberSaveable { mutableStateOf("CLOSED") }
     var isClosedChecked by rememberSaveable { mutableStateOf(true) }
     var isOpenChecked by rememberSaveable { mutableStateOf(false) }
-    val officeList = listOf("Select Office", "PRESIDENT", "SECRETARY", "TREASURER", "FINANCIAL_SECRETARY")
+    val officeList = listOf("Select Office", "PRESIDENT", "SECRETARY", "TREASURER", "FINANCIAL_SECRETARY, ADMIN, LEADER, ORGANIZER, CHIEF, LEADER")
     var memberOffice by rememberSaveable { mutableStateOf("") }
     val scrollState = rememberScrollState(initial = 0)
     val logoUrl = groupViewModel.groupLogoLivedata.observeAsState().value
@@ -443,7 +443,9 @@ fun SelectOffice(officeList: List<String>, content: (office: String) -> Unit) {
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
+                scrollState = rememberScrollState(initial = 0),
                 modifier = Modifier
+                    .fillMaxSize()
                     .constrainAs(menu) { end.linkTo(icon.start) }
                     .width((screenWidth - 40).dp)
             ) {

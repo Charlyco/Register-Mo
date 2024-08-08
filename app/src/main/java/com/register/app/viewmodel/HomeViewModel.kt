@@ -11,9 +11,11 @@ import com.register.app.enums.EventType
 import com.register.app.model.Event
 import com.register.app.model.EventCommentDto
 import com.register.app.model.EventReactionDto
+import com.register.app.model.Faq
 import com.register.app.model.Group
 import com.register.app.model.MembershipDto
 import com.register.app.model.MembershipRequest
+import com.register.app.repository.AuthRepository
 import com.register.app.repository.GroupRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,8 +26,11 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val authRepository: AuthRepository
 ): ViewModel() {
+    private val _faqListLiveData: MutableLiveData<List<Faq>?> = MutableLiveData()
+    val faqListLiveData: LiveData<List<Faq>?> = _faqListLiveData
     private val _suggestedGroupLiveData: MutableLiveData<List<Group>> = MutableLiveData()
     val suggestedGroupListLiveData: LiveData<List<Group>> = _suggestedGroupLiveData
     private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
@@ -38,6 +43,7 @@ init {
         _loadingState.value = true
         getEventFeeds()
         getSuggestedGroups()
+        getFaqList()
         _loadingState.value = false
     }
 }
@@ -76,6 +82,9 @@ init {
 //        //Fetch event comment  and set the response data to _eventCommentLivedate
 //    }
 
+    suspend fun getFaqList() {
+        _faqListLiveData.value = authRepository.getFaqList().data
+    }
 
 }
 

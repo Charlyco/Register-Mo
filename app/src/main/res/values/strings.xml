@@ -149,4 +149,25 @@
     <string name="pay_all">Offset all debt</string>
     <string name="pay_selection">Pay for selection</string>
     <string name="list_of_activities_paid">List of activities paid for</string>
+    <string name="reject_payment">Reject Payment</string>
+    <string name="support_desc">Hello!\nHow can we help you?</string>
+    <string name="live_chat">Contact live support</string>
+    <string name="send_email">Send us an email</string>
+    <string name="faq">FAQs</string>
+    <string name="body">Type your message here</string>
+    <string name="select_date">Select date</string>
+    <string name="election_title">Election title</string>
+    <string name="contestants">Contestants</string>
+    <string name="add">Add</string>
+    <string name="error_text">Network error, check network connection and try again</string>
+    <string name="select_contestant_to_vote">Select contestant to vote for</string>
+    <string name="cast_vote">Cast Vote</string>
+    <string name="you_have_voted">You have voted in this election</string>
+    <string name="remove_contestant">Continue to remove this contestant?</string>
+    <string name="view_result">See results</string>
+    <string name="winner">Winner</string>
+    <string name="end_election">End election</string>
+    <string name="start_election">Start election</string>
+    <string name="election_not_started">This election has not started yet</string>
+    <string name="no_elections">There are no elections\nat the moment</string>
 </resources>

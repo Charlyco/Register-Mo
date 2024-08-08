@@ -3,8 +3,10 @@ package com.register.app.util
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.DateRange
@@ -62,6 +66,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -151,10 +156,14 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
             .fillMaxWidth()
     ) {
         TopAppBar(
-            title = { Text(text = title) },
+            title = { Text(
+                text = title,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+                ) },
             modifier = Modifier.fillMaxWidth(),
             navigationIcon = { Icon(
-                imageVector = Icons.Default.ArrowBackIosNew,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "",
                 Modifier.clickable { navController.navigate(navRoute) {
                     launchSingleTop = true
@@ -171,7 +180,9 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
                 DropdownMenu(
                     expanded = isExpanded,
                     onDismissRequest = { isExpanded = false },
-                    modifier = Modifier.width(160.dp)
+                    modifier = Modifier
+                        .width(160.dp)
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.settings)) },
@@ -393,15 +404,14 @@ fun EventItem(
 }
 
 @Composable
-fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController) {
+fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController, width: Int) {
     val context = LocalContext.current
-    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
     val coroutineScope = rememberCoroutineScope()
 
     Surface(
         Modifier
-            .width(itemWidth.dp)
-            .padding(horizontal = 4.dp)
+            .width(width.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
             .height(72.dp)
             .clickable {
                 coroutineScope.launch {
@@ -413,80 +423,89 @@ fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewMode
         color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.small
     ) {
-        ConstraintLayout(
+        Row(
             Modifier
-                .fillMaxWidth()) {
-            val (logo, name, description, memberCount, memberIcons) = createRefs()
-
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+            ) {
+            //val (logo, name, description, memberCount, memberIcons) = createRefs()
             Surface(
                 Modifier
                     .size(56.dp)
-                    .clip(CircleShape)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start, margin = 8.dp)
-                        centerVerticallyTo(parent)
-                    },
+                    .clip(CircleShape),
+//                    .constrainAs(logo) {
+//                        start.linkTo(parent.start, margin =4.dp)
+//                        centerVerticallyTo(parent) },
                 color = Color.Transparent
             ) {
                 ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.download)
             }
 
-            Text(
-                text = group.groupName,
+            Column(
                 Modifier
-                    .width((itemWidth - 20).dp)
-                    .constrainAs(name) {
-                        top.linkTo(parent.top, margin = 12.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-                    },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Start
-            )
-
-            Text(text = group.groupDescription?: "",
-                Modifier
-                    .width((itemWidth - 20).dp)
-                    .constrainAs(description) {
-                        bottom.linkTo(parent.bottom, margin = 12.dp)
-                        start.linkTo(logo.end, margin = 8.dp)
-
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Start
-            )
-
-            Row(
-                Modifier.constrainAs(memberIcons) {
-                    top.linkTo(parent.top, margin = 8.dp)
-                    end.linkTo(parent.end, margin = 8.dp)
-                },
-                verticalAlignment = Alignment.CenterVertically
+                    .width((width - 96).dp),
+//                    .constrainAs(name) {
+//                        top.linkTo(parent.top, margin = 12.dp)
+//                        start.linkTo(logo.end, margin = 4.dp)
+//                    },
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                admins?.forEach { admin ->
-                    Surface(
-                        Modifier.clip(CircleShape)
-                    ) {
-                        ImageLoader(admin.imageUrl?: "", context, 20, 20, R.drawable.placeholder) }
+                Text(
+                    text = group.groupName,
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(text = group.groupDescription?: "",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    Modifier
+                        .padding(bottom = 4.dp),
+//                        top.linkTo(parent.top, margin = 8.dp)
+//                        end.linkTo(parent.end, margin = 8.dp)
+//                    },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    admins?.forEach { admin ->
+                        Surface(
+                            Modifier.clip(CircleShape)
+                        ) {
+                            ImageLoader(admin.imageUrl?: "", context, 20, 20, R.drawable.placeholder) }
+                    }
+                }
+
+                Surface(
+//                    Modifier
+//                        .constrainAs(memberCount) {
+//                            top.linkTo(memberIcons.bottom, margin = 4.dp)
+//                            centerHorizontallyTo(memberIcons)
+//                        },
+                    color = MaterialTheme.colorScheme.tertiary,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(text = "+${group.memberList?.size}",
+                        fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(horizontal = 4.dp))
                 }
             }
 
-            Surface(
-                Modifier
-                    .constrainAs(memberCount) {
-                        top.linkTo(memberIcons.bottom, margin = 4.dp)
-                        centerHorizontallyTo(memberIcons)
-                    },
-                color = MaterialTheme.colorScheme.tertiary,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(text = "+${group.memberList?.size}",
-                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 4.dp))
-            }
         }
     }
 }

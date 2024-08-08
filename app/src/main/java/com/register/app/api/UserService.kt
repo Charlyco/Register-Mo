@@ -2,11 +2,13 @@ package com.register.app.api
 
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
+import com.register.app.dto.FaqWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.MemberDetailWrapper
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
+import com.register.app.model.Faq
 import com.register.app.model.Member
 import okhttp3.MultipartBody
 import retrofit2.Call
@@ -46,4 +48,12 @@ interface UserService {
     fun updateUserData(@Path("memberId") memberId: Int, @Body updateData: Member): Call<UpdateUserResponse>
     @POST("auth-service/api/v1/auth/refreshToken")
     fun getRefreshToken(@Header("refreshToken") refreshToken: String): Call<AuthResponseWrapper>
+    @GET("auth-service/api/v1/user/member/email")
+    fun reloadUserData(@Query("emailAddress") emailAddress: String?): Call<Member>
+    @GET("company-service/api/v1/faq")
+    fun getFaqList(): Call<FaqWrapper>
+    @GET("auth-service/api/v1/auth/check")
+    fun checkEmailAndPhone(@Query("email") email: String, @Query("phone") phone: String): Call<GenericResponse>
+
+
 }

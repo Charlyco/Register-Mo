@@ -11,14 +11,20 @@ import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
 import com.register.app.screens.AuthScreen
 import com.register.app.screens.BulkPayment
+import com.register.app.screens.CreateElectionScreen
 import com.register.app.screens.CreateEvent
 import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EditProfile
+import com.register.app.screens.ElectionDetail
+import com.register.app.screens.ElectionResults
+import com.register.app.screens.Elections
 import com.register.app.screens.EvidenceOfPayment
+import com.register.app.screens.Faq
 import com.register.app.screens.Forum
 import com.register.app.screens.GroupDetail
 import com.register.app.screens.GroupUpdateScreen
 import com.register.app.screens.HomeScreen
+import com.register.app.screens.LiveChatSupport
 import com.register.app.screens.LoginScreen
 import com.register.app.screens.MemberDetails
 import com.register.app.screens.MembershipRequests
@@ -28,6 +34,7 @@ import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.SuggestedGroups
+import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.ActivityViewModel
@@ -131,6 +138,39 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 activityViewModel = activityViewModel,
                 totalAmount = backStackEntry.arguments?.getString("totalAmount")?.toDouble() ?: 0.0
             )
+        }
+        composable("support") {
+            SupportScreen(
+                authViewModel = authViewModel,
+                forumViewModel = forumViewModel,
+                navController = navController)
+        }
+        composable("live_support") {
+            LiveChatSupport(
+                homeViewModel = homeViewModel,
+                forumViewModel = forumViewModel,
+                navController = navController,
+               authViewModel = authViewModel
+                )
+        }
+        composable("faq") {
+            Faq(homeViewModel = homeViewModel, navController = navController)
+        }
+        composable("create_election") {
+            CreateElectionScreen(
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
+                navController = navController
+            )
+        }
+        composable("elections") {
+            Elections(groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("election_detail") {
+            ElectionDetail(groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("election_result") {
+            ElectionResults(groupViewModel = groupViewModel, navController = navController)
         }
     }
 }

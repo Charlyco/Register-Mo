@@ -310,6 +310,11 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                     val response = authViewModel.sendOtp(firstName, lastName, email, phone)
                     if (error?.isNotBlank() == true) {
                         Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        if (error == "Account with this email already exists") {
+                            navController.navigate("login") {
+                                popUpTo("splash") {inclusive = true}
+                            }
+                        }
                     }
                     if (response) {
                         navController.navigate("otp_verify/${email}") {

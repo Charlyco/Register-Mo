@@ -8,6 +8,7 @@ import com.register.app.dto.GenericResponse
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
+import com.register.app.dto.SupportMessageDto
 import com.register.app.dto.UserChatMessages
 import com.register.app.repository.ChatRepository
 import com.register.app.websocket.StompWebSocketClient
@@ -77,6 +78,16 @@ class ChatRepositoryImpl @Inject constructor(
             callback(chatMessage)
         }
     }
+
+    override suspend fun subscribeToSupport(
+        payload: SupportMessageDto,
+        callback: (SupportMessageDto) -> Unit
+    ) {
+        stompWebSocketClient.subscribeToSupport(payload) { supportMessage ->
+            callback(supportMessage)
+        }
+    }
+
     override suspend fun sendMessage(
         groupId: Int,
         message: MessagePayload,
@@ -92,6 +103,26 @@ class ChatRepositoryImpl @Inject constructor(
                     response.senderName,
                     response.imageUrl,
                     response.sendTime,
+                )
+            )
+        }
+    }
+
+    override suspend fun sendSupportMessage(
+        message: SupportMessageDto,
+        callback: (SupportMessageDto) -> Unit?
+    ) {
+        val jsonString = Gson().toJson(message)
+        stompWebSocketClient.sendMessage("/app/customer/sendMessage", jsonString) { topic1, message1 ->
+            val response = Gson().fromJson(message1, SupportMessageDto::class.java)
+            Log.d("MESSAGE", response.toString())
+            callback(
+                SupportMessageDto(
+                    response.email,
+                    response.fullName,
+                    response.message,
+                    response.messageType,
+                    response.dateTime
                 )
             )
         }

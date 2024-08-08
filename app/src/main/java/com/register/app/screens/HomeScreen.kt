@@ -89,7 +89,6 @@ import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
     homeViewModel : HomeViewModel,
@@ -107,9 +106,12 @@ fun HomeScreen(
                 homeViewModel,
                 groupViewModel,
                 activityViewModel,
+                authViewModel,
                 navController
             )
-
+        CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
+            groupViewModel.showCreateGroupSheet.postValue(show)
+        }
     }
 }
 
@@ -120,14 +122,21 @@ fun HomeScreenContent(
     homeViewModel: HomeViewModel,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
+    authViewModel: AuthViewModel,
     navController: NavController
 ) {
-    val loadingState = homeViewModel.loadingState.observeAsState()?.value
+    val loadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val isRefreshing by rememberSaveable { mutableStateOf(false)}
+    val coroutineScope = rememberCoroutineScope()
     val refreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
-        onRefresh = { homeViewModel.refreshHomeContents() },
+        onRefresh = {
+            coroutineScope.launch {
+                authViewModel.reloadUserData()
+                homeViewModel.refreshHomeContents()
+            }
+                    },
         refreshThreshold = 84.dp,
         refreshingOffset = 64.dp)
     Surface(
@@ -148,7 +157,7 @@ fun HomeScreenContent(
         ) {
             item { WelcomeNote() }
             item{ SearchSection(groupViewModel, navController) }
-            item {DiscoverSection(groupViewModel, homeViewModel, navController) }
+            item {DiscoverSection(groupViewModel, authViewModel, homeViewModel, navController) }
             item {TopGroups(homeViewModel, groupViewModel, navController) }
             item {ActivityFeedList(homeViewModel, navController, groupViewModel, activityViewModel) }
         }
@@ -247,10 +256,12 @@ fun HomeSearchBox(
 @Composable
 fun DiscoverSection(
     groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val userData = authViewModel.userLideData.observeAsState().value
     Row(
         Modifier
             .fillMaxWidth()
@@ -289,7 +300,7 @@ fun DiscoverSection(
         }
         Column(
             Modifier.clickable {
-                navController.navigate("colleagues") {
+                navController.navigate("support") {
                     launchSingleTop = true
                 }
             },
@@ -317,7 +328,12 @@ fun DiscoverSection(
         ) {
             Surface(
                 Modifier
-                    .size(64.dp),
+                    .size(64.dp)
+                    .clickable {
+                        navController.navigate("colleagues") {
+                            launchSingleTop = true
+                        }
+                    },
                 color = MaterialTheme.colorScheme.onTertiary,
                 shape = MaterialTheme.shapes.small
             ) {
@@ -359,6 +375,7 @@ fun DiscoverSection(
 @Composable
 fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navController: NavController) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
+    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
     ConstraintLayout(
         Modifier
             .padding(top = 16.dp)
@@ -388,7 +405,7 @@ fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navC
                     LaunchedEffect(key1 = 260) {
                         admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                     }
-                    GroupItem(group, admins, groupViewModel, navController)
+                    GroupItem(group, admins, groupViewModel, navController, itemWidth)
                 }
             }
         }
@@ -445,16 +462,13 @@ fun EventItemHome(
         modifier = Modifier
             .clickable {
                 coroutineScope.launch {
-                    groupViewModel.reloadGroup(eventFeed.groupId) // load group details
                     activityViewModel.setSelectedEvent(eventFeed)
-                    groupViewModel.getComplianceRate(eventFeed)
-                    if (groupViewModel.groupDetailLiveData.value != null) {
-                        groupViewModel.reloadGroup(eventFeed.groupId) // Load the details of the group that owns the activity
-                        groupViewModel.isUserAdmin() // check if user is admin for the group that owns the selected activity
-                        navController.navigate(route = "event_detail") {
-                            launchSingleTop = true
-                        }
+                    navController.navigate(route = "event_detail") {
+                        launchSingleTop = true
                     }
+                    groupViewModel.reloadGroup(eventFeed.groupId) // load group details
+                    groupViewModel.isUserAdmin() // check if user is admin for the group that owns the selected activity
+                    groupViewModel.getComplianceRate(eventFeed)
                 }
             }
             .padding(horizontal = 8.dp, vertical = 8.dp),

@@ -14,6 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Register"
         android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true"
         tools:targetApi="34">
         <service
             android:name=".NotificationService"

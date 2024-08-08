@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -103,9 +105,10 @@ fun GroupsScreenContent(
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
     val loadingState = groupViewModel.loadingState.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp
+    var searchTag by rememberSaveable { mutableStateOf("") }
     Surface(
         Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             Modifier
@@ -123,20 +126,51 @@ fun GroupsScreenContent(
                     trackColor = MaterialTheme.colorScheme.secondary,
                 )
             }
-            GroupSearchBox(groupViewModel, navController, screenWidth - 32)
+
+            Surface(
+                Modifier
+                    .padding(horizontal = 8.dp)
+                    .width(screenWidth.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = dimensionResource(id = R.dimen.low_elevation),
+                shape = MaterialTheme.shapes.large
+            ) {
+                TextField(
+                    value = searchTag,
+                    onValueChange = { searchTag = it },
+                    modifier = Modifier
+                        .height(55.dp),
+                    placeholder = { Text(
+                        text = stringResource(id = R.string.search_group),
+                        color = Color.Gray) },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent
+                    ),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "",
+                            tint = Color.Gray)
+                    }
+                )
+            }
 
             if (!groupList.isNullOrEmpty()) {
                 LazyColumn(
                     Modifier
                         .fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(groupList) { group ->
+                    items(groupList.filter { group -> group.groupName.contains(searchTag, ignoreCase = true) }) { group ->
                         var admins by rememberSaveable { mutableStateOf<List<Member>?>(null) }
                         LaunchedEffect(key1 = 260) {
                             admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                         }
-                        GroupItem(group, admins, groupViewModel, navController)
+                        GroupItem(group, admins, groupViewModel, navController, screenWidth - 8)
                     }
                 }
             }

@@ -1,9 +1,11 @@
 package com.register.app.repository
 
 import com.register.app.dto.ActivityRate
+import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.ChangeMemberStatusDto
-import com.register.app.dto.CreateEventModel
+import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
+import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
 import com.register.app.dto.GroupUpdateDto
@@ -12,6 +14,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.VoteDto
 import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
@@ -32,4 +35,13 @@ interface GroupRepository {
     suspend fun searchGroupByName(searchTag: String): GroupsWrapper?
     suspend fun requestToJoinGroup(groupId: Int, userInfo: JoinGroupDto): GenericResponse
     suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse
+    suspend fun createElection(election: Election): GenericResponse
+    suspend fun getGroupElections(groupId: Int?): List<Election>?
+    suspend fun castVote(voteModel: VoteDto): GenericResponse
+    suspend fun removeContestant(contestantId: Long?, electionId: Int?): GenericResponse
+    suspend fun getElectionDetails(electionId: Int): Election?
+    suspend fun addContestant(contestant: Contestant, electionId: Int): AddContestantResponse
+    suspend fun checkIfUserHasVoted(user: String?, electionId: Int?): GenericResponse
+    suspend fun startElection(electionId: Int?): GenericResponse
+    suspend fun endElection(electionId: Int?): GenericResponse
 }

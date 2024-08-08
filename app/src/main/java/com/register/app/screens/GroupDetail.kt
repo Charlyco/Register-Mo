@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -69,6 +67,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -132,7 +131,9 @@ fun GroupDetailTopBar(
     TopAppBar(
         title = { Text(
             text = group?.groupName!!,
-            Modifier.padding(start = 32.dp)
+            Modifier.padding(start = 32.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
             ) },
         navigationIcon = {
             Icon(
@@ -218,7 +219,10 @@ fun GroupDetailTopBar(
             
             DropdownMenu(
                 expanded = isExpanded,
-                onDismissRequest = { isExpanded = false }) {
+                onDismissRequest = { isExpanded = false },
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                ) {
                 if (isAdmin == true) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.update_group)) },
@@ -236,10 +240,6 @@ fun GroupDetailTopBar(
                         }
                         isExpanded = false
                     })
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.create_election)) },
-                        onClick = { isExpanded = false })
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.create_activity)) },
                         onClick = {
@@ -258,7 +258,14 @@ fun GroupDetailTopBar(
 
                 DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.elections)) },
-                    onClick = { isExpanded = false })
+                    onClick = {
+                        isExpanded = false
+                        groupViewModel.getGroupElections(group?.groupId)
+                        navController.navigate("elections") {
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
         }
     )
@@ -1096,12 +1103,12 @@ fun AllMembersList(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center)
 
-        SearchField(members, group, navController, groupViewModel, authViewModel){function(it)}
+        GroupMemberList(members, group, navController, groupViewModel, authViewModel){function(it)}
     }
 }
 
 @Composable
-fun SearchField(
+fun GroupMemberList(
     members: List<Member>?,
     group: Group?,
     navController: NavController,

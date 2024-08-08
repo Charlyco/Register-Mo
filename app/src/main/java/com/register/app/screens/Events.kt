@@ -18,12 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.Menu
@@ -54,7 +54,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -69,7 +68,6 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -79,7 +77,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.BulkPaymentModel
-import com.register.app.dto.Payment
 import com.register.app.enums.PaymentMethod
 import com.register.app.model.Event
 import com.register.app.model.Group
@@ -576,6 +573,8 @@ fun ConfirmPaymentDialog(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    var showReasonInputDialog by rememberSaveable { mutableStateOf(false) }
+    var reason by rememberSaveable { mutableStateOf("") }
     Dialog(
         onDismissRequest = { callback(false)}) {
         Surface(
@@ -585,6 +584,54 @@ fun ConfirmPaymentDialog(
                 .verticalScroll(rememberScrollState(initial = 0)),
             color = MaterialTheme.colorScheme.background
         ) {
+            Dialog(onDismissRequest = { showReasonInputDialog = false}) {
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    ConstraintLayout(
+                        Modifier.fillMaxWidth()
+                    ) {
+                        val (input, btn) = createRefs()
+
+                        TextField(
+                            value = reason,
+                            onValueChange = { reason = it },
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = MaterialTheme.colorScheme.background,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.background
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Proceed",
+                        modifier = Modifier
+                            .constrainAs(btn) {
+                                top.linkTo(input.bottom, margin = 8.dp)
+                                end.linkTo(parent.end, margin = 8.dp)
+
+                            }
+                            .clickable {
+                                coroutineScope.launch {
+                                    val response = activityViewModel.rejectBulkPayment(selectedPayment, reason)
+                                    if (response.status) {
+                                        callback(false)
+                                        Toast
+                                            .makeText(context, response.message, Toast.LENGTH_SHORT)
+                                            .show()
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
             Column(
                 Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -618,23 +665,41 @@ fun ConfirmPaymentDialog(
                     }
                 }
 
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val response = activityViewModel.confirmBulkPayment(
-                                selectedPayment, PaymentMethod.BANK_TRANSFER.name)
-                            if (response.status) {
-                                callback(false)
-                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
+                Row(
                     Modifier
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
-                        .width(screenWidth.dp - 32.dp),
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(text = stringResource(id = R.string.confirm))
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                    Button(
+                        onClick = {
+                            showReasonInputDialog = true
+                        },
+                        Modifier
+                            .width(((screenWidth/ 2) - 16).dp),
+                        shape = MaterialTheme.shapes.small,
+                    ) {
+                        Text(text = stringResource(id = R.string.reject_payment))
+                    }
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val response = activityViewModel.confirmBulkPayment(
+                                    selectedPayment, PaymentMethod.BANK_TRANSFER.name)
+                                if (response.status) {
+                                    callback(false)
+                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        Modifier
+                            .width(((screenWidth/ 2) - 16).dp),
+                        shape = MaterialTheme.shapes.small,
+                    ) {
+                        Text(text = stringResource(id = R.string.confirm))
+                    }
                 }
             }
         }

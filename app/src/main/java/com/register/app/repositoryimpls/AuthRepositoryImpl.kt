@@ -5,6 +5,7 @@ import androidx.core.content.contentValuesOf
 import com.register.app.api.UserService
 import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
+import com.register.app.dto.FaqWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.LoginUserModel
@@ -13,6 +14,7 @@ import com.register.app.dto.SendOtpModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
 import com.register.app.dto.VerifyOtpModel
+import com.register.app.model.Faq
 import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
 import okhttp3.MultipartBody
@@ -38,8 +40,11 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                         continuation.resume(response.body())
                     }else{
                         val responseCode = response.code()
-                        if (responseCode == 401) {
-                            continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(AuthResponseWrapper("Please check Internet connection and try again", false, null))
                         }
                     }
                 }
@@ -210,6 +215,63 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                 }
 
                 override fun onFailure(call: Call<AuthResponseWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun reloadUserData(emailAddress: String?): Member {
+        return suspendCoroutine { continuation ->
+            val call = userService.reloadUserData(emailAddress)
+            call.enqueue(object : Callback<Member> {
+                override fun onResponse(call: Call<Member>, response: Response<Member>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<Member>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getFaqList(): FaqWrapper {
+        return suspendCoroutine { continuation ->
+            val call = userService.getFaqList()
+            call.enqueue(object : Callback<FaqWrapper> {
+                override fun onResponse(call: Call<FaqWrapper>, response: Response<FaqWrapper>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<FaqWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun checkEmailAndPhone(email: String, phone: String): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = userService.checkEmailAndPhone(email, phone)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 
