@@ -1,5 +1,7 @@
 package com.register.app.screens
 
+import android.view.Surface
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -135,6 +137,7 @@ fun HomeScreenContent(
             coroutineScope.launch {
                 authViewModel.reloadUserData()
                 homeViewModel.refreshHomeContents()
+                activityViewModel.refreshHomeContents()
             }
                     },
         refreshThreshold = 84.dp,
@@ -179,6 +182,7 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     var searchTag by rememberSaveable { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     Row(
         Modifier
             .width(screenWidth.dp)
@@ -205,6 +209,8 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
                             val response = groupViewModel.searchGroupByName(searchTag)
                             if (response?.status == true) {
                                 navController.navigate("suggested_groups")
+                            }else {
+                                Toast.makeText(context, response?.message, Toast.LENGTH_LONG).show()
                             }
                         }
                     }
@@ -419,7 +425,7 @@ fun ActivityFeedList(
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel
 ) {
-    val feedList = homeViewModel.eventFeeds.observeAsState().value
+    val feedList = activityViewModel.eventFeeds.observeAsState().value
     if (feedList?.isNotEmpty() == true) {
         Column(
             Modifier
@@ -463,11 +469,12 @@ fun EventItemHome(
             .clickable {
                 coroutineScope.launch {
                     activityViewModel.setSelectedEvent(eventFeed)
+                    groupViewModel.reloadGroup(eventFeed.groupId) // load group details
+                    groupViewModel.isUserAdmin()
                     navController.navigate(route = "event_detail") {
                         launchSingleTop = true
                     }
-                    groupViewModel.reloadGroup(eventFeed.groupId) // load group details
-                    groupViewModel.isUserAdmin() // check if user is admin for the group that owns the selected activity
+                     // check if user is admin for the group that owns the selected activity
                     groupViewModel.getComplianceRate(eventFeed)
                 }
             }

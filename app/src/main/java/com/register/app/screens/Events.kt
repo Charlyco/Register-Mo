@@ -691,6 +691,9 @@ fun ConfirmPaymentDialog(
                                 if (response.status) {
                                     callback(false)
                                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                }else {
+                                    Toast.makeText(context, response.message,
+                                        Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },

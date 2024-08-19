@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +59,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
@@ -78,6 +80,7 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
     val membershipId = groupViewModel.membershipId.observeAsState().value
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var modeOfPayment by rememberSaveable { mutableStateOf("") }
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -130,37 +133,112 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
             if (loadingState == true) {
                 CircularIndicator()
             }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+
+            Column(
+                Modifier.padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                if (fileName != null) {
-                    Text(text = fileName)
-                }
-                Button(
-                    onClick = {
-                        filePicker.launch("image/*") },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    )
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.CASH.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.CASH.name }
+                    )
                     Text(
-                        text = stringResource(id = R.string.browse),
-                        Modifier.padding(2.dp)
+                        text = stringResource(id = R.string.cash_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.CARD_PAYMENT.name,
+                    onCheckedChange = { modeOfPayment = PaymentMethod.CARD_PAYMENT.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.card_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.BANK_TRANSFER.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.BANK_TRANSFER.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.bank_transfer),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(
+                    Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.POS.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.POS.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.pos_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            if (modeOfPayment != PaymentMethod.CASH.name) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (fileName != null) {
+                        Text(text = fileName)
+                    }
+                    Button(
+                        onClick = {
+                            filePicker.launch("image/*") },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onBackground
                         )
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.browse),
+                            Modifier.padding(2.dp)
+                        )
+                    }
                 }
             }
 
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val response = activityViewModel.submitEvidenceOfPayment(group?.groupName!!, membershipId!!)
+                        val response = activityViewModel.submitEvidenceOfPayment(group?.groupName!!, group.groupId, membershipId!!, modeOfPayment)
                         if (response.status) {
                             Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                        }else {
+                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                         }
                     }
                 },

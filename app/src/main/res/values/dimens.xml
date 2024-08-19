@@ -5,4 +5,5 @@
     <dimen name="button_pressed_evelation">8.dp</dimen>
     <dimen name="progress_indicator_stroke">2.dp</dimen>
     <dimen name="low_elevation">8dp</dimen>
+    <dimen name="button_height">55.dp</dimen>
 </resources>

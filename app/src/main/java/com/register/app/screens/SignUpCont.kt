@@ -58,6 +58,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.CircularIndicator
+import com.register.app.util.PasswordTextBox
 import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -238,50 +239,7 @@ fun InputSection(authViewModel: AuthViewModel, navController: NavController) {
             shape = MaterialTheme.shapes.small,
             border = BorderStroke(1.dp, Color.Gray)
         ) {
-            TextField(
-                value = password,
-                onValueChange = {password = it},
-                label = { Text(
-                    text = stringResource(id = R.string.password),
-                    color = Color.Gray) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "",
-                    tint = Color.Gray)},
-                trailingIcon = {
-                    if (showPassword) {
-                        IconButton(onClick = { showPassword = false }) {
-                            Icon(
-                                imageVector = Icons.Default.VisibilityOff,
-                                contentDescription = "hide_password",
-                                tint = Color.Gray
-                            )
-                        }
-                    } else {
-                        IconButton(
-                            onClick = { showPassword = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = "hide_password",
-                                tint = Color.Gray
-                            )
-                        }
-                    }
-                },
-                visualTransformation = if (showPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                )
-            )
+            PasswordTextBox(stringResource(id = R.string.password)) {password = it}
         }
 
         Surface(
@@ -296,50 +254,7 @@ fun InputSection(authViewModel: AuthViewModel, navController: NavController) {
             shape = MaterialTheme.shapes.small,
             border = BorderStroke(1.dp, Color.Gray)
         ) {
-            TextField(
-                value = rePassword,
-                onValueChange = {rePassword = it},
-                label = { Text(
-                    text = stringResource(id = R.string.confirm_password),
-                    color = Color.Gray) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "",
-                    tint = Color.Gray)},
-                trailingIcon = {
-                    if (showRePassword) {
-                        IconButton(onClick = { showRePassword = false }) {
-                            Icon(
-                                imageVector = Icons.Default.VisibilityOff,
-                                contentDescription = "hide_password",
-                                tint = Color.Gray
-                            )
-                        }
-                    } else {
-                        IconButton(
-                            onClick = { showRePassword = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = "hide_password",
-                                tint = Color.Gray
-                            )
-                        }
-                    }
-                },
-                visualTransformation = if (showRePassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                colors = TextFieldDefaults.colors(
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                )
-            )
+            PasswordTextBox(stringResource(id = R.string.confirm_password)) {rePassword = it}
         }
 
         Button(

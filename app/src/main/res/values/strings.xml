@@ -120,7 +120,7 @@
     <string name="search_by_email">Enter the user\'s email address</string>
     <string name="add_to_group">Add to group</string>
     <string name="payment">Pending payments</string>
-    <string name="confirm">Confirm payment</string>
+    <string name="confirm">Confirm</string>
     <string name="amount_paid">Amount paid</string>
     <string name="confirm_event_completion">Are you sure you want to mark this activity as completed?</string>
     <string name="cancel">Cancel</string>
@@ -149,7 +149,7 @@
     <string name="pay_all">Offset all debt</string>
     <string name="pay_selection">Pay for selection</string>
     <string name="list_of_activities_paid">List of activities paid for</string>
-    <string name="reject_payment">Reject Payment</string>
+    <string name="reject_payment">Decline</string>
     <string name="support_desc">Hello!\nHow can we help you?</string>
     <string name="live_chat">Contact live support</string>
     <string name="send_email">Send us an email</string>
@@ -170,4 +170,20 @@
     <string name="start_election">Start election</string>
     <string name="election_not_started">This election has not started yet</string>
     <string name="no_elections">There are no elections\nat the moment</string>
+    <string name="channel_name">Re register notifications</string>
+    <string name="channel_description">"Notification channel for The Register "</string>
+    <string name="register_notification_channel_id">Register channel Id</string>
+    <string name="error_occurred">An error occurred, please try again</string>
+    <string name="cash_payment">I paid in cash</string>
+    <string name="card_payment">Card payment</string>
+    <string name="bank_transfer">Bank transfer</string>
+    <string name="pos_payment">Through POS</string>
+    <string name="forgotPassword">Forgot password?</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="password_reset_header">Enter your registered email address to recieve a one time passcode</string>
+    <string name="send_otp">Send OTP</string>
+    <string name="enter_new_password">New Password</string>
+    <string name="new_password_header">Enter the new password. Note password mut be at least 6 digits</string>
+    <string name="otp_error">Incorect OTP, please try again</string>
+    <string name="leave_group">Leave group</string>
 </resources>

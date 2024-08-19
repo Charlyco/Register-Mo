@@ -94,6 +94,7 @@ import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun EventDetails(
@@ -128,7 +129,7 @@ fun EventDetailContent(
     authViewModel: AuthViewModel
 ) {
     val event = activityViewModel.selectedEvent.observeAsState().value
-    val commentList = groupViewModel.eventCommentLiveData.observeAsState().value
+    //val commentList = groupViewModel.eventCommentLiveData.observeAsState().value
     val pageState = rememberPagerState(pageCount = { event?.imageUrlList?.size?: 0} )
     var showDetails by rememberSaveable { mutableStateOf(true)}
     val context = LocalContext.current
@@ -282,21 +283,21 @@ fun EventDetailContent(
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .fillMaxWidth(),
                             color = Color.Transparent,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary),
                             shape = MaterialTheme.shapes.medium
                         ) {
                             CommentBox(groupViewModel, activityViewModel, event)
                         }
 
-                        if (commentList?.isNotEmpty() == true) {
+                        if (event?.eventComments?.isNotEmpty() == true) {
                             LazyColumn(
                                 modifier = Modifier
                                     .padding(vertical = 1.dp)
                                     .height(screenHeight.dp),
                                 verticalArrangement = Arrangement.Top
                             ) {
-                                items(commentList) { comment ->
-                                    CommentItem(comment, groupViewModel, activityViewModel)
+                                items(event.eventComments) { comment ->
+                                    CommentItem(comment, activityViewModel)
                                 }
                             }
                         }
@@ -370,8 +371,8 @@ fun ConfirmPaymentDialog(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    var amountPaid by rememberSaveable { mutableDoubleStateOf(0.0) }
-    var outstanding by rememberSaveable { mutableDoubleStateOf(0.0) }
+    var amountPaid by rememberSaveable { mutableStateOf("") }
+    var outstanding by rememberSaveable { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val context = LocalContext.current
@@ -386,56 +387,60 @@ fun ConfirmPaymentDialog(
                 .verticalScroll(rememberScrollState(initial = 0)),
             color = MaterialTheme.colorScheme.background
         ) {
-            Dialog(onDismissRequest = { showReasonInputDialog = false}) {
-                Surface(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    ConstraintLayout(
-                        Modifier.fillMaxWidth()
+            if (showReasonInputDialog) {
+                Dialog(onDismissRequest = { showReasonInputDialog = false}) {
+                    Surface(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        val (input, btn) = createRefs()
+                        ConstraintLayout(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        ) {
+                            val (input, btn) = createRefs()
 
-                        TextField(
-                            value = reason,
-                            onValueChange = { reason = it },
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedContainerColor = MaterialTheme.colorScheme.background,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.background
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                            TextField(
+                                value = reason,
+                                onValueChange = { reason = it },
+                                colors = TextFieldDefaults.colors(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.background
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Proceed",
-                            modifier = Modifier
-                                .constrainAs(btn) {
-                                    top.linkTo(input.bottom, margin = 8.dp)
-                                    end.linkTo(parent.end, margin = 8.dp)
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Proceed",
+                                modifier = Modifier
+                                    .constrainAs(btn) {
+                                        top.linkTo(input.bottom, margin = 8.dp)
+                                        end.linkTo(parent.end, margin = 8.dp)
 
-                                }
-                                .clickable {
-                                    coroutineScope.launch {
-                                        val response =
-                                            activityViewModel.rejectPayment(selectedPayment, reason)
-                                        if (response.status) {
-                                            callback(false)
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    response.message,
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                    }
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            val response =
+                                                activityViewModel.rejectPayment(selectedPayment, reason)
+                                            if (response.status) {
+                                                callback(false)
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        response.message,
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
+                                            }
                                         }
                                     }
-                                }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -461,7 +466,7 @@ fun ConfirmPaymentDialog(
                 ) {
                     TextField(
                         value = amountPaid.toString(),
-                        onValueChange = { amountPaid = it.toDouble()},
+                        onValueChange = { amountPaid = it},
                         placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -486,7 +491,7 @@ fun ConfirmPaymentDialog(
                 ) {
                     TextField(
                         value = outstanding.toString(),
-                        onValueChange = { outstanding = it.toDouble()},
+                        onValueChange = { outstanding = it},
                         placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -523,10 +528,12 @@ fun ConfirmPaymentDialog(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                val response = activityViewModel.confirmPayment(selectedPayment, amountPaid,
-                                    outstanding, group?.groupId!!, PaymentMethod.BANK_TRANSFER.name)
+                                val response = activityViewModel.confirmPayment(selectedPayment, amountPaid.toDouble(),
+                                    outstanding.toDouble(), group?.groupId!!)
                                 if (response.status) {
                                     callback(false)
+                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                }else {
                                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -1159,14 +1166,12 @@ fun AdminActionDialog(
                                         val response =
                                             activityViewModel.markActivityCompleted(event)
                                         if (response.status) {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Activity completed",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                            Toast.makeText(context, "Activity completed",
+                                                Toast.LENGTH_SHORT).show()
                                             navController.navigateUp()
+                                        } else {
+                                            Toast.makeText(context, response.message,
+                                                Toast.LENGTH_SHORT).show()
                                         }
                                         callback(false)
                                     }
@@ -1176,14 +1181,12 @@ fun AdminActionDialog(
                                     coroutineScope.launch {
                                         val response = activityViewModel.archiveActivity(event)
                                         if (response.status) {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Activity archived",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                            Toast.makeText(context, "Activity archived",
+                                                    Toast.LENGTH_SHORT).show()
                                             navController.navigateUp()
+                                        }else {
+                                            Toast.makeText(context, response.message,
+                                                    Toast.LENGTH_SHORT).show()
                                         }
                                         callback(false)
                                     }
@@ -1193,14 +1196,12 @@ fun AdminActionDialog(
                                     coroutineScope.launch {
                                         val response = activityViewModel.deleteActivity(event)
                                         if (response.status) {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Activity deleted",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                            Toast.makeText(context, "Activity deleted",
+                                                    Toast.LENGTH_SHORT).show()
                                             navController.navigateUp()
+                                        }else {
+                                            Toast.makeText(context, response.message,
+                                                Toast.LENGTH_SHORT).show()
                                         }
                                         callback(false)
                                     }
@@ -1210,7 +1211,6 @@ fun AdminActionDialog(
                                     callback(false)
                                 }
                             }
-                            {}
                         }
                         .constrainAs(confirm) {
                             end.linkTo(parent.end, margin = 16.dp)
@@ -1298,7 +1298,7 @@ fun CommentBox(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
 
         )
         IconButton(onClick = { coroutineScope.launch {
-            val newComment = activityViewModel.postComment(commentText, event?.eventId) }
+            activityViewModel.postComment(commentText, event?.eventId) }
             }
         ) {
             Icon(
@@ -1369,60 +1369,60 @@ fun ReactToEvent(likeList: Int, loveList: Int) {
 @Composable
 fun CommentItem(
     comment: EventComment,
-    groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp - 8
     var showCommentReplyBox by rememberSaveable { mutableStateOf(false) }
     var commentReply by rememberSaveable { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
-    var commentReplyList by rememberSaveable { mutableStateOf(listOf<CommentReply>()) }
+
     Surface(
         modifier = Modifier
-            .padding(vertical = 1.dp)
-            .width(screenWidth.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+            .padding(vertical = 1.dp, horizontal = 16.dp)
+            .fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background,
         shape = MaterialTheme.shapes.extraSmall
     ) {
         ConstraintLayout {
             val (commentText, replyText, replyBox, replyList, userName, time) = createRefs()
             Text(
                 text = "${comment.username}: ",
-                fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.secondary,
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.constrainAs(userName) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start, margin = 4.dp)
                 }
             )
             Text(
-                text = comment.comment,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                text = comment.comment?: "",
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 modifier = Modifier
                     .constrainAs(commentText) {
                         start.linkTo(parent.start, margin = 8.dp)
-                        top.linkTo(userName.bottom, margin = 2.dp)
+                        top.linkTo(userName.bottom)
                     }
             )
             Text(
-                text = comment.dateOfComment,
+                text = LocalDateTime.parse(comment.dateOfComment).format(DateTimeFormatter.ofPattern("HH:mm")),
                 fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.secondary,
+                color = Color.Gray,
                 modifier = Modifier.constrainAs(time) {
                     top.linkTo(parent.top, margin = 4.dp)
                     end.linkTo(parent.end, margin = 4.dp)
                 }
             )
-            if (commentReplyList.isNotEmpty()) {
+            if (comment.commentReplies?.isNotEmpty() == true) {
                 Surface(
                     modifier = Modifier
                         .padding(start = 12.dp)
                         .constrainAs(replyList) {
-                            top.linkTo(userName.bottom)
+                            top.linkTo(commentText.bottom)
                             end.linkTo(parent.end, margin = 4.dp)
-                        }
+                        },
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    CommentReplyList(commentReplyList)
+                    CommentReplyList(comment.commentReplies)
                 }
             }
 
@@ -1444,29 +1444,40 @@ fun CommentItem(
                         start.linkTo(parent.start, margin = 4.dp)
                     }
                 ) {
-                    TextField(
-                        value = commentReply,
-                        onValueChange = { commentReply = it },
+                    Surface(
                         modifier = Modifier.width((screenWidth - 84).dp),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            focusedContainerColor = MaterialTheme.colorScheme.background
-                        ),
-                        placeholder = { Text(text = stringResource(id = R.string.reply)) }
-                    )
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        TextField(
+                            value = commentReply,
+                            onValueChange = { commentReply = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                                focusedContainerColor = MaterialTheme.colorScheme.background,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            placeholder = { Text(text = stringResource(id = R.string.reply)) }
+                        )
+                    }
+
                     IconButton(onClick = {
+                        showCommentReplyBox = false
                         coroutineScope.launch {
-                            val newReplyItem = activityViewModel.postCommentReply(
+                            activityViewModel.postCommentReply(
                                 commentReply,
-                                comment.commentId
+                                comment.commentId!!
                             )
-                            if (newReplyItem != null) {
-                                val newCommentReplyList =
-                                    commentReplyList.toMutableList() // creates a mutable list of the reply list defined above
-                                newCommentReplyList.add(newReplyItem) //adds the new item to the list
-                                commentReplyList =
-                                    newCommentReplyList //reassign the reply list with the updated list
-                            }
+//                            if (newReplyItem != null) {
+//                                val newCommentReplyList =
+//                                    commentReplyList.toMutableList() // creates a mutable list of the reply list defined above
+//                                newCommentReplyList.add(newReplyItem) //adds the new item to the list
+//                                commentReplyList =
+//                                    newCommentReplyList //reassign the reply list with the updated list
+//                            }
                         }
                     }) {
                         Icon(
@@ -1483,11 +1494,12 @@ fun CommentItem(
 
 @Composable
 fun CommentReplyList(commentReplyList: List<CommentReply>) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp - 64
-    LazyColumn(
-        modifier = Modifier.height(240.dp)
+    val screenWidth = LocalConfiguration.current.screenWidthDp - 64
+    Column(
+        modifier = Modifier
+            .width(screenWidth.dp)
     ) {
-        items(commentReplyList) { reply ->
+        commentReplyList.forEach { reply ->
             ReplyItem(reply)
         }
     }
@@ -1500,29 +1512,29 @@ fun ReplyItem(reply: CommentReply) {
 
         Text(
             text = "${reply.username}: ",
-            fontSize = TextUnit(10.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.secondary,
+            fontSize = TextUnit(12.0f, TextUnitType.Sp),
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.constrainAs(userName) {
                 top.linkTo(parent.top)
                 start.linkTo(parent.start, margin = 4.dp)
             }
         )
         Text(
-            text = reply.reply,
-            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            text = reply.replyText?: "",
+            fontSize = TextUnit(12.0f, TextUnitType.Sp),
             modifier = Modifier
                 .constrainAs(comment) {
                     start.linkTo(parent.start, margin = 8.dp)
-                    top.linkTo(userName.bottom, margin = 2.dp)
+                    top.linkTo(userName.bottom)
                 }
         )
         Text(
-            text = reply.dateOfComment,
+            text = LocalDateTime.parse(reply.dateOfReply).format(DateTimeFormatter.ofPattern("HH:mm")),
             fontSize = TextUnit(10.0f, TextUnitType.Sp),
-            color = MaterialTheme.colorScheme.secondary,
+            color = Color.Gray,
             modifier = Modifier.constrainAs(time) {
                 top.linkTo(comment.bottom)
-                end.linkTo(parent.end, margin = 4.dp)
+                start.linkTo(parent.start, margin = 8.dp)
             }
         )
     }

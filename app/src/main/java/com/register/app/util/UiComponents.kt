@@ -23,10 +23,13 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Details
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,6 +68,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -171,74 +176,62 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
                 tint = MaterialTheme.colorScheme.onBackground
             )},
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent),
-            actions = {
-                IconButton(
-                    onClick = { isExpanded = !isExpanded }) {
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu))
+                containerColor = Color.Transparent)
+        )
+    }
+}
+
+@Composable
+fun PasswordTextBox(label: String, callback: (String) -> Unit) {
+    var password by rememberSaveable { mutableStateOf("") }
+    var showPassword by rememberSaveable { mutableStateOf(false) }
+
+    TextField(
+        value = password,
+        onValueChange = {
+            password = it
+            callback(password) },
+        label = { Text(
+            text = label,
+            color = Color.Gray) },
+        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = { Icon(
+            imageVector = Icons.Default.Lock,
+            contentDescription = "",
+            tint = Color.Gray)},
+        trailingIcon = {
+            if (showPassword) {
+                IconButton(onClick = { showPassword = false }) {
+                    Icon(
+                        imageVector = Icons.Default.VisibilityOff,
+                        contentDescription = "hide_password",
+                        tint = Color.Gray
+                    )
                 }
-                DropdownMenu(
-                    expanded = isExpanded,
-                    onDismissRequest = { isExpanded = false },
-                    modifier = Modifier
-                        .width(160.dp)
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.settings)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        colors = MenuDefaults.itemColors(
-
-                        ),
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(id = R.string.settings)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.privacy)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.PrivacyTip,
-                            contentDescription = stringResource(id = R.string.privacy)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.about)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Details,
-                            contentDescription = stringResource(id = R.string.about)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.sign_out)) },
-                        onClick = {
-                            isExpanded = false
-                            navController.navigate("signin") {
-                                popUpTo("home") {
-                                    inclusive = true
-                                }
-                            }
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.ArrowOutward,
-                            contentDescription = stringResource(id = R.string.sign_out)
-                        ) }
+            } else {
+                IconButton(
+                    onClick = { showPassword = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = "hide_password",
+                        tint = Color.Gray
                     )
                 }
             }
+        },
+        visualTransformation = if (showPassword) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
+        colors = TextFieldDefaults.colors(
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedContainerColor = MaterialTheme.colorScheme.background,
+            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+            unfocusedLabelColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary
         )
-    }
+    )
 }
 
 @Composable

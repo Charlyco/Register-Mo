@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -204,6 +205,7 @@ fun SuggestedGroupItem(
 @Composable
 fun JoinGroupDialog(groupViewModel: GroupViewModel, admins: List<Member>?, selectedGroup: Group?, function: (show: Boolean) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     Dialog(
         onDismissRequest = { function(false) },
         ) {
@@ -297,6 +299,8 @@ fun JoinGroupDialog(groupViewModel: GroupViewModel, admins: List<Member>?, selec
                                 val response = groupViewModel.requestToJoinGroup(selectedGroup)
                                 if (response.status) {
                                     function(false)
+                                }else {
+                                    Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                                 }
                             }
                         },

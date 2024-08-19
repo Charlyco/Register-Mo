@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils
@@ -352,7 +353,8 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                            centerHorizontallyTo(parent)
                        },
                    colors = ButtonDefaults.buttonColors(
-                       containerColor = MaterialTheme.colorScheme.secondary
+                       containerColor = MaterialTheme.colorScheme.secondary,
+                       contentColor = MaterialTheme.colorScheme.onBackground
                    )
                    ) {
                    Text(text = stringResource(id = R.string.upload))
@@ -362,12 +364,14 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                    onClick = {
                        coroutineScope.launch {
                            val response = groupViewModel.createNewGroup(groupName, groupDescription, memberOffice, groupType)
-                           if (response.groupName == groupName) {
+                           if (response != null && response.groupName == groupName) {
                                Toast.makeText(context, "Group Created Successfully", Toast.LENGTH_SHORT).show()
                                groupViewModel.showCreateGroupSheet.postValue(false)
                                groupViewModel.setSelectedGroupDetail(response)
                                groupViewModel.isUserAdmin() //grants the user admin rights
                                navController.navigate("group_detail")
+                           } else {
+                               Toast.makeText(context, AN_ERROR_OCCURRED, Toast.LENGTH_SHORT).show()
                            }
                        }
                    },
@@ -379,7 +383,11 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                            top.linkTo(uploadBtn.bottom, margin = 16.dp)
                            bottom.linkTo(parent.bottom, margin = 48.dp)
                            centerHorizontallyTo(parent)
-                       }
+                       },
+                   colors = ButtonDefaults.buttonColors(
+                       containerColor = MaterialTheme.colorScheme.primary,
+                       contentColor = MaterialTheme.colorScheme.onBackground
+                   ),
                ) {
                    Text(text = stringResource(id = R.string.create_group_btn))
                }

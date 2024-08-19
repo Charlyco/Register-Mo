@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FirebaseTokenModel
+import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
@@ -32,10 +33,10 @@ class AuthViewModel @Inject constructor(
 ): ViewModel() {
     private val _progressLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     val progressLiveData: LiveData<Boolean> = _progressLiveData
-    private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData(false)
+    private val _shouldResendOtp: MutableLiveData<Boolean> = MutableLiveData()
     val shouldResendOtp: LiveData<Boolean> = _shouldResendOtp
-    private val _isOtpVerified: MutableLiveData<Boolean> = MutableLiveData(false)
-    val isOtpVerified: LiveData<Boolean> = _isOtpVerified
+    private val _isOtpVerified: MutableLiveData<Boolean?> = MutableLiveData()
+    val isOtpVerified: LiveData<Boolean?> = _isOtpVerified
     private val _otpTimer: MutableLiveData<String> = MutableLiveData("")
     val otpTimer: LiveData<String> = _otpTimer
     private val _otpLiveData: MutableLiveData<Int> = MutableLiveData()
@@ -52,6 +53,8 @@ class AuthViewModel @Inject constructor(
     val signUpModelLiveData: LiveData<SignUpModel> = _signUpModelLiveData
     private val _userProfileImage: MutableLiveData<String?> = MutableLiveData()
     val userProfileImage: LiveData<String?> = _userProfileImage
+    private val _userEmail: MutableLiveData<String> = MutableLiveData()
+    val userEmail: LiveData<String> = _userEmail
 
     suspend fun signUp(
         username: String,
@@ -84,11 +87,12 @@ class AuthViewModel @Inject constructor(
         return false
     }
 
-    suspend fun verifyOtp(otp: Int, email: String) {
+    suspend fun verifyOtp(otp: Int, email: String): GenericResponse? {
         _progressLiveData.value = true
         val response = authRepository.verifyOtp(otp, email)
         _isOtpVerified.value = response.status
         _progressLiveData.value = false
+        return response
     }
 
     suspend fun sendOtp(
@@ -123,18 +127,27 @@ class AuthViewModel @Inject constructor(
         return false
     }
 
+    suspend fun sendOtp(email: String): GenericResponse? {
+        _userEmail.value = email
+        _progressLiveData.value = true
+        val response = authRepository.sendOtp(email)
+        _progressLiveData.value = false
+        if (response?.status == true) countDownTimer(2)
+        return response
+    }
+
     private fun countDownTimer(duration: Int) { //A function that creates a countdown timer for OTP value expiration
         val initialTime = duration * 60
         var remainingTime = initialTime
 
         timer(period = 1000) {
+            remainingTime--
             if (remainingTime > 0) {
                 val formattedTime = formatTime(remainingTime)
                 _otpTimer.postValue(formattedTime)
-                remainingTime--
-            } else if (remainingTime == 0) {
+            } else {
                 _shouldResendOtp.postValue(true)
-                _otpTimer.postValue("Time Elapsed!")
+                _otpTimer.postValue( "Time Elapsed!")
                 cancel()
             }
         }
@@ -188,10 +201,6 @@ class AuthViewModel @Inject constructor(
         return member
     }
 
-    fun setSelectedMember(member: Member) {
-
-    }
-
     suspend fun getMemberDetails(email: String): Member {
         _progressLiveData.value = true
         Log.d("Member", "fetching member details")
@@ -212,7 +221,7 @@ class AuthViewModel @Inject constructor(
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response = authRepository.uploadImage(requestBody, fileNameFromUri!!)
         _progressLiveData.value = true
-        _userProfileImage.value = response.data.secureUrl
+        _userProfileImage.value = response.data?.secureUrl
         _progressLiveData.value = false
         return response
     }
@@ -268,9 +277,23 @@ class AuthViewModel @Inject constructor(
 
     suspend fun reloadUserData() {
             _progressLiveData.value = true
-            val userData: Member = authRepository.reloadUserData(dataStoreManager.readUserData()?.emailAddress)
+            val userData: Member? = authRepository.reloadUserData(dataStoreManager.readUserData()?.emailAddress)
+        if (userData != null) {
             dataStoreManager.writeUserData(userData)
+        }
             _progressLiveData.value = false
+    }
+
+    suspend fun resetPassword(password: String): GenericResponse {
+        val email = userEmail.value
+        _progressLiveData.value = true
+        val response = authRepository.resetPassword(email, password)
+        _progressLiveData.value = false
+        return response
+    }
+
+    fun clearOtpVerificationLiveData(value: Boolean) {
+        _isOtpVerified.value = null
     }
 
 }

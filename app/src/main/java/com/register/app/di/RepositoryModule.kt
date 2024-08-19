@@ -4,10 +4,12 @@ import com.register.app.repository.ActivityRepository
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.repository.GroupRepository
+import com.register.app.repository.NotificationRepository
 import com.register.app.repositoryimpls.ActivityRepositoryImpl
 import com.register.app.repositoryimpls.AuthRepositoryImpl
 import com.register.app.repositoryimpls.ChatRepositoryImpl
 import com.register.app.repositoryimpls.GroupRepositoryImpl
+import com.register.app.repositoryimpls.NotificationRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Singleton
     @Binds
     abstract fun bindsActivityRepository(activityRepositoryImpl: ActivityRepositoryImpl): ActivityRepository
+
+    @Singleton
+    @Binds
+    abstract fun bindsNotificationRepository(notificationRepositoryImpl: NotificationRepositoryImpl): NotificationRepository
 }

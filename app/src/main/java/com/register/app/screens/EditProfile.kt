@@ -94,7 +94,7 @@ fun EditProfileUi(
                             val response = authViewModel.uploadProfilePic(inputStream, mimeType,
                                 Utils.getFileNameFromUri(context.contentResolver, uri))
                             if (response.status) {
-                                imageUrl = response.data.secureUrl
+                                imageUrl = response.data?.secureUrl
                                 user?.imageUrl = imageUrl
                                 val updateResponse = authViewModel.updateUserProfilePic(user)
                                 imageUrl = updateResponse.data?.imageUrl

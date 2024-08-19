@@ -290,6 +290,8 @@ fun ElectionDetailScreen(
                             if (response.status) {
                                 Toast.makeText(context, response.data.toString(), Toast.LENGTH_SHORT).show()
                                 //navController.navigateUp()
+                            }else {
+                                Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                             }
                         }
                     },
@@ -401,14 +403,11 @@ fun RemoveContestantDialog(
                                     election.electionId
                                 )
                                 if (response.status) {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            response.data.toString(),
-                                            Toast.LENGTH_SHORT
-                                        )
+                                    Toast.makeText(context, response.data.toString(), Toast.LENGTH_SHORT)
                                         .show()
                                     groupViewModel.getElectionDetails(election.electionId!!)
+                                }else {
+                                    Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                                 }
                             }
                         }

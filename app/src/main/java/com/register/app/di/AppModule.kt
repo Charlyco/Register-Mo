@@ -1,6 +1,9 @@
 package com.register.app.di
 
 import android.content.Context
+import androidx.room.Room
+import com.register.app.db.NotificationDao
+import com.register.app.db.NotificationDb
 import com.register.app.util.DataStoreManager
 import com.register.app.websocket.StompWebSocketClient
 import com.register.app.websocket.StompWebSocketClientImpl
@@ -24,5 +27,15 @@ object AppModule {
     @Provides
     fun providesStompClient(): StompWebSocketClient {
         return StompWebSocketClientImpl.getInstance("ws://34.105.170.3:8084/ws")
+    }
+
+    @Singleton
+    @Provides
+    fun provideNotificationDao(@ApplicationContext context: Context): NotificationDao {
+        val db = Room.databaseBuilder(
+            context, NotificationDb::class.java, "notification_db"
+        ).build()
+
+        return db.notificationDao()
     }
 }

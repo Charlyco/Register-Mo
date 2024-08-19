@@ -2,9 +2,12 @@ package com.register.app.repository
 
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
+import com.register.app.dto.EventComment
+import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
@@ -29,5 +32,7 @@ interface ActivityRepository {
     suspend fun confirmBulkPayment(confirmBulkPaymentDto: ConfirmBulkPaymentDto): GenericResponse
     suspend fun rejectBulkPayment(rejectedBulkPaymentDto: RejectBulkPaymentDto): GenericResponse
     suspend fun rejectPayment(rejectedPayment: RejectedPayment): GenericResponse
-    suspend fun generateReport(eventId: Int?): ResponseBody
+    suspend fun generateReport(eventId: Int?): ResponseBody?
+    suspend fun postComment(commentModel: EventComment): EventCommentResponse
+    suspend fun postCommentReply(replyModel: CommentReply): EventCommentResponse
 }

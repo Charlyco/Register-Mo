@@ -142,6 +142,8 @@ fun BulkPayment(navController: NavController, groupViewModel: GroupViewModel, ac
                         val response = activityViewModel.submitBulkPaymentEvidence(group?.groupName!!, group.groupId, membershipId!!, totalAmount)
                         if (response.status) {
                             Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Error submitting payment", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },

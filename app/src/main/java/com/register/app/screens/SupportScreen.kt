@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.LiveHelp
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.QuestionMark
-import androidx.compose.material.rememberBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,13 +66,14 @@ import java.time.LocalDateTime
 fun SupportScreen(
     authViewModel: AuthViewModel,
     forumViewModel: ForumViewModel,
+    homeViewModel: HomeViewModel,
     navController: NavController
 ) {
     Scaffold(
         topBar = {GenericTopBar(title = "Support", navController = navController, navRoute = "home")},
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        SupportScreenContent(Modifier.padding(it), forumViewModel, authViewModel, navController)
+        SupportScreenContent(Modifier.padding(it), forumViewModel, authViewModel, homeViewModel, navController)
     }
 }
 
@@ -82,6 +82,7 @@ fun SupportScreenContent(
     modifier: Modifier,
     forumViewModel: ForumViewModel,
     authViewModel: AuthViewModel,
+    homeViewModel: HomeViewModel,
     navController: NavController
 ) {
     val userData = authViewModel.userLideData.observeAsState().value
@@ -239,6 +240,9 @@ fun SupportScreenContent(
                     .height(48.dp)
                     .fillMaxWidth()
                     .clickable {
+                        coroutineScope.launch {
+                            homeViewModel.getFaqList()
+                        }
                         navController.navigate("faq") {
                             launchSingleTop = true
                         }

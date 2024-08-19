@@ -34,7 +34,10 @@ class ForumViewModel @Inject constructor(
     val remoteChatMessages: MutableLiveData<ChatMessageResponse?> = _remoteChatMessages
     private val _selectedGroup: MutableLiveData<Group?> = MutableLiveData()
     val selectedGroup: LiveData<Group?> = _selectedGroup
-
+    private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
+    val errorLiveData: LiveData<String?> = _errorLiveData
+    private val _isLoadingLiveData: MutableLiveData<Boolean?> = MutableLiveData()
+    val isLoadingLiveData: LiveData<Boolean?> = _isLoadingLiveData
     private val _currentRemoteUser: MutableLiveData<String?> = MutableLiveData()
     val currentRemoteUser: LiveData<String?> = _currentRemoteUser
 
@@ -55,8 +58,10 @@ class ForumViewModel @Inject constructor(
 
 
     suspend fun fetUserChats() {
+        _isLoadingLiveData.value = true
         val userChats = chatRepository.fetchUserChats(selectedGroup.value?.groupId!!)
-        if (userChats.data?.isNotEmpty() == true) {
+        _isLoadingLiveData.value = false
+        if (userChats?.data?.isNotEmpty() == true) {
             val data = userChats.data
             val messageList = _chatMessages.value
             val newMessageList = mutableListOf<MessageData>()
@@ -64,6 +69,8 @@ class ForumViewModel @Inject constructor(
             data.forEach {
                 newMessageList.add(
                     MessageData(
+                        it.groupId,
+                        it.groupName,
                         it.message,
                         it.membershipId,
                         it.senderName,
@@ -84,6 +91,8 @@ class ForumViewModel @Inject constructor(
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
             newMessageList.add(
                 MessageData(
+                    it.groupId,
+                    it.groupName,
                     it.message,
                     it.membershipId,
                     it.senderName,
@@ -101,6 +110,8 @@ class ForumViewModel @Inject constructor(
         newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
         newMessageList.add(
             MessageData(
+                it.groupId,
+                it.groupName,
                 it.message,
                 it.membershipId,
                 it.senderName,
@@ -135,21 +146,14 @@ class ForumViewModel @Inject constructor(
     }
 
     suspend fun loadGroupChats(groupId: Int?) {
+        _isLoadingLiveData.value = true
         val groupChats = groupId.let { chatRepository.fetchUserChats(it!!) }
-        if (groupChats.data?.isNotEmpty() == true) {
+        _isLoadingLiveData.value = false
+        if (groupChats?.data?.isNotEmpty() == true) {
             val data = groupChats.data
             val messageList = _chatMessages.value
             val newMessageList = mutableListOf<MessageData>()
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
-//            data.forEach {
-//                MessageData(
-//                    it.message,
-//                    it.membershipId,
-//                    it.senderName,
-//                    it.imageUrl,
-//                    it.sendTime
-//                )
-//            }
             newMessageList.addAll(data)
             _chatMessages.value = newMessageList
         }

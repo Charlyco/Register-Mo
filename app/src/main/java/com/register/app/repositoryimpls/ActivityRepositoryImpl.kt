@@ -3,11 +3,15 @@ package com.register.app.repositoryimpls
 import com.google.common.io.ByteStreams
 import com.register.app.api.ActivityService
 import com.register.app.api.UserService
+import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
+import com.register.app.dto.EventComment
+import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
@@ -44,6 +48,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -65,6 +77,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(ImageUploadResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(ImageUploadResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -86,6 +106,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -107,6 +135,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -125,6 +161,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 override fun onResponse(call: Call<Member?>, response: Response<Member?>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume(  null)
+                        }
                     }
                 }
 
@@ -145,6 +189,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(EventDetailWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(EventDetailWrapper("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -165,6 +217,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -185,6 +245,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -206,6 +274,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(BulkPaymentWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(BulkPaymentWrapper("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -228,6 +304,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -249,6 +333,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -270,6 +362,14 @@ class ActivityRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -281,17 +381,83 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun generateReport(eventId: Int?): ResponseBody {
+    override suspend fun generateReport(eventId: Int?): ResponseBody? {
         return suspendCoroutine { continuation ->
             val call = activityService.generateReport(eventId)
             call.enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
                     }
                 }
 
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun postComment(commentModel: EventComment): EventCommentResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.postComment(commentModel)
+            call.enqueue(object : Callback<EventCommentResponse> {
+                override fun onResponse(
+                    call: Call<EventCommentResponse>,
+                    response: Response<EventCommentResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(EventCommentResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(EventCommentResponse("Please check Internet connection and try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<EventCommentResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun postCommentReply(replyModel: CommentReply): EventCommentResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.postCommentReply(replyModel)
+            call.enqueue(object : Callback<EventCommentResponse> {
+                override fun onResponse(
+                    call: Call<EventCommentResponse>,
+                    response: Response<EventCommentResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(EventCommentResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(EventCommentResponse("Please check Internet connection and try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<EventCommentResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

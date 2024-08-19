@@ -54,6 +54,9 @@ interface UserService {
     fun getFaqList(): Call<FaqWrapper>
     @GET("auth-service/api/v1/auth/check")
     fun checkEmailAndPhone(@Query("email") email: String, @Query("phone") phone: String): Call<GenericResponse>
+    @PUT("auth-service/api/v1/auth/resetPassword")
+    fun resetPassword(@Query("email") email: String?,
+                      @Query("password") password: String): Call<GenericResponse>
 
 
 }

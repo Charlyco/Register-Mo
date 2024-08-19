@@ -17,6 +17,6 @@ interface ChatRepository {
     suspend fun sendMessage(groupId: Int, message: MessagePayload, callback: (MessageData) -> Unit?)
     suspend fun sendSupportMessage(message: SupportMessageDto, callback: (SupportMessageDto) -> Unit?)
     suspend fun disconnectChat()
-    suspend fun fetchUserChats(groupId: Int): UserChatMessages
+    suspend fun fetchUserChats(groupId: Int): UserChatMessages?
 
 }

@@ -62,6 +62,7 @@ import androidx.navigation.compose.rememberNavController
 import com.register.app.R
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
+import com.register.app.util.PasswordTextBox
 import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -89,7 +90,7 @@ fun LoginScreen(
         ConstraintLayout(
             modifier = Modifier.fillMaxSize()
         ) {
-            val (backBtn, header, topBg, emailBox, passwordBox, loginBtn, alternate, indicator) = createRefs()
+            val (backBtn, header, topBg, emailBox, passwordBox, loginBtn, alternate, indicator, forgotPassword) = createRefs()
 
             Image(painter = painterResource(
                 id = R.drawable.auth_bg2),
@@ -133,7 +134,7 @@ fun LoginScreen(
                         .size(18.dp)
                         .clickable {
                             navController.navigate("auth") {
-                                popUpTo("splash") {inclusive = true}
+                                popUpTo("splash") { inclusive = true }
                             }
                         },
                     tint = MaterialTheme.colorScheme.primary
@@ -186,65 +187,35 @@ fun LoginScreen(
                 border = BorderStroke(1.dp, Color.Gray)
 
             ) {
-                TextField(
-                    value = password,
-                    onValueChange = {password = it},
-                    label = { Text(
-                        text = stringResource(id = R.string.password),
-                        color = Color.Gray) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "",
-                        tint = Color.Gray)},
-                    trailingIcon = {
-                        if (showPassword) {
-                            IconButton(onClick = { showPassword = false }) {
-                                Icon(
-                                    imageVector = Icons.Default.VisibilityOff,
-                                    contentDescription = "hide_password",
-                                    tint = Color.Gray
-                                )
-                            }
-                        } else {
-                            IconButton(
-                                onClick = { showPassword = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Visibility,
-                                    contentDescription = "hide_password",
-                                    tint = Color.Gray
-                                )
-                            }
-                        }
-                    },
-                    visualTransformation = if (showPassword) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary
-                    )
-                )
+                PasswordTextBox(stringResource(id = R.string.password)) {password = it}
             }
+
+            Text(
+                text = stringResource(id = R.string.forgotPassword),
+                Modifier
+                    .clickable {
+                        navController.navigate("reset_password") {
+                            launchSingleTop = true
+                        }
+                    }
+                    .constrainAs(forgotPassword) {
+                        end.linkTo(passwordBox.end)
+                        top.linkTo(passwordBox.bottom, margin = 8.dp)
+                    },
+                color = MaterialTheme.colorScheme.secondary,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                )
 
             Button(
                 onClick = {
                     coroutineScope.launch {
                         val response = authViewModel.signIn(email, password)
-                        if (error?.isNotBlank() == true) {
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                        }
                         if (response?.status == true) {
                             navController.navigate("home") {
                                 popUpTo("signin") {inclusive = true}
                             }
                         }else {
-                            Toast.makeText(context, "Invalid login credentials", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, response?.message, Toast.LENGTH_LONG).show()
                         }
                     }
                           },
@@ -309,9 +280,9 @@ fun SignUpInstead(navController: NavController) {
                 .padding(end = 8.dp)
                 .clickable {
                     navController.navigate("signup") {
-                        popUpTo("home") {inclusive = true}
+                        popUpTo("home") { inclusive = true }
                     }
-                           },
+                },
             color = MaterialTheme.colorScheme.secondary
         )
     }

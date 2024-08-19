@@ -69,6 +69,7 @@ import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
+import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
@@ -293,7 +294,11 @@ fun AdminMemberActions(
                             coroutineScope.launch {
                                 val response = groupViewModel.changeMemberStatus(
                                     member?.membershipId!!, ChangeMemberStatusDto(MemberStatus.SUSPENDED.name, group?.groupId))
-                                if (response.status) Toast.makeText(context, "Member suspended", Toast.LENGTH_SHORT).show()
+                                if (response.status) {
+                                    Toast.makeText(context, "Member suspended", Toast.LENGTH_SHORT).show()
+                                }else {
+                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     },
@@ -326,7 +331,8 @@ fun AdminMemberActions(
                             Toast.makeText(context, "This member is already on ${memberDetail.status}", Toast.LENGTH_LONG).show()
                         } else{
                             coroutineScope.launch {
-                                val response = groupViewModel.expelMember(RemoveMemberModel(member?.membershipId!!, memberDetail.emailAddress, group?.groupId!!))
+                                val response = groupViewModel.expelMember(RemoveMemberModel(member?.membershipId!!,
+                                    memberDetail.emailAddress, group?.groupId!!))
                                 Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                                 if (response.status) {
                                     navController.navigateUp()
@@ -397,7 +403,11 @@ fun AdminMemberActions(
                             coroutineScope.launch {
                                 val response = groupViewModel.changeMemberStatus(
                                     member?.membershipId!!, ChangeMemberStatusDto(MemberStatus.ACTIVE.name, group?.groupId))
-                                if (response.status) Toast.makeText(context, "Member suspended", Toast.LENGTH_SHORT).show()
+                                if (response.status) {
+                                    Toast.makeText(context, "Member recalled", Toast.LENGTH_SHORT).show()
+                                }else {
+                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     },

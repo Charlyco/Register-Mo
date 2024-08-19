@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
@@ -177,6 +178,8 @@ fun NewMemberDetail(groupViewModel: GroupViewModel, authViewModel: AuthViewModel
                                         if (response) {
                                             Toast.makeText(context, "Member added to ${group?.groupName}", Toast.LENGTH_LONG).show()
                                             navController.navigateUp()
+                                        }else {
+                                            Toast.makeText(context, AN_ERROR_OCCURRED, Toast.LENGTH_LONG).show()
                                         }
                                     }
                                 },

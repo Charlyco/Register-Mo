@@ -1,6 +1,7 @@
 package com.register.app.repositoryimpls
 
 import android.graphics.Paint.Join
+import androidx.compose.foundation.Image
 import com.register.app.api.ActivityService
 import com.register.app.api.GroupService
 import com.register.app.dto.ActivityRate
@@ -48,6 +49,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
                     }
                 }
 
@@ -69,6 +78,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful){
                         continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume(  null)
+                        }
                     }
                 }
 
@@ -79,13 +96,21 @@ class GroupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createNewGroup(groupModel: CreateGroupModel): Group {
+    override suspend fun createNewGroup(groupModel: CreateGroupModel): Group? {
         return suspendCoroutine { continuation ->
             val call = groupService.createNewGroup(groupModel)
             call.enqueue(object : Callback<Group> {
                 override fun onResponse(call: Call<Group>, response: Response<Group>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume(null)
+                        }
                     }
                 }
 
@@ -107,6 +132,14 @@ class GroupRepositoryImpl @Inject constructor(
                 override fun onResponse(call: Call<ActivityRate>, response: Response<ActivityRate>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(ActivityRate("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(ActivityRate("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -127,6 +160,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -148,6 +189,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -173,6 +222,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(ImageUploadResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(ImageUploadResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -197,6 +254,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(MembershipDtoWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(MembershipDtoWrapper("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -217,6 +282,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -237,6 +310,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GroupDetailWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GroupDetailWrapper("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -258,8 +339,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
-                    }else {
-                        continuation.resume(GroupsWrapper(response.message(), false, null))
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GroupsWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GroupsWrapper("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -284,6 +371,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -305,6 +400,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -325,6 +428,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -346,6 +457,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume(  null)
+                        }
                     }
                 }
 
@@ -367,6 +486,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -388,6 +515,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -406,6 +541,14 @@ class GroupRepositoryImpl @Inject constructor(
                 override fun onResponse(call: Call<Election?>, response: Response<Election?>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
                     }
                 }
 
@@ -430,6 +573,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(AddContestantResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(AddContestantResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -451,6 +602,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -471,6 +630,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -491,6 +658,14 @@ class GroupRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 

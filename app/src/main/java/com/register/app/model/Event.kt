@@ -1,5 +1,6 @@
 package com.register.app.model
 
+import com.register.app.dto.EventComment
 import com.register.app.dto.Payment
 import java.io.Serializable
 
@@ -10,7 +11,7 @@ data class Event(
     val dateCreated: String,
     val eventDate: String?,
     val imageUrlList: List<String>?,
-    val eventComments: List<EventCommentDto>?,
+    val eventComments: List<EventComment>?,
     val eventReactionsList: List<EventReactionDto>?,
     val eventCreator: String,
     val groupName: String?,
@@ -44,22 +45,5 @@ data class ContributionDto(
     val dateOfPayment: String?,
     val methodOfPayment: String?,
     val confirmedBy: String?
-)
-
-data class EventCommentDto(
-    val commentId: Int?,
-    val userName: String?,
-    val dateOfComment: String?,
-    val comment: String?,
-    val commentReplies: List<CommentReplyDto>?,
-    val eventTitle: String?
-)
-
-data class CommentReplyDto(
-    val replyId: Int?,
-    val userName: String?,
-    val dateOfReply: String?,
-    val replyText: String?,
-    val commentId: Int?
 )
 

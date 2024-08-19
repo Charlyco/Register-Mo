@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,11 +47,14 @@ import com.register.app.util.BottomNavBar
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
+import com.register.app.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel,
     groupViewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
     navController: NavController
 ) {
     Scaffold(
@@ -58,7 +62,7 @@ fun ProfileScreen(
         bottomBar = { BottomNavBar(navController = navController)},
         containerColor = MaterialTheme.colorScheme.background
     ) {
-        ProfileScreenUi(Modifier.padding(it), authViewModel, groupViewModel, navController)
+        ProfileScreenUi(Modifier.padding(it), authViewModel, groupViewModel, homeViewModel, navController)
     }
 }
 
@@ -67,11 +71,13 @@ fun ProfileScreenUi(
     modifier: Modifier,
     authViewModel: AuthViewModel,
     groupViewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
     navController: NavController
 ) {
     val context = LocalContext.current
     val user = authViewModel.userLideData.observeAsState().value
     val scrollState = rememberScrollState(initial = 0)
+    val coroutineScope = rememberCoroutineScope()
     ConstraintLayout(
         Modifier
             .verticalScroll(scrollState)
@@ -253,7 +259,14 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable {  }
+                        .clickable {
+                            coroutineScope.launch {
+                                homeViewModel.populateNotifications()
+                                navController.navigate("notifications") {
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
                 ) {
                     val (icon, label, arrow) = createRefs()
 
@@ -297,7 +310,10 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable {  }
+                        .clickable {
+                            navController.navigate("support")  {
+                            launchSingleTop = true
+                        } }
                 ) {
                     val (icon, label, arrow) = createRefs()
 

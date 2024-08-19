@@ -47,8 +47,8 @@ import javax.inject.Inject
 class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
-    private val authRepository: AuthRepository): ViewModel(){
-        private val _electionsLideData: MutableLiveData<List<Election>?> = MutableLiveData()
+    private val authRepository: AuthRepository): ViewModel() {
+    private val _electionsLideData: MutableLiveData<List<Election>?> = MutableLiveData()
     val electionsLiveData: LiveData<List<Election>?> = _electionsLideData
     private val _electionDetail: MutableLiveData<Election?> = MutableLiveData()
     val electionDetail: LiveData<Election?> = _electionDetail
@@ -112,9 +112,11 @@ class GroupViewModel @Inject constructor(
         //fetch groups from server
         _loadingState.value = true
         if (!dataStoreManager.readUserData()?.groupIds.isNullOrEmpty()) {
-            val groups: List<Group>? = groupRepository.getAllGroupsForUser(dataStoreManager.readUserData()?.groupIds)
+            val groups: List<Group>? =
+                groupRepository.getAllGroupsForUser(dataStoreManager.readUserData()?.groupIds)
             _groupListLiveDate.value = groups
-            _groupDetailLiveData.value = groups?.get(0) // temporarily set a default group till  the user selects a group
+            _groupDetailLiveData.value =
+                groups?.get(0) // temporarily set a default group till  the user selects a group
             getMembershipId(groups?.get(0))
             _loadingState.value = false
         } else {
@@ -138,15 +140,18 @@ class GroupViewModel @Inject constructor(
 
         //filter paid activities
         val paid = groupEvents?.filter { event ->
-            event.contributions?.any { it.memberEmail == userEmail } == true }
+            event.contributions?.any { it.memberEmail == userEmail } == true
+        }
         _paidActivities.value = paid
         //filter unpaid activities
         val unpaid = groupEvents?.filter { event ->
-            event.contributions.isNullOrEmpty() || event.contributions.none { it.memberEmail == userEmail }}?.toMutableList()
+            event.contributions.isNullOrEmpty() || event.contributions.none { it.memberEmail == userEmail }
+        }?.toMutableList()
         //Remove freewill donations that are completed or archived
         unpaid?.forEach { event ->
             if ((event.eventType == EventType.FREE_WILL.name && event.eventStatus == "COMPLETED") ||
-                (event.eventType == EventType.FREE_WILL.name && event.eventStatus == "ARCHIVED")) {
+                (event.eventType == EventType.FREE_WILL.name && event.eventStatus == "ARCHIVED")
+            ) {
                 unpaid.remove(event)
             }
         }
@@ -157,9 +162,10 @@ class GroupViewModel @Inject constructor(
         //getMembershipId(group)
     }
 
-     suspend fun getActivityRate(membershipId: String?, joinedDateTime: String?, groupId: Int) {
+    suspend fun getActivityRate(membershipId: String?, joinedDateTime: String?, groupId: Int) {
         val activityRate = groupRepository.getMemberActivityRate(
-            membershipId, joinedDateTime, groupId).data
+            membershipId, joinedDateTime, groupId
+        ).data
         _paymentRateLiveData.value = activityRate
         _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
     }
@@ -177,8 +183,11 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun isUserAdmin() {
-        val isAdmin = groupAdminList.value.let {admins -> admins?.any {
-            it.emailAddress == dataStoreManager.readUserData()?.emailAddress } }
+        val isAdmin = groupAdminList.value.let { admins ->
+            admins?.any {
+                it.emailAddress == dataStoreManager.readUserData()?.emailAddress
+            }
+        }
         Log.d("IS ADMIN", "isUserAdmin: $isAdmin")
         if (isAdmin == true) {
             _isAdminLiveData.value = true
@@ -200,10 +209,10 @@ class GroupViewModel @Inject constructor(
     }
 
 
-
     private suspend fun getMembershipId(group: Group?) {
-            val member = group?.memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
-            _membershipId.value = member?.membershipId
+        val member =
+            group?.memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
+        _membershipId.value = member?.membershipId
     }
 
     suspend fun saveGroupUpdate(
@@ -218,13 +227,14 @@ class GroupViewModel @Inject constructor(
     ): GenericResponse? {
         val group = GroupUpdateDto(
             groupName = groupName,
-            groupDescription = description?: "",
-            groupEmail = email?: "",
-            phoneNumber = phone?: "",
-            address = address?: "",
-            logoUrl = logoUrl?: "",
+            groupDescription = description ?: "",
+            groupEmail = email ?: "",
+            phoneNumber = phone ?: "",
+            address = address ?: "",
+            logoUrl = logoUrl ?: "",
             groupType = groupDetailLiveData.value?.groupType!!,
-            bankDetails = bankDetail)
+            bankDetails = bankDetail
+        )
         _loadingState.value = true
         val response = groupRepository.updateGroup(groupId, group)
         _loadingState.value = false
@@ -232,9 +242,11 @@ class GroupViewModel @Inject constructor(
     }
 
     fun getComplianceRate(event: Event) {
-        val groupSize = groupListLiveData.value?.find { it.groupId == event.groupId }?.memberList?.size
-        val percentage = ((event.contributions?.size?: 0.times(100)).div(groupSize!!)).toDouble()
-        _complianceRate.value = ComplianceRate(event.contributions?.size?: 0, groupSize, percentage)
+        val groupSize =
+            groupListLiveData.value?.find { it.groupId == event.groupId }?.memberList?.size
+        val percentage = ((event.contributions?.size ?: 0.times(100)).div(groupSize!!)).toDouble()
+        _complianceRate.value =
+            ComplianceRate(event.contributions?.size ?: 0, groupSize, percentage)
     }
 
     suspend fun uploadGroupLogo(
@@ -245,44 +257,60 @@ class GroupViewModel @Inject constructor(
         _loadingState.value = true
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response = groupRepository.uploadImage(requestBody, fileNameFromUri!!)
-        _groupLogoLivedata.value = response.data.secureUrl
-        //Log.d("UPLOAD IMAGE", "uploadGroupLogo: $file")
         _loadingState.value = false
-        return response.data.secureUrl
+        if (response.status) {
+            _groupLogoLivedata.value = response.data?.secureUrl
+            return response.data?.secureUrl!!
+        }
+        return ""
     }
 
     fun populateActivities(type: String) {
-        when(type) {
+        when (type) {
             PAID -> {
                 _groupEvents.value = _paidActivities.value
             }
+
             UNPAID -> {
                 _groupEvents.value = _unpaidActivities.value
             }
+
             else -> {}
         }
     }
 
     suspend fun setSelectedMembership(member: MembershipDto) {
         _selectedMember.value = member
-        getMemberActivityRate(member.membershipId, member.joinedDateTime, groupDetailLiveData.value?.groupId!!)
+        getMemberActivityRate(
+            member.membershipId,
+            member.joinedDateTime,
+            groupDetailLiveData.value?.groupId!!
+        )
     }
+
     suspend fun setSelectedMember(member: Member) {
         _groupMemberLiveData.value = member
         val group = groupDetailLiveData.value
         val groupEvents = groupRepository.getAllActivitiesForGroup(group?.groupId!!)
         val paidActivities = groupEvents?.filter { event ->
-            event.contributions?.any { it.memberEmail == member.emailAddress } == true }
+            event.contributions?.any { it.memberEmail == member.emailAddress } == true
+        }
         _memberPaidActivities.value = paidActivities
         //filter unpaid activities
         val unpaidActivities = groupEvents?.filter { event ->
-            event.contributions?.none { it.memberEmail == member.emailAddress } == true  && (
+            event.contributions?.none { it.memberEmail == member.emailAddress } == true && (
                     (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "COMPLETED") ||
-                            (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "ARCHIVED")) }
+                            (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "ARCHIVED"))
+        }
         _memberUnpaidActivities.value = unpaidActivities
     }
 
-    suspend fun createNewGroup(groupName: String, groupDescription: String, memberOffice: String, groupType: String): Group {
+    suspend fun createNewGroup(
+        groupName: String,
+        groupDescription: String,
+        memberOffice: String,
+        groupType: String
+    ): Group? {
         _loadingState.value = true
         val groupModel = CreateGroupModel(
             groupName,
@@ -291,25 +319,33 @@ class GroupViewModel @Inject constructor(
             dataStoreManager.readUserData()?.fullName!!,
             memberOffice,
             groupType,
-            groupLogoLivedata.value?: "")
+            groupLogoLivedata.value ?: ""
+        )
         val response = groupRepository.createNewGroup(groupModel)
         _loadingState.value = false
-        return response
+        if (response != null) {
+            return response
+        } else {
+            return null
+        }
     }
 
     suspend fun populateGroupMembers(group: Group?) {
         val membersEmailList = group?.memberList?.map { it.emailAddress }
         if (membersEmailList != null) {
+            _loadingState.value = true
             val members = authRepository.getAllMembersForGroup(membersEmailList)
+            _loadingState.value = false
             _memberDetails.value = members?.data
-        }else{
+        } else {
             Log.d("MEMBER DETAILS", "getAllGroupMembers: null")
         }
     }
 
     suspend fun filterAdmins(memberList: List<MembershipDto>): List<Member>? {
         _loadingState.value = true
-        val admins = memberList.filter { member -> member.designation == Designation.ADMIN.name }.map { it.emailAddress }
+        val admins = memberList.filter { member -> member.designation == Designation.ADMIN.name }
+            .map { it.emailAddress }
         val adminDetailList = authRepository.getAllMembersForGroup(admins)?.data
         _groupAdminList.value = adminDetailList
         _loadingState.value = false
@@ -332,7 +368,8 @@ class GroupViewModel @Inject constructor(
         groupId: Int
     ) {
         val activityRate = groupRepository.getMemberActivityRate(
-            membershipId, joinedDateTime, groupId).data
+            membershipId, joinedDateTime, groupId
+        ).data
         _memberPaymentRateLiveData.value = activityRate
         //_activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
     }
@@ -353,18 +390,16 @@ class GroupViewModel @Inject constructor(
     suspend fun expelMember(removeMemberModel: RemoveMemberModel): GenericResponse {
         _loadingState.value = true
         val response = groupRepository.expelMember(removeMemberModel)
+        _loadingState.value = false
         if (response.status) {
             reloadGroup(removeMemberModel.groupId) // refresh group details
         }
-        _loadingState.value = false
         return response
     }
 
     suspend fun reloadGroup(groupId: Int?) {
         _loadingState.value = true
-        Log.d("PULLREFRESH", "Refreshing")
         val response = groupRepository.getGroupDetails(groupId)?.data
-        Log.d("PULLREFRESH", response?.groupName?: "Null")
         _loadingState.value = false
         if (response != null) {
             setSelectedGroupDetail(response)
@@ -374,14 +409,19 @@ class GroupViewModel @Inject constructor(
     suspend fun searchGroupByName(searchTag: String): GroupsWrapper? {
         _loadingState.value = true
         val response = groupRepository.searchGroupByName(searchTag)
-        _suggestedGroupList.value = response?.data
         _loadingState.value = false
+        if (response?.status == true) {
+            _suggestedGroupList.value = response.data
+        }
         return response
     }
 
     suspend fun requestToJoinGroup(selectedGroup: Group): GenericResponse {
         _loadingState.value = true
-        val userInfo = JoinGroupDto(dataStoreManager.readUserData()?.emailAddress!!, dataStoreManager.readUserData()?.fullName!!)
+        val userInfo = JoinGroupDto(
+            dataStoreManager.readUserData()?.emailAddress!!,
+            dataStoreManager.readUserData()?.fullName!!
+        )
         val response = groupRepository.requestToJoinGroup(selectedGroup.groupId, userInfo)
         _loadingState.value = false
         return response
@@ -401,27 +441,30 @@ class GroupViewModel @Inject constructor(
     ): GenericResponse {
         val contestants = mutableListOf<Contestant>()
         contestantList.value?.forEach { contestant ->
-            contestants.add(Contestant(
-                null,
-                contestant.fullName,
-                contestant.imageUrl,
-                getMembershipIdForMember(contestant.emailAddress),
-                contestant.emailAddress,
-                electionTitle,
-                null,
-                office,
-                ContestantStatus.UNDECIDED.name,
-                ""
-            ))
+            contestants.add(
+                Contestant(
+                    null,
+                    contestant.fullName,
+                    contestant.imageUrl,
+                    getMembershipIdForMember(contestant.emailAddress),
+                    contestant.emailAddress,
+                    electionTitle,
+                    null,
+                    office,
+                    ContestantStatus.UNDECIDED.name,
+                    ""
+                )
+            )
         }
         val group = groupDetailLiveData.value
         val admin = dataStoreManager.readUserData()?.fullName
         val election = Election(
-            null,electionTitle,
+            null, electionTitle,
             electionDate, electionDescription,
             office, contestants,
             group?.groupId, group?.groupName,
-            admin, null, ElectionStatus.FUTURISTIC.name)
+            admin, null, ElectionStatus.FUTURISTIC.name
+        )
 
         _loadingState.value = true
         val response = groupRepository.createElection(election)
@@ -463,8 +506,17 @@ class GroupViewModel @Inject constructor(
     suspend fun castVote(election: Election, contestant: Contestant?): GenericResponse {
         _loadingState.value = true
         val user = dataStoreManager.readUserData()?.fullName
-        val voteModel = VoteDto(null, user, election.groupId, contestant?.contestantName, contestant?.id,
-            election.electionId, contestant?.office, LocalDateTime.now().toString(), VoteStatus.VALID.name)
+        val voteModel = VoteDto(
+            null,
+            user,
+            election.groupId,
+            contestant?.contestantName,
+            contestant?.id,
+            election.electionId,
+            contestant?.office,
+            LocalDateTime.now().toString(),
+            VoteStatus.VALID.name
+        )
         val response = groupRepository.castVote(voteModel)
         if (response.status) {
             getElectionDetails(election.electionId!!)
@@ -537,5 +589,17 @@ class GroupViewModel @Inject constructor(
             }
             _loadingState.value = false
         }
+    }
+
+    suspend fun leaveGroup(group: Group?): GenericResponse {
+        val removeMemberModel = RemoveMemberModel(
+            membershipId.value!!,
+            dataStoreManager.readUserData()?.emailAddress!!,
+            group?.groupId!!
+        )
+        _loadingState.value = true
+        val response = groupRepository.expelMember(removeMemberModel)
+        _loadingState.value = false
+        return response
     }
 }

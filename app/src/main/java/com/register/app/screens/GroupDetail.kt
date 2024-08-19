@@ -107,7 +107,7 @@ fun GroupDetail(
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     Scaffold(
-        topBar = { GroupDetailTopBar(navController, group, groupViewModel, forumViewModel){showAllMembers = it} },
+        topBar = { GroupDetailTopBar(navController, group, groupViewModel, forumViewModel, authViewModel){showAllMembers = it} },
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
@@ -123,6 +123,7 @@ fun GroupDetailTopBar(
     group: Group?,
     groupViewModel: GroupViewModel,
     forumViewModel: ForumViewModel,
+    authViewModel: AuthViewModel,
     viewAllMembers: (show: Boolean) -> Unit
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
@@ -263,6 +264,22 @@ fun GroupDetailTopBar(
                         groupViewModel.getGroupElections(group?.groupId)
                         navController.navigate("elections") {
                             launchSingleTop = true
+                        }
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = {Text(text = stringResource(id = R.string.leave_group))},
+                    onClick = {
+                        isExpanded = false
+                        coroutineScope.launch {
+                            val response = groupViewModel.leaveGroup(group)
+                            if (response.status) {
+                                authViewModel.reloadUserData()
+                                navController.navigate("home") {
+                                    popUpTo("group_detail") {inclusive = true}
+                                }
+                            }
                         }
                     }
                 )

@@ -35,6 +35,14 @@ class ChatRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -55,6 +63,14 @@ class ChatRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
                     }
                 }
 
@@ -98,6 +114,8 @@ class ChatRepositoryImpl @Inject constructor(
             Log.d("MESSAGE", response.toString())
             callback(
                 MessageData(
+                    response.groupId,
+                    response.groupName,
                     response.message,
                     response.membershipId,
                     response.senderName,
@@ -132,7 +150,7 @@ class ChatRepositoryImpl @Inject constructor(
         stompWebSocketClient.close()
     }
 
-    override suspend fun fetchUserChats(groupId: Int): UserChatMessages {
+    override suspend fun fetchUserChats(groupId: Int): UserChatMessages? {
         return suspendCoroutine { continuation ->
             val call = chatService.getUserChatMessages(groupId)
             call.enqueue(object : Callback<UserChatMessages> {
@@ -142,6 +160,14 @@ class ChatRepositoryImpl @Inject constructor(
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
                     }
                 }
 

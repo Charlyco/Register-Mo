@@ -2,6 +2,7 @@ package com.register.app
 
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,7 +30,10 @@ import com.register.app.screens.LoginScreen
 import com.register.app.screens.MemberDetails
 import com.register.app.screens.MembershipRequests
 import com.register.app.screens.ModifyAdmin
+import com.register.app.screens.NewPasswordEntry
+import com.register.app.screens.NotificationScreen
 import com.register.app.screens.ProfileScreen
+import com.register.app.screens.ResetPassword
 import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
@@ -51,8 +55,10 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
     val forumViewModel: ForumViewModel by mainActivity.viewModels()
     val activityViewModel: ActivityViewModel by mainActivity.viewModels()
 
+    val startDestination = homeViewModel.homeDestination.observeAsState().value
+
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "splash") {
+    NavHost(navController = navController, startDestination = startDestination!!) {
         composable("splash") {
             SplashScreen(authViewModel, navController, dataStoreManager)
         }
@@ -95,7 +101,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 activityViewModel = activityViewModel)
         }
         composable("profile") {
-            ProfileScreen(authViewModel, groupViewModel, navController)
+            ProfileScreen(authViewModel, groupViewModel, homeViewModel, navController)
         }
         composable("forum") {
             Forum(forumViewModel = forumViewModel, groupViewModel = groupViewModel, navController = navController)
@@ -143,6 +149,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             SupportScreen(
                 authViewModel = authViewModel,
                 forumViewModel = forumViewModel,
+                homeViewModel = homeViewModel,
                 navController = navController)
         }
         composable("live_support") {
@@ -171,6 +178,21 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("election_result") {
             ElectionResults(groupViewModel = groupViewModel, navController = navController)
+        }
+        composable("notifications") {
+            NotificationScreen(
+                authViewModel = authViewModel,
+                homeViewModel = homeViewModel,
+                groupViewModel = groupViewModel,
+                activityViewModel = activityViewModel,
+                navController = navController
+            )
+        }
+        composable("reset_password") {
+            ResetPassword(authViewModel = authViewModel, navController = navController)
+        }
+        composable("new_password") {
+            NewPasswordEntry(authViewModel = authViewModel, navController = navController)
         }
     }
 }

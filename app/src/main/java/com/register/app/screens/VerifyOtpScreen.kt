@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,6 +50,15 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController, email: String?) {
+    val isOtPVerified = authViewModel.isOtpVerified.observeAsState().value
+
+    LaunchedEffect(isOtPVerified) {
+        if (isOtPVerified == true) {
+            navController.navigate("new_password") {
+                launchSingleTop = true
+            }
+        }
+    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.primary
@@ -86,13 +96,13 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController, 
                     imageVector = Icons.Default.ArrowBackIosNew,
                     contentDescription = "",
                     modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             Text(
                 text = stringResource(id = R.string.verify_otp_header),
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .constrainAs(text) {
@@ -129,7 +139,7 @@ fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController, 
 @Composable
 fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavController, email: String) {
     val timer = authViewModel.otpTimer.observeAsState().value
-    val enableResendButton =authViewModel.shouldResendOtp.observeAsState().value
+    val enableResendButton = authViewModel.shouldResendOtp.observeAsState().value
     val screenWidth = LocalConfiguration.current.screenWidthDp - 32
     val showIndicator = authViewModel.progressLiveData.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
@@ -173,14 +183,17 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                 modifier = Modifier
                     .clickable {
                         coroutineScope.launch {
-                            authViewModel.resendOtp(email)}}
+                            authViewModel.resendOtp(email)
+                        }
+                    }
                     .constrainAs(timerText) {
-                    top.linkTo(otpBox.bottom, margin = 4.dp)
-                    end.linkTo(otpBox.end)
-                },
+                        top.linkTo(otpBox.bottom, margin = 4.dp)
+                        end.linkTo(otpBox.end)
+                    },
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
             )
+
         }
 
         if (timer != null) {
@@ -194,35 +207,31 @@ fun LowerVerifySection(authViewModel: AuthViewModel, navController: NavControlle
                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
             )
         }
-        if (isOtPVerified == true) {
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        navController.navigate("sinup_cont") {
-                            launchSingleTop = true
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .width(screenWidth.dp)
-                    .height(50.dp)
-                    .constrainAs(nextButton) {
-                        centerHorizontallyTo(parent)
-                        bottom.linkTo(parent.bottom, margin = 128.dp)
-                    },
-                shape = MaterialTheme.shapes.large,
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = dimensionResource(id = R.dimen.low_elevation),
-                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Text(text = stringResource(id = R.string.proceed))
-            }
-        }
+//        if (isOtPVerified == true) {
+//            Button(
+//                onClick = {
+//
+//                },
+//                modifier = Modifier
+//                    .width(screenWidth.dp)
+//                    .height(50.dp)
+//                    .constrainAs(nextButton) {
+//                        centerHorizontallyTo(parent)
+//                        bottom.linkTo(parent.bottom, margin = 128.dp)
+//                    },
+//                shape = MaterialTheme.shapes.large,
+//                elevation = ButtonDefaults.buttonElevation(
+//                    defaultElevation = dimensionResource(id = R.dimen.low_elevation),
+//                    pressedElevation = dimensionResource(id = R.dimen.button_pressed_evelation)
+//                ),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.primary,
+//                    contentColor = MaterialTheme.colorScheme.onPrimary
+//                )
+//            ) {
+//                Text(text = stringResource(id = R.string.proceed))
+//            }
+//        }
 
         if (showIndicator == true) {
             Surface(

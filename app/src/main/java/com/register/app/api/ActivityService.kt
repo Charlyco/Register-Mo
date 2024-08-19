@@ -3,9 +3,12 @@ package com.register.app.api
 import android.app.Activity
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
+import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
 import com.register.app.dto.ConfirmPaymentModel
 import com.register.app.dto.CreateEventModel
+import com.register.app.dto.EventComment
+import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
@@ -56,4 +59,8 @@ interface ActivityService {
     fun rejectPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
     @GET("event-service/api/v1/event/{activityId}/report")
     fun generateReport(@Path("activityId") eventId: Int?): Call<ResponseBody>
+    @PUT("event-service/api/v1/event/comment")
+    fun postComment(@Body commentModel: EventComment): Call<EventCommentResponse>
+    @PUT("event-service/api/v1/event/comment/reply")
+    fun postCommentReply(@Body replyModel: CommentReply): Call<EventCommentResponse>
 }

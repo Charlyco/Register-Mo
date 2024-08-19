@@ -242,6 +242,8 @@ fun CreateElectionUi(
                         if (response.status) {
                             Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                             groupViewModel.clearContestants()
+                        }else {
+                            Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
                         }
                     }
                 }

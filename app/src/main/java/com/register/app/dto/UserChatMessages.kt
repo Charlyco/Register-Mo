@@ -8,6 +8,8 @@ data class UserChatMessages(
 )
 
 data class MessageData(
+    val groupId: Int?,
+    val groupName: String?,
     val message: String?,
     val membershipId: String?,
     val senderName: String?,

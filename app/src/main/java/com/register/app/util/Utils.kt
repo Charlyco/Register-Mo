@@ -1,12 +1,17 @@
 package com.register.app.util
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.ContextCompat.getString
+import com.register.app.R
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -68,4 +73,15 @@ object Utils {
             dataStoreManager.writeDeviceId(deviceId)
         }
     }
+
+        fun createNotificationChannel(context: Context) {
+            val name = getString(context, R.string.channel_name)
+            val descriptionText = getString(context, R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(getString(context, R.string.register_notification_channel_id), name, importance )
+            channel.description = descriptionText
+
+            val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
 }

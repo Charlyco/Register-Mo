@@ -8,11 +8,14 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.register.app.R
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
@@ -30,6 +33,8 @@ import com.register.app.enums.EventStatus
 import com.register.app.model.Event
 import com.register.app.model.Member
 import com.register.app.repository.ActivityRepository
+import com.register.app.repository.GroupRepository
+import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +51,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ActivityViewModel @Inject constructor(
     private val activityRepository: ActivityRepository,
+    private val groupRepository: GroupRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
     private val _pendingBulkPayments: MutableLiveData<List<BulkPaymentModel>?> = MutableLiveData(listOf())
@@ -56,8 +62,8 @@ class ActivityViewModel @Inject constructor(
     val fileName: LiveData<String?> = _fileName
     private val _paymentEvidence: MutableLiveData<String?> = MutableLiveData()
     val paymentEvidence: LiveData<String?> = _paymentEvidence
-    private val _selectedEvent: MutableLiveData<Event> = MutableLiveData()
-    val selectedEvent: LiveData<Event> = _selectedEvent
+    private val _selectedEvent: MutableLiveData<Event?> = MutableLiveData()
+    val selectedEvent: LiveData<Event?> = _selectedEvent
     private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
     val loadingState: LiveData<Boolean> = _loadingState
     private val _activityImages: MutableLiveData<MutableList<String>?> = MutableLiveData(mutableListOf())
@@ -68,10 +74,42 @@ class ActivityViewModel @Inject constructor(
     val hasPaid: LiveData<Boolean> = _hasUserPaid
     private val _paidMembersList: MutableLiveData<List<Member>?> = MutableLiveData(listOf())
     val paidMembersList: LiveData<List<Member>?> = _paidMembersList
+    private val _eventFeeds: MutableLiveData<List<Event>?> = MutableLiveData()
+    val eventFeeds: LiveData<List<Event>?> = _eventFeeds
+    private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
+    val errorLiveData: LiveData<String?> = _errorLiveData
+
+    init {
+        viewModelScope.launch {
+            getEventFeeds()
+        }
+    }
+
+    private suspend fun getEventFeeds() {
+        val userGroups = dataStoreManager.readUserData()?.groupIds
+        val events = mutableListOf<Event>()
+        _loadingState.value = true
+        userGroups?.forEach { groupId ->
+            groupRepository.getAllActivitiesForGroup(groupId)?.forEach { event ->
+                if (event.eventStatus == EventStatus.CURRENT.name) {
+                    events.add(event)
+                }
+            }
+        }
+        _loadingState.value = false
+        if (events.isNotEmpty()) {
+            _eventFeeds.value = events
+        }
+    }
+
+    fun refreshHomeContents() {
+        viewModelScope.launch {
+            getEventFeeds()
+        }
+    }
 
 
     suspend fun setSelectedEvent(eventFeed: Event) {
-        _loadingState.value = true
         _selectedEvent.value = eventFeed
         if (eventFeed.contributions?.any { contributionDto ->
             contributionDto.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true) {
@@ -81,8 +119,11 @@ class ActivityViewModel @Inject constructor(
             getMembershipIdByGroupId(eventFeed.groupId!!)
             val paidMembers = paidMembersList.value?.toMutableList()
             eventFeed.contributions?.forEach { contributionDto ->
+                _loadingState.value = true
                 val member = activityRepository.getMemberDetails(contributionDto.memberEmail)
-                paidMembers?.add(member!!)
+                if (member != null) {
+                    paidMembers?.add(member)
+                }else _errorLiveData.value = AN_ERROR_OCCURRED
             }
             _paidMembersList.value = paidMembers
             _loadingState.value = false
@@ -93,21 +134,39 @@ class ActivityViewModel @Inject constructor(
 
     }
 
-    fun postCommentReply(commentReply: String, eventCommentId: Int): CommentReply? {
-        return null
+    suspend fun postCommentReply(commentReply: String, eventCommentId: Int) {
+        val replyModel = CommentReply(
+            null,
+            dataStoreManager.readUserData()?.fullName,
+            LocalDateTime.now().toString(),
+            commentReply,
+            eventCommentId)
+        _loadingState.value = true
+        val response = activityRepository.postCommentReply(replyModel)
+        _loadingState.value = false
+        if (response.status) {
+            _selectedEvent.value = response.data
+        }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
-    fun postComment(comment: String, eventId: Int?): EventComment? {
-        return null
+    suspend fun postComment(comment: String, eventId: Int?) {
+        val user = dataStoreManager.readUserData()?.fullName
+        val commentModel = EventComment(null, user, LocalDateTime.now().toString(), comment, null, eventId)
+        _loadingState.value = true
+        val response = activityRepository.postComment(commentModel)
+        _loadingState.value = false
+        if (response.status) {
+            _selectedEvent.value = response.data!!
+        }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
-    suspend fun submitEvidenceOfPayment(groupName: String, membershipId: String): GenericResponse {
+    suspend fun submitEvidenceOfPayment(groupName: String, groupId: Int, membershipId: String, modeOfPayment: String): GenericResponse {
         val imageUrl = paymentEvidence.value
         val eventTitle = selectedEvent.value?.eventTitle
         val eventId = selectedEvent.value?.eventId
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
         val payerFullName = dataStoreManager.readUserData()?.fullName
-        val payment = Payment(imageUrl!!, membershipId, payerEmail!!, payerFullName!!, eventTitle!!, eventId!!, groupName)
+        val payment = Payment(imageUrl?: "", membershipId, payerEmail!!, payerFullName!!, eventTitle!!, eventId!!,modeOfPayment, groupName, groupId)
         _loadingState.value = true
         val response = activityRepository.submitEvidenceOfPayment(payment)
         _loadingState.value = false
@@ -121,7 +180,7 @@ class ActivityViewModel @Inject constructor(
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response: ImageUploadResponse = activityRepository.uploadImage(requestBody, fileNameFromUri!!)
         val images = activityImageList.value
-        images?.add(response.data.secureUrl)
+        images?.add(response.data?.secureUrl?: "")
         _activityImages.value = images
         _loadingState.value = false
     }
@@ -158,7 +217,6 @@ class ActivityViewModel @Inject constructor(
         amountPaid: Double,
         outstanding: Double,
         groupId: Int,
-        paymentMethod: String
     ): GenericResponse {
         _loadingState.value = true
         val contribution = ConfirmPaymentModel(
@@ -171,7 +229,7 @@ class ActivityViewModel @Inject constructor(
             selectedPayment.groupName,
             amountPaid,
             outstanding,
-            paymentMethod,
+            selectedPayment.modeOfPayment,
             dataStoreManager.readUserData()?.fullName!!
             )
         val response = activityRepository.confirmPayment(contribution)
@@ -187,9 +245,11 @@ class ActivityViewModel @Inject constructor(
         _loadingState.value = true
         val requestBody = inputStream.readBytes().toRequestBody(mimeType?.toMediaTypeOrNull())
         val response: ImageUploadResponse = activityRepository.uploadImage(requestBody, fileNameFromUri!!)
-        _paymentEvidence.value = response.data.secureUrl
-        _fileName.value = fileNameFromUri
         _loadingState.value = false
+        if (response.status) {
+            _paymentEvidence.value = response.data?.secureUrl
+            _fileName.value = fileNameFromUri
+        }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
     suspend fun markActivityCompleted(event: Event): EventDetailWrapper {
@@ -233,7 +293,8 @@ class ActivityViewModel @Inject constructor(
         val imageUrl = paymentEvidence.value
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
         val payerFullName = dataStoreManager.readUserData()?.fullName
-        val payment = BulkPaymentModel(null, imageUrl!!, eventList, membershipId, payerEmail!!, payerFullName!!, groupName, groupId, totalAmount)
+        val payment = BulkPaymentModel(null, imageUrl!!, eventList, membershipId, payerEmail!!,
+            payerFullName!!, groupName, groupId, totalAmount)
         _loadingState.value = true
         val response = activityRepository.submitBulkPaymentEvidence(payment)
         _loadingState.value = false
@@ -303,43 +364,48 @@ class ActivityViewModel @Inject constructor(
         try {
             _loadingState.value = true
             val response = activityRepository.generateReport(event?.eventId)
-            val pdfBytes = response.byteStream()
-            val contentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, "report${LocalDateTime.now()}.pdf")
-                put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
-            }
-            val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
-            val outputStream = context.contentResolver.openOutputStream(uri!!)
-            val buffer = ByteArray(1024)
-            var read: Int
-            withContext(Dispatchers.IO) {
-                while (pdfBytes.read(buffer).also { read = it } != -1) {
-                    outputStream!!.write(buffer, 0, read)
+            if (response != null) {
+                val pdfBytes = response.byteStream()
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, "report${LocalDateTime.now()}.pdf")
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
                 }
-                outputStream!!.flush()
-                outputStream.close()
-            }
-            _loadingState.value = false
+                val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+                val outputStream = context.contentResolver.openOutputStream(uri!!)
+                val buffer = ByteArray(4096)
+                var read: Int
+                withContext(Dispatchers.IO) {
+                    while (pdfBytes.read(buffer).also { read = it } != -1) {
+                        outputStream!!.write(buffer, 0, read)
+                    }
+                    outputStream!!.flush()
+                    outputStream.close()
+                }
+                _loadingState.value = false
 
-            val dialog = AlertDialog.Builder(context)
-            dialog.setTitle("Activity report generated")
-            dialog.setMessage("Report saved successfully. Do you want to open or share it?")
-            dialog.setPositiveButton("Open") { _, _ ->
-                // Open file
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.setDataAndType(uri, "application/pdf")
-                startActivity(context, intent, null)
+                val dialog = AlertDialog.Builder(context)
+                dialog.setTitle("Activity report generated")
+                dialog.setMessage("Report saved successfully. Do you want to open or share it?")
+                dialog.setPositiveButton("Open") { _, _ ->
+                    // Open file
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.setDataAndType(uri, "application/pdf")
+                    startActivity(context, intent, null)
+                }
+                dialog.setNegativeButton("Share") { _, _ ->
+                    // Share file
+                    val intent = Intent(Intent.ACTION_SEND)
+                    intent.setType("application/pdf")
+                    intent.putExtra(Intent.EXTRA_STREAM, uri)
+                    startActivity(context, Intent.createChooser(intent, "Share file"), null)
+                }
+                dialog.setNeutralButton("Cancel") { _, _ -> }
+                dialog.show()
+            }else {
+                _loadingState.value = false
+            _errorLiveData.value = AN_ERROR_OCCURRED
             }
-            dialog.setNegativeButton("Share") { _, _ ->
-                // Share file
-                val intent = Intent(Intent.ACTION_SEND)
-                intent.setType("application/pdf")
-                intent.putExtra(Intent.EXTRA_STREAM, uri)
-                startActivity(context, Intent.createChooser(intent, "Share file"), null)
-            }
-            dialog.setNeutralButton("Cancel") { _, _ -> }
-            dialog.show()
         }catch (e: Exception) {
             Toast.makeText(context, "Error saving file: ${e.message}", Toast.LENGTH_LONG).show()
         }
