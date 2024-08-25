@@ -28,8 +28,8 @@ class ForumViewModel @Inject constructor(
 ): ViewModel() {
     private val _supportMessages: MutableLiveData<List<SupportMessageDto>?> = MutableLiveData()
     val supportMessages: LiveData<List<SupportMessageDto>?> = _supportMessages
-    private val _chatMessages: MutableLiveData<List<MessageData>> = MutableLiveData()
-    val chatMessages: LiveData<List<MessageData>> = _chatMessages
+    private val _chatMessages: MutableLiveData<List<MessageData>?> = MutableLiveData()
+    val chatMessages: LiveData<List<MessageData>?> = _chatMessages
     private val _remoteChatMessages: MutableLiveData<ChatMessageResponse?> = MutableLiveData()
     val remoteChatMessages: MutableLiveData<ChatMessageResponse?> = _remoteChatMessages
     private val _selectedGroup: MutableLiveData<Group?> = MutableLiveData()
@@ -38,11 +38,12 @@ class ForumViewModel @Inject constructor(
     val errorLiveData: LiveData<String?> = _errorLiveData
     private val _isLoadingLiveData: MutableLiveData<Boolean?> = MutableLiveData()
     val isLoadingLiveData: LiveData<Boolean?> = _isLoadingLiveData
-    private val _currentRemoteUser: MutableLiveData<String?> = MutableLiveData()
-    val currentRemoteUser: LiveData<String?> = _currentRemoteUser
+    private val _currentUser: MutableLiveData<String?> = MutableLiveData()
+    val currentUser: LiveData<String?> = _currentUser
 
     init {
         viewModelScope.launch {
+            _currentUser.value = dataStoreManager.readUserData()?.fullName
             var initialGroupId: Int? = null
             val groups = dataStoreManager.readUserData()?.groupIds
             if (groups?.isNotEmpty() == true) {
@@ -151,11 +152,11 @@ class ForumViewModel @Inject constructor(
         _isLoadingLiveData.value = false
         if (groupChats?.data?.isNotEmpty() == true) {
             val data = groupChats.data
-            val messageList = _chatMessages.value
-            val newMessageList = mutableListOf<MessageData>()
-            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
-            newMessageList.addAll(data)
-            _chatMessages.value = newMessageList
+            //val messageList = _chatMessages.value
+//            val newMessageList = mutableListOf<MessageData>()
+//            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+//            newMessageList.addAll(data)
+            _chatMessages.value = data
         }
     }
 

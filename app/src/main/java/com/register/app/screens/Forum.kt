@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,13 +28,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +58,7 @@ import com.register.app.R
 import com.register.app.dto.GroupStateItem
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
+import com.register.app.model.Group
 import com.register.app.util.BottomNavBar
 import com.register.app.util.GroupStateSaver
 import com.register.app.util.ImageLoader
@@ -66,15 +72,15 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun Forum(forumViewModel: ForumViewModel?, groupViewModel: GroupViewModel, navController: NavController){
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
-    if (group == null) {
-        NullGroupScreen()
-    }else{
-        Scaffold(
-            topBar = { ChatTopBar(groupViewModel, forumViewModel, navController) },
-            bottomBar = { BottomNavBar(navController = navController) },
-            containerColor = MaterialTheme.colorScheme.background
-        ) {
-            ForumScreen(Modifier.padding(it),forumViewModel, groupViewModel, navController)
+    Scaffold(
+        topBar = { ChatTopBar(groupViewModel, forumViewModel, navController) },
+        bottomBar = { BottomNavBar(navController = navController) },
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        if (group == null) {
+            NullGroupScreen()
+        }else {
+            ForumScreen(Modifier.padding(it), forumViewModel, groupViewModel, navController)
         }
     }
 }
@@ -127,6 +133,9 @@ fun ChatTopBar(
         groupSaverList.add(GroupStateItem(it.groupId, it.groupName))
     }
     val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupViewModel.groupDetailLiveData.observeAsState().value
+//    LaunchedEffect(selectedGroup) {
+//        groupViewModel.setSelectedGroupDetail(selectedGroup!!) //update selected group in group viewModel
+//    }
 
     //var selectedGroup by rememberSaveable { mutableStateOf(groupList?.get(0)) }
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -192,6 +201,7 @@ fun ChatTopBar(
                                         val groupDetail = groupList.find { it.groupId == group.groupId } // Find the group that matches the selected item
                                         expanded = false
                                         forumViewModel?.connectToChat(JoinChatPayload(groupDetail?.groupName!!, groupDetail.groupId))
+                                        groupViewModel.setSelectedGroupDetail(groupDetail!!)
                                         forumViewModel?.setSelectedGroup(groupDetail)
                                     }
                                 }
@@ -232,7 +242,7 @@ fun ChatErrorScreen() {
 
 @Composable
 fun ForumScreen(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     forumViewModel: ForumViewModel?,
     groupViewModel: GroupViewModel,
     navController: NavController
@@ -240,12 +250,22 @@ fun ForumScreen(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val conversations = forumViewModel?.chatMessages?.observeAsState()?.value
     val membershipId = groupViewModel.membershipId.value
+    val userFullName = forumViewModel?.currentUser?.observeAsState()?.value
+
+    // Create and remember the LazyListState
+    val listState = rememberLazyListState()
+
+    // Scroll to the last item when conversations change
+    LaunchedEffect(conversations) {
+        if (!conversations.isNullOrEmpty()) {
+            listState.scrollToItem(conversations.size - 1)
+        }
+    }
 
     ConstraintLayout(
         modifier = Modifier
-            .padding(top = 64.dp)
-            .fillMaxWidth()
-            .height((screenHeight - 96).dp)
+            .padding(top = 196.dp)
+            .fillMaxSize()
     ) {
         val (conversation, messageBox) = createRefs()
 
@@ -258,26 +278,28 @@ fun ForumScreen(
                     bottom.linkTo(messageBox.top, margin = 4.dp)
                 },
             color = MaterialTheme.colorScheme.background
-        ) { if (conversations != null) {
-            LazyColumn(
-                state = rememberLazyListState()
-            ) {
-                items(conversations) { item ->
-                    if (item.membershipId == membershipId) {
-                        MyMessageItem(item)
-                    }else {
-                        RemoteMessageItem(item)
+        ) {
+            if (conversations != null) {
+                LazyColumn(
+                    state = listState,  // Set the state to LazyColumn
+                ) {
+                    items(conversations) { item ->
+                        if (item.senderName == userFullName) {
+                            MyMessageItem(item)
+                        } else {
+                            RemoteMessageItem(item)
+                        }
                     }
                 }
             }
         }
-        }
+
         Surface(
             color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxWidth()
                 .constrainAs(messageBox) {
-                    bottom.linkTo(parent.bottom, margin = 42.dp)
+                    bottom.linkTo(parent.bottom, margin = 72.dp)
                 }
         ) {
             MessageBox(forumViewModel, groupViewModel, navController, membershipId!!)
@@ -285,107 +307,101 @@ fun ForumScreen(
     }
 }
 
+
 @Composable
 fun RemoteMessageItem(item: MessageData) {
     val context = LocalContext.current
-    Surface(
+    Row(
         modifier = Modifier
-            .padding(vertical = 2.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 2.dp,
-        shape = MaterialTheme.shapes.small
+            .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        ConstraintLayout(
-            modifier = Modifier.fillMaxWidth()
+        Surface(
+            Modifier.padding(horizontal = 8.dp),
+            color = MaterialTheme.colorScheme.background,
+            border = BorderStroke(1.dp, Color.Gray),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
-            val (image, name, message, time) = createRefs()
-
-            Surface(
-                Modifier
-                    .constrainAs(image) {
-                        centerVerticallyTo(parent)
-                        start.linkTo(parent.start, margin = 4.dp)
-                    },
-                color = MaterialTheme.colorScheme.background,
-                border = BorderStroke(1.dp, Color.Gray),
-                shape = MaterialTheme.shapes.extraLarge
+            ImageLoader(
+                imageUrl = item.imageUrl ?: "",
+                context = context,
+                height = 42,
+                width = 42,
+                placeHolder = R.drawable.placeholder
+            )
+        }
+        Surface(
+            modifier = Modifier
+                .padding(),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 2.dp,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start
             ) {
-                ImageLoader(
-                    imageUrl = item.imageUrl ?: "",
-                    context = context,
-                    height = 42,
-                    width = 42,
-                    placeHolder = R.drawable.placeholder
+                Text(
+                    text = item.senderName!!,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .padding(end = 4.dp, start = 4.dp)
+                )
+                Text(
+                    text = item.message!!,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .padding(start = 4.dp, end = 4.dp)
+                        .fillMaxWidth()
+                )
+                Text(
+                    text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = Color.Gray,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 4.dp),
+                    textAlign = TextAlign.End
                 )
             }
-
-            Text(
-                text = item.senderName!!,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.constrainAs(name) {
-                    top.linkTo(parent.top, margin = 2.dp)
-                    start.linkTo(image.end, margin = 4.dp)
-                }
-            )
-
-            Text(
-                text = item.message!!,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.constrainAs(message) {
-                    top.linkTo(name.bottom, margin = 2.dp)
-                    start.linkTo(image.end, margin = 4.dp)
-                }
-            )
-
-            Text(
-                text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
-                fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                color = Color.Gray,
-                modifier = Modifier.constrainAs(time) {
-                    top.linkTo(message.bottom, margin = 1.dp)
-                    end.linkTo(parent.end, margin = 4.dp)
-                }
-            )
         }
     }
 }
 
 @Composable
 fun MyMessageItem(item: MessageData) {
-    Surface(
+    Row(
         modifier = Modifier
-            .padding(vertical = 2.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shape = MaterialTheme.shapes.small
+            .padding(top = 2.dp, bottom = 2.dp, start = 42.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        ConstraintLayout(
-            modifier = Modifier.fillMaxWidth()
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp, bottom = 2.dp, start = 16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp,
+            shape = MaterialTheme.shapes.small
         ) {
-            val (message, time) = createRefs()
+            Column {
+                Text(
+                    text = item.message!!,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
 
-            Text(
-                text = item.message!!,
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.constrainAs(message) {
-                    top.linkTo(parent.top, margin = 2.dp)
-                    end.linkTo(parent.end, margin = 4.dp)
-                }
-            )
-
-            Text(
-                text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
-                fontSize = TextUnit(10.0f, TextUnitType.Sp),
-                color = Color.Gray,
-                modifier = Modifier.constrainAs(time) {
-                    top.linkTo(message.bottom, margin = 1.dp)
-                    end.linkTo(parent.end, margin = 2.dp)
-                }
-            )
+                Text(
+                    text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
         }
     }
 }
@@ -419,28 +435,27 @@ fun MessageBox(
             TextField(
                 value = message,
                 onValueChange = { message =it},
-                placeholder = { Text(text = stringResource(id = R.string.message)) })
+                placeholder = { Text(text = stringResource(id = R.string.message)) },
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    )
+                )
         }
-        if (message.isBlank()) {
-            IconButton(onClick = { },
-                modifier = Modifier.constrainAs(btn) { end.linkTo(parent.end, margin = 4.dp)
-                }
-            ) { Icon(imageVector = Icons.Default.AttachFile, contentDescription = "Attach file") }
-        }else{
-            IconButton(
-                onClick = {
-                    keyboardController?.hide()
-                    coroutineScope.launch {
-                        forumViewModel?.sendMessage(membershipId, message, group)
-                        message = ""
-                    }
-                },
-                modifier = Modifier.constrainAs(btn) {
-                    end.linkTo(parent.end, margin = 4.dp)
-                }
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
+        IconButton(
+            onClick = {
+                keyboardController?.hide()
+                coroutineScope.launch {
+                    forumViewModel?.sendMessage(membershipId, message, group)
+                    message = ""
+                } },
+            modifier = Modifier.constrainAs(btn) {
+                end.linkTo(parent.end, margin = 4.dp)
             }
+        ) {
+            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
         }
     }
 }

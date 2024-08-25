@@ -109,18 +109,15 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun getAllGroupsForUser() {
-        //fetch groups from server
-        _loadingState.value = true
         if (!dataStoreManager.readUserData()?.groupIds.isNullOrEmpty()) {
+            _loadingState.value = true
             val groups: List<Group>? =
                 groupRepository.getAllGroupsForUser(dataStoreManager.readUserData()?.groupIds)
+            _loadingState.value = false
             _groupListLiveDate.value = groups
             _groupDetailLiveData.value =
                 groups?.get(0) // temporarily set a default group till  the user selects a group
             getMembershipId(groups?.get(0))
-            _loadingState.value = false
-        } else {
-            _loadingState.value = false
         }
     }
 
@@ -134,6 +131,7 @@ class GroupViewModel @Inject constructor(
         //get membership id
         val member = getMember(group.memberList)
         _membershipId.value = member?.membershipId
+        isUserAdmin(group)
         // Get all events for for group and filter into paid and unpaid for user
         val groupEvents = groupRepository.getAllActivitiesForGroup(group.groupId)
         val userEmail = dataStoreManager.readUserData()?.emailAddress
@@ -182,16 +180,11 @@ class GroupViewModel @Inject constructor(
         return memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
     }
 
-    suspend fun isUserAdmin() {
-        val isAdmin = groupAdminList.value.let { admins ->
-            admins?.any {
+    suspend fun isUserAdmin(group: Group) {
+        val admins = group.memberList?.let { filterAdmins(it) }
+        _isAdminLiveData.value = admins?.any {
                 it.emailAddress == dataStoreManager.readUserData()?.emailAddress
-            }
         }
-        Log.d("IS ADMIN", "isUserAdmin: $isAdmin")
-        if (isAdmin == true) {
-            _isAdminLiveData.value = true
-        } else _isAdminLiveData.value = false
     }
 
     suspend fun getIndividualMembershipRequest(emailAddress: String) {

@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -57,6 +58,13 @@ fun ProfileScreen(
     homeViewModel: HomeViewModel,
     navController: NavController
 ) {
+    BackHandler {
+        navController.navigate("home") {
+            popUpTo("profile") {inclusive = true}
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         topBar = {},
         bottomBar = { BottomNavBar(navController = navController)},
@@ -83,7 +91,7 @@ fun ProfileScreenUi(
             .verticalScroll(scrollState)
             .padding(bottom = 72.dp)
             .fillMaxWidth()
-            .clickable {  }
+            .clickable { }
     ) {
         val (bgImage, profilePic, name, phone, address, card) = createRefs()
 
@@ -215,7 +223,7 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable {  }
+                        .clickable { }
                 ) {
                     val (icon, label, arrow) = createRefs()
 
@@ -311,9 +319,10 @@ fun ProfileScreenUi(
                         .height(48.dp)
                         .fillMaxWidth()
                         .clickable {
-                            navController.navigate("support")  {
-                            launchSingleTop = true
-                        } }
+                            navController.navigate("support") {
+                                launchSingleTop = true
+                            }
+                        }
                 ) {
                     val (icon, label, arrow) = createRefs()
 

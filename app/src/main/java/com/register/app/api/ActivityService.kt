@@ -63,4 +63,6 @@ interface ActivityService {
     fun postComment(@Body commentModel: EventComment): Call<EventCommentResponse>
     @PUT("event-service/api/v1/event/comment/reply")
     fun postCommentReply(@Body replyModel: CommentReply): Call<EventCommentResponse>
+    @GET("event-service/api/v1/event/{eventId}/details")
+    fun getEventDetails(@Path("eventId") eventId: Int): Call<Event?>
 }

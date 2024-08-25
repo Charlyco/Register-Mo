@@ -1,7 +1,7 @@
 package com.register.app.screens
 
-import android.view.Surface
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,26 +22,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.ArrowOutward
-import androidx.compose.material.icons.filled.Details
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -54,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -72,12 +66,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
+import com.register.app.MainActivity
 import com.register.app.R
 import com.register.app.model.Event
 import com.register.app.model.Member
@@ -89,6 +83,7 @@ import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
+import com.register.app.viewmodel.QuestionnaireViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -97,10 +92,17 @@ fun HomeScreen(
     navController: NavController,
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel,
-    activityViewModel: ActivityViewModel) {
+    questionnaireViewModel: QuestionnaireViewModel,
+    activityViewModel: ActivityViewModel,
+    mainActivity: MainActivity) {
+
+    var showExitDialog by rememberSaveable { mutableStateOf(false) }
+    BackHandler {
+        showExitDialog = true
+    }
 
     Scaffold(
-        topBar = { HomeTopBar(navController, homeViewModel, authViewModel) },
+        topBar = { HomeTopBar(authViewModel) },
         bottomBar = { BottomNavBar(navController) },
     ) {
             HomeScreenContent(
@@ -109,10 +111,23 @@ fun HomeScreen(
                 groupViewModel,
                 activityViewModel,
                 authViewModel,
+                questionnaireViewModel,
                 navController
             )
         CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
+        }
+        
+        if (showExitDialog) {
+            AlertDialog(
+                title = { Text(text = stringResource(id = R.string.exit_app_title)) },
+                text = { Text(text = stringResource(id = R.string.exit_app)) },
+                onDismissRequest = { showExitDialog = false },
+                confirmButton = {
+                    mainActivity.finish()
+                },
+                icon = { Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "") }
+            )
         }
     }
 }
@@ -125,6 +140,7 @@ fun HomeScreenContent(
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
     authViewModel: AuthViewModel,
+    questionnaireViewModel: QuestionnaireViewModel,
     navController: NavController
 ) {
     val loadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
@@ -138,6 +154,7 @@ fun HomeScreenContent(
                 authViewModel.reloadUserData()
                 homeViewModel.refreshHomeContents()
                 activityViewModel.refreshHomeContents()
+                groupViewModel.getAllGroupsForUser()
             }
                     },
         refreshThreshold = 84.dp,
@@ -161,8 +178,8 @@ fun HomeScreenContent(
             item { WelcomeNote() }
             item{ SearchSection(groupViewModel, navController) }
             item {DiscoverSection(groupViewModel, authViewModel, homeViewModel, navController) }
-            item {TopGroups(homeViewModel, groupViewModel, navController) }
-            item {ActivityFeedList(homeViewModel, navController, groupViewModel, activityViewModel) }
+            item {TopGroups(questionnaireViewModel, groupViewModel, navController) }
+            item {ActivityFeedList(navController, groupViewModel, activityViewModel) }
         }
     }
 }
@@ -209,8 +226,10 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
                             val response = groupViewModel.searchGroupByName(searchTag)
                             if (response?.status == true) {
                                 navController.navigate("suggested_groups")
-                            }else {
-                                Toast.makeText(context, response?.message, Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast
+                                    .makeText(context, response?.message, Toast.LENGTH_LONG)
+                                    .show()
                             }
                         }
                     }
@@ -267,11 +286,10 @@ fun DiscoverSection(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val userData = authViewModel.userLideData.observeAsState().value
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 48.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -329,31 +347,31 @@ fun DiscoverSection(
                 fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 textAlign = TextAlign.Center)
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                Modifier
-                    .size(64.dp)
-                    .clickable {
-                        navController.navigate("colleagues") {
-                            launchSingleTop = true
-                        }
-                    },
-                color = MaterialTheme.colorScheme.onTertiary,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.forum),
-                    contentDescription = "discover",
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .size(32.dp))
-            }
-            Text(text = stringResource(id = R.string.explore),
-                fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                textAlign = TextAlign.Center)
-        }
+//        Column(
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            Surface(
+//                Modifier
+//                    .size(64.dp)
+//                    .clickable {
+//                        navController.navigate("colleagues") {
+//                            launchSingleTop = true
+//                        }
+//                    },
+//                color = MaterialTheme.colorScheme.onTertiary,
+//                shape = MaterialTheme.shapes.small
+//            ) {
+//                Image(
+//                    painter = painterResource(id = R.drawable.forum),
+//                    contentDescription = "discover",
+//                    modifier = Modifier
+//                        .padding(10.dp)
+//                        .size(32.dp))
+//            }
+//            Text(text = stringResource(id = R.string.explore),
+//                fontSize = TextUnit(12.0f, TextUnitType.Sp),
+//                textAlign = TextAlign.Center)
+//        }
         Column(
             Modifier.clickable { groupViewModel.showCreateGroupSheet.postValue(true)},
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -379,9 +397,9 @@ fun DiscoverSection(
     }
 }
 @Composable
-fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navController: NavController) {
+fun TopGroups(questionnaireViewModel: QuestionnaireViewModel, groupViewModel: GroupViewModel, navController: NavController) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
-    val itemWidth = LocalConfiguration.current.screenWidthDp - 32
+    val itemWidth = LocalConfiguration.current.screenWidthDp - 16
     ConstraintLayout(
         Modifier
             .padding(top = 16.dp)
@@ -400,27 +418,38 @@ fun TopGroups(homeViewModel: HomeViewModel, groupViewModel: GroupViewModel, navC
             color = MaterialTheme.colorScheme.onBackground
         )
         if (!groupList.isNullOrEmpty()) {
-            LazyRow(
+            Column(
                 Modifier.constrainAs(list) {
                     top.linkTo(header.bottom, margin = 8.dp)
                     start.linkTo(parent.start, margin = 8.dp)
                 }
             ) {
-                items(groupList) { group ->
-                    var admins by rememberSaveable { mutableStateOf<List<Member>?>(null) }
-                    LaunchedEffect(key1 = 260) {
+                groupList.take(3).forEach { group ->
+                    var admins by remember { mutableStateOf<List<Member>?>(null) }
+                    LaunchedEffect(groupList) {
                         admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                     }
-                    GroupItem(group, admins, groupViewModel, navController, itemWidth)
+                    GroupItem(group, admins, groupViewModel, questionnaireViewModel, navController, itemWidth)
                 }
             }
         }
+        Text(
+            text = stringResource(id = R.string.show_more),
+            modifier = Modifier
+                .clickable { navController.navigate("groups") }
+                .padding(end = 8.dp, top = 4.dp)
+                .constrainAs(showMore) {
+                    end.linkTo(parent.end, margin = 8.dp)
+                    top.linkTo(list.bottom, margin = 8.dp)
+                },
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
 @Composable
 fun ActivityFeedList(
-    homeViewModel: HomeViewModel,
     navController: NavController,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel
@@ -443,10 +472,19 @@ fun ActivityFeedList(
             Column(
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                feedList.forEach { eventFeed ->
+                feedList.take(3).forEach { eventFeed ->
                     EventItemHome(navController, groupViewModel, activityViewModel, eventFeed)
                 }
             }
+            Text(
+                text = stringResource(id = R.string.show_more),
+                modifier = Modifier
+                    .clickable { navController.navigate("all_user_activities") }
+                    .padding(end = 8.dp, top = 4.dp, bottom = 8.dp)
+                    .fillMaxWidth(),
+                textAlign = TextAlign.End,
+                color = MaterialTheme.colorScheme.secondary
+            )
         }
     }
 }
@@ -461,7 +499,6 @@ fun EventItemHome(
 ) {
     val pageState = rememberPagerState(pageCount = { eventFeed.imageUrlList?.size!!} )
     val context = LocalContext.current
-    val screenWidth = LocalConfiguration.current.screenWidthDp
     val coroutineScope = rememberCoroutineScope()
 
     Surface(
@@ -470,15 +507,14 @@ fun EventItemHome(
                 coroutineScope.launch {
                     activityViewModel.setSelectedEvent(eventFeed)
                     groupViewModel.reloadGroup(eventFeed.groupId) // load group details
-                    groupViewModel.isUserAdmin()
                     navController.navigate(route = "event_detail") {
                         launchSingleTop = true
                     }
-                     // check if user is admin for the group that owns the selected activity
+                    // check if user is admin for the group that owns the selected activity
                     groupViewModel.getComplianceRate(eventFeed)
                 }
             }
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.background,
     ) {
@@ -489,8 +525,8 @@ fun EventItemHome(
             val (eventImages, dotIndicator, eventTitle, groupName, levyAmount, icon) = createRefs()
             Surface(
                 modifier = Modifier
-                    .width(84.dp)
-                    .height(84.dp)
+                    .width(72.dp)
+                    .height(72.dp)
                     .constrainAs(eventImages) {
                         start.linkTo(parent.start)
                         centerVerticallyTo(parent)
@@ -506,8 +542,8 @@ fun EventItemHome(
                     eventFeed.imageUrlList?.get(pageState.currentPage)?.let { imageUrl  -> ImageLoader(
                         imageUrl,
                         context,
-                        84,
-                        84,
+                        72,
+                        72,
                         R.drawable.event
                     ) }
                 }
@@ -541,7 +577,8 @@ fun EventItemHome(
                 modifier = Modifier.constrainAs(eventTitle) {
                     top.linkTo(parent.top, margin = 4.dp)
                     start.linkTo(eventImages.end, margin = 8.dp)
-                }
+                },
+                color = MaterialTheme.colorScheme.primary
             )
 
             Text(
@@ -576,22 +613,12 @@ fun EventItemHome(
 
 }
 
-@Composable
-fun ErrorState(homeViewModel: HomeViewModel) {
-
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
-    navController: NavController,
-    homeViewModel: HomeViewModel,
     authViewModel: AuthViewModel
 ) {
-    var isExpanded by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val coroutineScope = rememberCoroutineScope()
     val userData = authViewModel.userLideData.observeAsState().value
     Surface {
         Row(
@@ -608,64 +635,6 @@ fun HomeTopBar(
                 modifier = Modifier.width((screenWidth - 40).dp),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface),
-                actions = {
-                    IconButton(
-                        onClick = { isExpanded = !isExpanded }) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu))
-                    }
-                    DropdownMenu(
-                        expanded = isExpanded,
-                        onDismissRequest = { isExpanded = false },
-                        modifier = Modifier.width(160.dp)
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.settings)) },
-                            onClick = {
-                                isExpanded = false
-                            },
-                            colors = MenuDefaults.itemColors(
-
-                            ),
-                            leadingIcon = { Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = stringResource(id = R.string.settings)
-                            ) }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.privacy)) },
-                            onClick = {
-                                isExpanded = false
-                            },
-                            leadingIcon = { Icon(
-                                imageVector = Icons.Default.PrivacyTip,
-                                contentDescription = stringResource(id = R.string.privacy)
-                            ) }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.about)) },
-                            onClick = {
-                                isExpanded = false
-                            },
-                            leadingIcon = { Icon(
-                                imageVector = Icons.Default.Details,
-                                contentDescription = stringResource(id = R.string.about)
-                            ) }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.sign_out)) },
-                            onClick = {
-                                isExpanded = false
-                            },
-                            leadingIcon = { Icon(
-                                imageVector = Icons.Default.ArrowOutward,
-                                contentDescription = stringResource(id = R.string.sign_out)
-                            ) }
-                        )
-                    }
-                }
             )
         }
     }

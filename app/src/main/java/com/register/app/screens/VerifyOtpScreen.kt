@@ -49,12 +49,15 @@ import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun VerifyOtpScreen(authViewModel: AuthViewModel, navController: NavController, email: String?) {
+fun VerifyOtpScreen(authViewModel: AuthViewModel,
+                    navController: NavController,
+                    email: String?
+                    ) {
     val isOtPVerified = authViewModel.isOtpVerified.observeAsState().value
 
     LaunchedEffect(isOtPVerified) {
         if (isOtPVerified == true) {
-            navController.navigate("new_password") {
+            navController.navigate("signup_cont") {
                 launchSingleTop = true
             }
         }

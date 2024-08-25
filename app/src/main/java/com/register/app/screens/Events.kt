@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,6 +98,13 @@ fun Events(
 ) {
     val isUnpaid = title == "Unpaid Activities"
     var showPayments by rememberSaveable { mutableStateOf(false)}
+
+    BackHandler {
+            navController.navigate("home") {
+                popUpTo("event") {inclusive = true}
+                launchSingleTop = true
+            }
+    }
     Scaffold(
         topBar = { EventListTopBar(
             title = title!!,
@@ -370,7 +378,7 @@ fun EventFeedItem(
                         coroutineScope.launch {
                             activityViewModel.setSelectedEvent(event)
                             groupViewModel.getComplianceRate(event) // calculate the compliance rate of this user and set the value to a liveData
-                            groupViewModel.isUserAdmin() //determine if this user is an admin in the group to which this activity belong
+                            groupViewModel.isUserAdmin(group) //determine if this user is an admin in the group to which this activity belong
                         }
                         navController.navigate("event_detail") {
                             launchSingleTop = true
@@ -619,7 +627,8 @@ fun ConfirmPaymentDialog(
                             }
                             .clickable {
                                 coroutineScope.launch {
-                                    val response = activityViewModel.rejectBulkPayment(selectedPayment, reason)
+                                    val response =
+                                        activityViewModel.rejectBulkPayment(selectedPayment, reason)
                                     if (response.status) {
                                         callback(false)
                                         Toast

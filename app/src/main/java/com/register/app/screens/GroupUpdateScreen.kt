@@ -87,9 +87,9 @@ fun GroupUpdateUi(
     var phone by rememberSaveable { mutableStateOf(group.phoneNumber) }
     var email by rememberSaveable { mutableStateOf(group.groupEmail) }
     var logoUrl by rememberSaveable { mutableStateOf(group.logoUrl) }
-    var accountName by rememberSaveable { mutableStateOf("") }
-    var bankName by rememberSaveable { mutableStateOf("") }
-    var accountNumber by rememberSaveable { mutableStateOf("") }
+    var accountName by rememberSaveable { mutableStateOf(group.bankDetails?.accountName?: "") }
+    var bankName by rememberSaveable { mutableStateOf(group.bankDetails?.bankName?: "") }
+    var accountNumber by rememberSaveable { mutableStateOf(group.bankDetails?.accountNumber?: "") }
     val imageMimeTypes = listOf("image/jpeg", "image/png")
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -100,7 +100,7 @@ fun GroupUpdateUi(
                         val inputStream = context.contentResolver.openInputStream(uri)
                         if (inputStream != null) {
                             val mimeType = context.contentResolver.getType(uri)
-                            groupViewModel.uploadGroupLogo(inputStream, mimeType, Utils.getFileNameFromUri(context.contentResolver, uri))
+                            logoUrl = groupViewModel.uploadGroupLogo(inputStream, mimeType, Utils.getFileNameFromUri(context.contentResolver, uri))
                         } else {
                             // Handle error
                         }
@@ -316,6 +316,7 @@ fun GroupUpdateUi(
             Surface(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
                     .height(55.dp),
                 border = BorderStroke(1.dp, Color.Gray),
                 shape = MaterialTheme.shapes.medium,
@@ -337,6 +338,7 @@ fun GroupUpdateUi(
             Surface(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
                     .height(55.dp),
                 border = BorderStroke(1.dp, Color.Gray),
                 shape = MaterialTheme.shapes.medium,
@@ -358,6 +360,7 @@ fun GroupUpdateUi(
             Surface(
                 Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
                     .height(55.dp),
                 border = BorderStroke(1.dp, Color.Gray),
                 shape = MaterialTheme.shapes.medium,

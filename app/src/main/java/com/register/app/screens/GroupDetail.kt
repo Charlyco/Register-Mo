@@ -1,7 +1,9 @@
 package com.register.app.screens
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +53,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +64,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -71,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import co.yml.charts.common.model.PlotType
@@ -79,6 +86,8 @@ import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.JoinChatPayload
+import com.register.app.enums.Designation
+import com.register.app.enums.FormStatus
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
@@ -92,6 +101,7 @@ import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
+import com.register.app.viewmodel.QuestionnaireViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -101,17 +111,86 @@ fun GroupDetail(
     authViewModel: AuthViewModel,
     forumViewModel: ForumViewModel,
     homeViewModel: HomeViewModel,
+    questionnaireViewModel: QuestionnaireViewModel,
     activityViewModel: ActivityViewModel
 ) {
     var showAllMembers by rememberSaveable{ mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val membershipId = groupViewModel.membershipId.observeAsState().value
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
+    val questionnaires = questionnaireViewModel.groupQuestionnaires.observeAsState().value
+    var showQuestionnaireDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(questionnaires) {
+        if (questionnaires != null) {
+            showQuestionnaireDialog = questionnaires.any { it.status ==  FormStatus.ACTIVE.name && !it.responders.contains(membershipId)}
+        }
+    }
+
+    BackHandler {
+        navController.navigate("home") {
+            popUpTo("group_detail") {inclusive = true}
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
-        topBar = { GroupDetailTopBar(navController, group, groupViewModel, forumViewModel, authViewModel){showAllMembers = it} },
+        topBar = { GroupDetailTopBar(
+            navController,
+            group,
+            groupViewModel,
+            forumViewModel,
+            authViewModel,
+            homeViewModel,
+            activityViewModel
+            ){showAllMembers = it} },
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
             AllMembersList(group, groupViewModel, authViewModel, navController, isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
+        }
+            if(showQuestionnaireDialog) {
+                QuestionnaireDialog(navController) { showQuestionnaireDialog = it}
+        }
+    }
+}
+
+@Composable
+fun QuestionnaireDialog(navController: NavController, onDismiss: (Boolean) -> Unit) {
+    Dialog(
+        onDismissRequest = { onDismiss(false) },
+        ) {
+        Surface(
+            Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .padding(horizontal = 24.dp)
+
+        ) {
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(id = R.string.questionnaire_waiting),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp)
+                )
+
+                Button(
+                    onClick = {
+                        onDismiss(false)
+                        navController.navigate("quest_response") {
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                    ) {
+                    Text(text = stringResource(id = R.string.take_action))
+                }
+            }
         }
     }
 }
@@ -124,6 +203,8 @@ fun GroupDetailTopBar(
     groupViewModel: GroupViewModel,
     forumViewModel: ForumViewModel,
     authViewModel: AuthViewModel,
+    homeViewModel: HomeViewModel,
+    activityViewModel: ActivityViewModel,
     viewAllMembers: (show: Boolean) -> Unit
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false)}
@@ -239,15 +320,36 @@ fun GroupDetailTopBar(
                         navController.navigate("add_member") {
                             launchSingleTop = true
                         }
-                        isExpanded = false
-                    })
+                        isExpanded = false }
+                    )
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.create_activity)) },
                         onClick = {
                             navController.navigate("create_event") {
                                 launchSingleTop = true
                             }
-                            isExpanded = false })
+                            isExpanded = false
+                        })
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.create_questionnaire)) },
+                        onClick = {
+                            navController.navigate("questionnaire") {
+                                launchSingleTop = true
+                            }
+                            isExpanded = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.goto_questionnaire)) },
+                        onClick = {
+                            navController.navigate("quest_response") {
+                                launchSingleTop = true
+                            }
+                            isExpanded = false
+                        }
+                    )
+
                 }
                 DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.view_members)) },
@@ -279,6 +381,10 @@ fun GroupDetailTopBar(
                                 navController.navigate("home") {
                                     popUpTo("group_detail") {inclusive = true}
                                 }
+                                authViewModel.reloadUserData()
+                                homeViewModel.refreshHomeContents()
+                                activityViewModel.refreshHomeContents()
+                                groupViewModel.getAllGroupsForUser()
                             }
                         }
                     }
@@ -372,7 +478,7 @@ fun ActivityRate(groupViewModel: GroupViewModel) {
         showSliceLabels = true,
         labelFontSize = TextUnit(20.0f, TextUnitType.Sp),
         labelColor = MaterialTheme.colorScheme.onBackground,
-        strokeWidth = 24f,
+        strokeWidth = 32f,
         activeSliceAlpha = .9f,
         labelVisible = true,
         isAnimationEnable = true,
@@ -399,7 +505,7 @@ fun ActivityRate(groupViewModel: GroupViewModel) {
 
         DonutPieChart(
             modifier = Modifier
-                .size(140.dp)
+                .size(120.dp)
                 .constrainAs(chart) {
                     start.linkTo(parent.start, margin = 16.dp)
                     top.linkTo(title.bottom, margin = 16.dp)
@@ -576,14 +682,27 @@ fun PaidEvents(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.ErrorOutline,
-                    contentDescription ="",
+                Surface(
                     Modifier
-                        .size(32.dp)
-                        .padding(vertical = 16.dp))
+                        .padding(top = 16.dp)
+                        .size(64.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_activity),
+                        contentDescription = "",
+                        colorFilter = ColorFilter.tint(Color.White),
+                        contentScale = ContentScale.Fit
+                        )
+                }
                 Text(
-                    text = stringResource(id = R.string.empty_event))
+                    text = stringResource(id = R.string.empty_event),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -638,14 +757,27 @@ fun UnpaidEvents(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.ErrorOutline,
-                    contentDescription ="",
+                Surface(
                     Modifier
-                        .size(32.dp)
-                        .padding(vertical = 16.dp))
+                        .padding(top = 16.dp)
+                        .size(64.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_activity),
+                        contentDescription = "",
+                        colorFilter = ColorFilter.tint(Color.White),
+                        contentScale = ContentScale.Fit
+                    )
+                }
                 Text(
-                    text = stringResource(id = R.string.no_unpaid_activities))
+                    text = stringResource(id = R.string.no_unpaid_activities),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    textAlign = TextAlign.Center
+                    )
             }
         }
     }
@@ -1196,6 +1328,7 @@ fun MemberItem(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val designation = group?.memberList?.find { it.emailAddress == member.emailAddress }?.designation
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -1246,6 +1379,15 @@ fun MemberItem(
                     fontSize = TextUnit(16.0f, TextUnitType.Sp),
                     color = MaterialTheme.colorScheme.onBackground
                 )
+
+                if (designation == Designation.ADMIN.name) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_admin),
+                        contentDescription = "",
+                        Modifier.padding(start = 8.dp),
+                        tint = Color(context.getColor(R.color.purple_700))
+                    )
+                }
             }
             HorizontalDivider(Modifier.padding(2.dp))
         }

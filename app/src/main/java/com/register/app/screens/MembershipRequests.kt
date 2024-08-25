@@ -2,16 +2,20 @@ package com.register.app.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,8 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -37,6 +43,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
+import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils
 import com.register.app.viewmodel.AuthViewModel
@@ -47,19 +54,49 @@ import kotlinx.coroutines.launch
 fun MembershipRequests(
     navController: NavController,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel) {
-    val group = groupViewModel.groupDetailLiveData.observeAsState().value
-    MembershipRequestList(group, groupViewModel)
+    authViewModel: AuthViewModel
+) {
+    Scaffold(
+        topBar = { GenericTopBar(title = stringResource(id = R.string.membership_requests),
+            navController = navController, navRoute = "group_detail") },
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        val group = groupViewModel.groupDetailLiveData.observeAsState().value
+        MembershipRequestList(Modifier.padding(it) ,group, groupViewModel)
+    }
+
 }
 
 @Composable
-fun MembershipRequestList(group: Group?, groupViewModel: GroupViewModel) {
+fun MembershipRequestList(modifier: Modifier, group: Group?, groupViewModel: GroupViewModel) {
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
-    if (group?.pendingMemberRequests?.isNotEmpty() == true) {
-        group.pendingMemberRequests.forEach {request ->
-            MembershipRequestItem(request, groupViewModel)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(start = 16.dp, end = 16.dp, top = 64.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (group?.pendingMemberRequests?.isNotEmpty() == true) {
+            group.pendingMemberRequests.forEach {request ->
+                MembershipRequestItem(request, groupViewModel)
+            }
+        }else {
+            Image(
+                painter = painterResource(id = R.drawable.groups),
+                contentDescription ="",
+                modifier = Modifier.size(72.dp)
+            )
+
+            Text(
+                text = stringResource(id = R.string.no_requests),
+                fontSize = TextUnit(20.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+                )
         }
     }
+
 }
 
 @Composable
@@ -76,7 +113,8 @@ fun MembershipRequestItem(
             .fillMaxWidth()
             .clickable {
                 coroutineScope.launch {
-                    groupViewModel.getIndividualMembershipRequest(request.memberEmail) }
+                    groupViewModel.getIndividualMembershipRequest(request.memberEmail)
+                }
             },
         color = MaterialTheme.colorScheme.background
 

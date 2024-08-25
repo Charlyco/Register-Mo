@@ -10,10 +10,12 @@ import com.register.app.screens.AddRemoveMember
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
+import com.register.app.screens.AllUserActivities
 import com.register.app.screens.AuthScreen
 import com.register.app.screens.BulkPayment
 import com.register.app.screens.CreateElectionScreen
 import com.register.app.screens.CreateEvent
+import com.register.app.screens.CreateQuestionnaireScreen
 import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EditProfile
 import com.register.app.screens.ElectionDetail
@@ -33,10 +35,12 @@ import com.register.app.screens.ModifyAdmin
 import com.register.app.screens.NewPasswordEntry
 import com.register.app.screens.NotificationScreen
 import com.register.app.screens.ProfileScreen
+import com.register.app.screens.QuestionnaireResponses
 import com.register.app.screens.ResetPassword
 import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SplashScreen
+import com.register.app.screens.SubmitQuestionnaireResponse
 import com.register.app.screens.SuggestedGroups
 import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
@@ -46,6 +50,7 @@ import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
+import com.register.app.viewmodel.QuestionnaireViewModel
 
 @Composable
 fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreManager) {
@@ -54,6 +59,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
     val groupViewModel: GroupViewModel by mainActivity.viewModels()
     val forumViewModel: ForumViewModel by mainActivity.viewModels()
     val activityViewModel: ActivityViewModel by mainActivity.viewModels()
+    val questionnaireViewModel: QuestionnaireViewModel by mainActivity.viewModels()
 
     val startDestination = homeViewModel.homeDestination.observeAsState().value
 
@@ -65,7 +71,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         composable("signup") {
             Signup(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
-        composable("sinup_cont") {
+        composable("signup_cont") {
             SignUpCont(authViewModel, navController)
         }
         composable("otp_verify/{email}") {
@@ -75,7 +81,14 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
         composable("home") {
-            HomeScreen(homeViewModel = homeViewModel, navController = navController, groupViewModel = groupViewModel, authViewModel = authViewModel, activityViewModel = activityViewModel)
+            HomeScreen(
+                homeViewModel = homeViewModel,
+                navController = navController,
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
+                activityViewModel = activityViewModel,
+                questionnaireViewModel = questionnaireViewModel,
+                mainActivity = mainActivity)
         }
         composable("colleagues") {
             DiscoverScreen(groupViewModel = groupViewModel, homeViewModel = homeViewModel, navController = navController)
@@ -87,7 +100,11 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             EventDetails(dataStoreManager = dataStoreManager, navController = navController, activityViewModel = activityViewModel, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("groups") {
-            AllGroups(navController = navController, dataStoreManager = dataStoreManager, groupViewModel = groupViewModel)
+            AllGroups(
+                navController = navController,
+                dataStoreManager = dataStoreManager,
+                groupViewModel = groupViewModel,
+                questionnaireViewModel = questionnaireViewModel)
         }
         composable("payment") {
             EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel, activityViewModel = activityViewModel)
@@ -98,7 +115,8 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 authViewModel = authViewModel,
                 forumViewModel = forumViewModel,
                 homeViewModel = homeViewModel,
-                activityViewModel = activityViewModel)
+                activityViewModel = activityViewModel,
+                questionnaireViewModel = questionnaireViewModel)
         }
         composable("profile") {
             ProfileScreen(authViewModel, groupViewModel, homeViewModel, navController)
@@ -128,7 +146,13 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             ModifyAdmin(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
         }
         composable("suggested_groups") {
-            SuggestedGroups(groupViewModel = groupViewModel, navController = navController)
+            SuggestedGroups(
+                groupViewModel = groupViewModel,
+                navController = navController,
+                homeViewModel = homeViewModel,
+                activityViewModel = activityViewModel,
+                authViewModel = authViewModel
+                )
         }
         composable("membership_request") {
             MembershipRequests(
@@ -193,6 +217,34 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         }
         composable("new_password") {
             NewPasswordEntry(authViewModel = authViewModel, navController = navController)
+        }
+        composable("questionnaire") {
+            CreateQuestionnaireScreen(
+                navController = navController,
+                questionnaireViewModel = questionnaireViewModel,
+                groupViewModel = groupViewModel
+            )
+        }
+        composable("quest_response") {
+            SubmitQuestionnaireResponse(
+                questionnaireViewModel = questionnaireViewModel,
+                groupViewModel = groupViewModel,
+                navController = navController
+            )
+        }
+        composable("user_responses/{form_title}") { backStackEntry ->
+            QuestionnaireResponses(
+                questionnaireViewModel = questionnaireViewModel,
+                navController = navController,
+                formTitle = backStackEntry.arguments?.getString("form_title")
+            )
+        }
+        composable("all_user_activities") {
+            AllUserActivities(
+                activityViewModel = activityViewModel,
+                groupViewModel = groupViewModel,
+                navController = navController
+            )
         }
     }
 }

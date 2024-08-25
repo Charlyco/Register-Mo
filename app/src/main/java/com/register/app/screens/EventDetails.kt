@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -106,6 +107,13 @@ fun EventDetails(
 ) {
     val selectedEvent = activityViewModel.selectedEvent.observeAsState().value
     var showPayments by rememberSaveable { mutableStateOf(false) }
+    BackHandler {
+        navController.navigate("home") {
+            popUpTo("event_detail") { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         topBar = { EventDetailTopBar(navController, groupViewModel, activityViewModel, selectedEvent){ showPayments = it } }
     ) {
@@ -393,53 +401,79 @@ fun ConfirmPaymentDialog(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        shape = MaterialTheme.shapes.small
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.background
                     ) {
                         ConstraintLayout(
                             Modifier
                                 .fillMaxWidth()
-                                .height(120.dp)
+                                .height(200.dp)
                         ) {
                             val (input, btn) = createRefs()
+                            Surface(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp)
+                                    .constrainAs(input) {
+                                        top.linkTo(parent.top, margin = 4.dp)
+                                        centerHorizontallyTo(parent)
+                                    },
+                                shape = MaterialTheme.shapes.small,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
+                            ) {
+                                TextField(
+                                    value = reason,
+                                    onValueChange = { reason = it },
+                                    colors = TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.background
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                )
+                            }
 
-                            TextField(
-                                value = reason,
-                                onValueChange = { reason = it },
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.background
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Proceed",
-                                modifier = Modifier
+                            Surface(
+                                Modifier
+                                    .size(64.dp)
+                                    .padding(8.dp)
                                     .constrainAs(btn) {
-                                        top.linkTo(input.bottom, margin = 8.dp)
-                                        end.linkTo(parent.end, margin = 8.dp)
+                                        bottom.linkTo(parent.bottom, margin = 8.dp)
+                                        centerHorizontallyTo(parent)
+                                    },
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Proceed",
+                                    modifier = Modifier
 
-                                    }
-                                    .clickable {
-                                        coroutineScope.launch {
-                                            val response =
-                                                activityViewModel.rejectPayment(selectedPayment, reason)
-                                            if (response.status) {
-                                                callback(false)
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        response.message,
-                                                        Toast.LENGTH_SHORT
+                                        .clickable {
+                                            coroutineScope.launch {
+                                                val response =
+                                                    activityViewModel.rejectPayment(
+                                                        selectedPayment,
+                                                        reason
                                                     )
-                                                    .show()
+                                                if (response.status) {
+                                                    showReasonInputDialog = false
+                                                    callback(false)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            response.message,
+                                                            Toast.LENGTH_SHORT
+                                                        )
+                                                        .show()
+                                                }
                                             }
                                         }
-                                    }
-                            )
+                                )
+                            }
+
                         }
                     }
                 }
@@ -465,7 +499,7 @@ fun ConfirmPaymentDialog(
                     shape = MaterialTheme.shapes.small
                 ) {
                     TextField(
-                        value = amountPaid.toString(),
+                        value = amountPaid,
                         onValueChange = { amountPaid = it},
                         placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
                         colors = TextFieldDefaults.colors(
@@ -481,36 +515,36 @@ fun ConfirmPaymentDialog(
                         )
                         )
                 }
-                Surface(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    TextField(
-                        value = outstanding.toString(),
-                        onValueChange = { outstanding = it},
-                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.background,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        )
-                    )
-                }
+//                Surface(
+//                    Modifier
+//                        .fillMaxWidth()
+//                        .padding(horizontal = 16.dp, vertical = 4.dp),
+//                    color = Color.Transparent,
+//                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
+//                    shape = MaterialTheme.shapes.small
+//                ) {
+//                    TextField(
+//                        value = outstanding.toString(),
+//                        onValueChange = { outstanding = it},
+//                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
+//                        colors = TextFieldDefaults.colors(
+//                            focusedContainerColor = MaterialTheme.colorScheme.background,
+//                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+//                            focusedIndicatorColor = Color.Transparent,
+//                            unfocusedIndicatorColor = Color.Transparent,
+//                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+//                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+//                        ),
+//                        keyboardOptions = KeyboardOptions(
+//                            keyboardType = KeyboardType.Number
+//                        )
+//                    )
+//                }
 
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = 16.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -519,7 +553,7 @@ fun ConfirmPaymentDialog(
                             showReasonInputDialog = true
                         },
                         Modifier
-                            .width(((screenWidth/ 2) - 16).dp),
+                            .width(120.dp),
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Text(text = stringResource(id = R.string.reject_payment))
@@ -529,7 +563,7 @@ fun ConfirmPaymentDialog(
                         onClick = {
                             coroutineScope.launch {
                                 val response = activityViewModel.confirmPayment(selectedPayment, amountPaid.toDouble(),
-                                    outstanding.toDouble(), group?.groupId!!)
+                                    0.0, group?.groupId!!)
                                 if (response.status) {
                                     callback(false)
                                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
@@ -539,7 +573,7 @@ fun ConfirmPaymentDialog(
                             }
                         },
                         Modifier
-                            .width(((screenWidth/ 2) - 16).dp),
+                            .width(120.dp),
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Text(text = stringResource(id = R.string.confirm))
@@ -1166,12 +1200,20 @@ fun AdminActionDialog(
                                         val response =
                                             activityViewModel.markActivityCompleted(event)
                                         if (response.status) {
-                                            Toast.makeText(context, "Activity completed",
-                                                Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context, "Activity completed",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
                                         } else {
-                                            Toast.makeText(context, response.message,
-                                                Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context, response.message,
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                         }
                                         callback(false)
                                     }
@@ -1181,12 +1223,20 @@ fun AdminActionDialog(
                                     coroutineScope.launch {
                                         val response = activityViewModel.archiveActivity(event)
                                         if (response.status) {
-                                            Toast.makeText(context, "Activity archived",
-                                                    Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context, "Activity archived",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
-                                        }else {
-                                            Toast.makeText(context, response.message,
-                                                    Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast
+                                                .makeText(
+                                                    context, response.message,
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                         }
                                         callback(false)
                                     }
@@ -1196,12 +1246,20 @@ fun AdminActionDialog(
                                     coroutineScope.launch {
                                         val response = activityViewModel.deleteActivity(event)
                                         if (response.status) {
-                                            Toast.makeText(context, "Activity deleted",
-                                                    Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context, "Activity deleted",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                             navController.navigateUp()
-                                        }else {
-                                            Toast.makeText(context, response.message,
-                                                Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast
+                                                .makeText(
+                                                    context, response.message,
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                         }
                                         callback(false)
                                     }

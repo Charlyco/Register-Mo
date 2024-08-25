@@ -16,6 +16,7 @@ import com.register.app.model.Member
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
+import com.register.app.util.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -87,9 +88,9 @@ class AuthViewModel @Inject constructor(
         return false
     }
 
-    suspend fun verifyOtp(otp: Int, email: String): GenericResponse? {
+    suspend fun verifyOtp(otp: Int, email: String): GenericResponse {
         _progressLiveData.value = true
-        val response = authRepository.verifyOtp(otp, email)
+        val response = authRepository.verifyOtp(otp, Utils.normaliseString(email))
         _isOtpVerified.value = response.status
         _progressLiveData.value = false
         return response
@@ -111,9 +112,9 @@ class AuthViewModel @Inject constructor(
             _errorLiveData.value = "Phone number cannot be blank"
         }else {
             _progressLiveData.value = true
-            val isTaken = authRepository.checkEmailAndPhone(email, phone)
+            val isTaken = authRepository.checkEmailAndPhone(Utils.normaliseString(email), phone)
             if (isTaken.status) {
-                val signUpModel = SignUpModel("$firstName $lastName", phone, email, "", "", "")
+                val signUpModel = SignUpModel("$firstName $lastName", phone, Utils.normaliseString(email), "", "", "")
                 val response = authRepository.sendOtp(email)
                 _signUpModelLiveData.value = signUpModel
                 _progressLiveData.value = false
@@ -160,7 +161,7 @@ class AuthViewModel @Inject constructor(
 
     suspend fun signIn(email: String, password: String): AuthResponseWrapper? {
         _progressLiveData.value = true
-           val authResponse = authRepository.login(LoginUserModel(email, password))
+           val authResponse = authRepository.login(LoginUserModel(Utils.normaliseString(email), password))
         if (authResponse?.status == true) {
             dataStoreManager.writeUserData(authResponse.data?.member!!)
             dataStoreManager.writeTokenData(authResponse.data.authToken)
@@ -201,18 +202,18 @@ class AuthViewModel @Inject constructor(
         return member
     }
 
-    suspend fun getMemberDetails(email: String): Member {
+    suspend fun getMemberDetails(email: String): Member? {
         _progressLiveData.value = true
         Log.d("Member", "fetching member details")
-        val member = authRepository.getMemberDetails(email)
+        val member = authRepository.getMemberDetails(Utils.normaliseString(email))
         _intendingMemberLiveData.value = member
         _progressLiveData.value = false
-        return member!!
+        return member
     }
 
     suspend fun resendOtp(email: String) {
         _progressLiveData.value = true
-        authRepository.sendOtp(email)
+        authRepository.sendOtp(Utils.normaliseString(email))
         _progressLiveData.value = false
         countDownTimer(2)
     }

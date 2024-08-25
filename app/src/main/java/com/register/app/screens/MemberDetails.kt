@@ -184,6 +184,7 @@ fun MemberInfo(
     callback: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     ConstraintLayout(
         Modifier
             .fillMaxSize()
@@ -246,7 +247,7 @@ fun MemberInfo(
             MemberActivityRate(groupViewModel = groupViewModel)
         }
 
-        if (authViewModel.isUserAdmin()) {
+        if (isAdmin == true) {
             Surface(
                 Modifier
                     .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,7 +21,6 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,35 +37,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
-import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.DataStoreManager
-import com.register.app.util.DateFormatter
 import com.register.app.util.GenericTopBar
 import com.register.app.util.GroupItem
-import com.register.app.util.GroupSearchBox
-import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
-import kotlinx.coroutines.launch
+import com.register.app.viewmodel.QuestionnaireViewModel
 
 @Composable
-fun AllGroups(navController: NavController, dataStoreManager: DataStoreManager, groupViewModel: GroupViewModel) {
+fun AllGroups(
+    navController: NavController,
+    dataStoreManager: DataStoreManager,
+    groupViewModel: GroupViewModel,
+    questionnaireViewModel: QuestionnaireViewModel
+) {
+    BackHandler {
+        navController.navigate("home") {
+            popUpTo("groups") {inclusive = true}
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         topBar = { GenericTopBar(title = stringResource(id = R.string.groups), navController, navRoute = "home") },
         floatingActionButton = { NewGroupFab(navController, dataStoreManager, groupViewModel) },
         floatingActionButtonPosition = FabPosition.End
     ) {
-        GroupsScreenContent(Modifier.padding(it), navController, dataStoreManager, groupViewModel)
+        GroupsScreenContent(Modifier.padding(it), navController, questionnaireViewModel, groupViewModel)
         CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
         }
@@ -99,7 +101,7 @@ fun NewGroupFab(
 fun GroupsScreenContent(
     modifier: Modifier,
     navController: NavController,
-    dataStoreManager: DataStoreManager,
+    questionnaireViewModel: QuestionnaireViewModel,
     groupViewModel: GroupViewModel
 ) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
@@ -170,7 +172,14 @@ fun GroupsScreenContent(
                         LaunchedEffect(key1 = 260) {
                             admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                         }
-                        GroupItem(group, admins, groupViewModel, navController, screenWidth - 8)
+                        GroupItem(
+                            group,
+                            admins,
+                            groupViewModel,
+                            questionnaireViewModel,
+                            navController,
+                            screenWidth - 8
+                        )
                     }
                 }
             }

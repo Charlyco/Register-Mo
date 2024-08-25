@@ -368,7 +368,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                                Toast.makeText(context, "Group Created Successfully", Toast.LENGTH_SHORT).show()
                                groupViewModel.showCreateGroupSheet.postValue(false)
                                groupViewModel.setSelectedGroupDetail(response)
-                               groupViewModel.isUserAdmin() //grants the user admin rights
+                               groupViewModel.isUserAdmin(response) //grants the user admin rights
                                navController.navigate("group_detail")
                            } else {
                                Toast.makeText(context, AN_ERROR_OCCURRED, Toast.LENGTH_SHORT).show()

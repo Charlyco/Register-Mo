@@ -17,6 +17,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.UUID
 
 object Utils {
@@ -72,6 +73,10 @@ object Utils {
             val deviceId = UUID.randomUUID().toString()
             dataStoreManager.writeDeviceId(deviceId)
         }
+    }
+
+    fun normaliseString(input: String): String {
+        return input.trim().lowercase(Locale.ROOT)
     }
 
         fun createNotificationChannel(context: Context) {

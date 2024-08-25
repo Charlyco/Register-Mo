@@ -3,7 +3,6 @@ package com.register.app.util
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,28 +17,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.ArrowOutward
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Details
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Slider
@@ -86,6 +75,7 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
+import com.register.app.viewmodel.QuestionnaireViewModel
 import kotlinx.coroutines.launch
 
 
@@ -112,6 +102,7 @@ fun BottomNavBar(navController: NavController) {
     val bottomBarItems = listOf(
         BottomBarItem("home", R.drawable.icon_home),
         BottomBarItem("forum", R.drawable.messages),
+        BottomBarItem("all_user_activities", R.drawable.icon_activity),
         BottomBarItem("profile", R.drawable.profile_simple)
     )
 BottomAppBar(
@@ -308,7 +299,7 @@ fun EventItem(
                 coroutineScope.launch {
                     activityViewModel.setSelectedEvent(event)
                     groupViewModel.getComplianceRate(event) // calculate the compliance rate of this user and set the value to a liveData
-                    groupViewModel.isUserAdmin() //determine if this user is an admin in the group to which this activity belong
+                    groupViewModel.isUserAdmin(group) //determine if this user is an admin in the group to which this activity belong
                 }
                 navController.navigate("event_detail") {
                     launchSingleTop = true
@@ -397,7 +388,14 @@ fun EventItem(
 }
 
 @Composable
-fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewModel, navController: NavController, width: Int) {
+fun GroupItem(
+    group: Group,
+    admins: List<Member>?,
+    groupViewModel: GroupViewModel,
+    questionnaireViewModel: QuestionnaireViewModel,
+    navController: NavController,
+    width: Int
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -409,7 +407,7 @@ fun GroupItem(group: Group, admins: List<Member>?, groupViewModel: GroupViewMode
             .clickable {
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
-                    groupViewModel.isUserAdmin()
+                    questionnaireViewModel.getQuestionnaires(group.groupId)
                     navController.navigate("group_detail") { launchSingleTop = true }
                 }
             },

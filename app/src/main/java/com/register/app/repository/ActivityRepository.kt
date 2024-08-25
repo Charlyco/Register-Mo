@@ -35,4 +35,5 @@ interface ActivityRepository {
     suspend fun generateReport(eventId: Int?): ResponseBody?
     suspend fun postComment(commentModel: EventComment): EventCommentResponse
     suspend fun postCommentReply(replyModel: CommentReply): EventCommentResponse
+    suspend fun getEventDetails(eventId: Int): Event?
 }

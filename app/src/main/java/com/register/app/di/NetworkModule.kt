@@ -5,6 +5,7 @@ import com.register.app.api.ActivityService
 import com.register.app.api.ChatService
 import com.register.app.api.GroupService
 import com.register.app.api.HttpInterceptor
+import com.register.app.api.QuestionnaireService
 import com.register.app.api.UserService
 import com.register.app.util.DataStoreManager
 import dagger.Module
@@ -64,5 +65,10 @@ object NetworkModule {
     @Provides
     fun providesActivityService(retrofit: Retrofit) : ActivityService {
         return retrofit.create(ActivityService::class.java)
+    }
+
+    @Provides
+    fun provideQuestionnaireService(retrofit: Retrofit): QuestionnaireService {
+        return retrofit.create(QuestionnaireService::class.java)
     }
 }

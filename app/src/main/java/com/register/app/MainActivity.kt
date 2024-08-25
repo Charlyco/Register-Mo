@@ -23,6 +23,7 @@ import com.register.app.util.NOTIFICATION_REQUEST_CODE
 import com.register.app.util.NOTIFICATION_TITLE
 import com.register.app.util.NOTIFICATION_TYPE
 import com.register.app.util.Utils
+import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     val homeViewModel: HomeViewModel by viewModels()
     val groupViewModel: GroupViewModel by viewModels()
     val forumViewModel: ForumViewModel by viewModels()
+    val authViewModel: AuthViewModel by viewModels()
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +49,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             RegisterTheme {
                 RegisterAppNavHost(this, dataStoreManager)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+        if (dataStoreManager.readUserData() != null) {
+                authViewModel.getUserDetails()
             }
         }
     }

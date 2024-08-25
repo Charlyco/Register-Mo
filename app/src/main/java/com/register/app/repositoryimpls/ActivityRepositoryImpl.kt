@@ -464,4 +464,30 @@ class ActivityRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun getEventDetails(eventId: Int): Event? {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getEventDetails(eventId)
+            call.enqueue(object : Callback<Event?> {
+                override fun onResponse(call: Call<Event?>, response: Response<Event?>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<Event?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }

@@ -102,6 +102,14 @@ class ActivityViewModel @Inject constructor(
         }
     }
 
+    suspend fun getEventDetails(eventId: Int) {
+        _loadingState.value = true
+        val event = activityRepository.getEventDetails(eventId)
+        if (event != null) {
+            setSelectedEvent(event)
+        }
+    }
+
     fun refreshHomeContents() {
         viewModelScope.launch {
             getEventFeeds()
@@ -117,12 +125,12 @@ class ActivityViewModel @Inject constructor(
         }
         viewModelScope.launch {
             getMembershipIdByGroupId(eventFeed.groupId!!)
-            val paidMembers = paidMembersList.value?.toMutableList()
+            val paidMembers = mutableListOf<Member>()
             eventFeed.contributions?.forEach { contributionDto ->
                 _loadingState.value = true
                 val member = activityRepository.getMemberDetails(contributionDto.memberEmail)
                 if (member != null) {
-                    paidMembers?.add(member)
+                    paidMembers.add(member)
                 }else _errorLiveData.value = AN_ERROR_OCCURRED
             }
             _paidMembersList.value = paidMembers
@@ -233,6 +241,9 @@ class ActivityViewModel @Inject constructor(
             dataStoreManager.readUserData()?.fullName!!
             )
         val response = activityRepository.confirmPayment(contribution)
+        if (response.status) {
+            getEventDetails(selectedPayment.eventId)
+        }
         _loadingState.value = false
         return response
     }
@@ -255,16 +266,20 @@ class ActivityViewModel @Inject constructor(
     suspend fun markActivityCompleted(event: Event): EventDetailWrapper {
         _loadingState.value = true
         val response = activityRepository.changeEventStatus(event.eventId, EventStatus.COMPLETED.name)
+        if (response.status) {
+            getEventDetails(event.eventId)
+        }
         _loadingState.value = false
-        setSelectedEvent(event)
         return response
     }
 
     suspend fun archiveActivity(event: Event) : EventDetailWrapper {
         _loadingState.value = true
         val response = activityRepository.changeEventStatus(event.eventId, EventStatus.ARCHIVED.name)
+        if (response.status) {
+            getEventDetails(event.eventId)
+        }
         _loadingState.value = false
-        setSelectedEvent(event)
         return response
     }
 
@@ -324,6 +339,7 @@ class ActivityViewModel @Inject constructor(
             dataStoreManager.readUserData()?.fullName!!)
         _loadingState.value = true
         val response = activityRepository.confirmBulkPayment(confirmPaymentModel)
+        _loadingState.value = false
         return response
     }
 
@@ -356,6 +372,9 @@ class ActivityViewModel @Inject constructor(
         )
         _loadingState.value = true
         val response = activityRepository.rejectPayment(rejectedPayment)
+        if (response.status) {
+            getEventDetails(selectedPayment?.eventId!!)
+        }
         _loadingState.value = false
         return response
     }
