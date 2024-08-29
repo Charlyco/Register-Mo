@@ -6,16 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.register.app.R
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
@@ -27,23 +23,27 @@ import com.register.app.dto.EventItemDto
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
+import com.register.app.dto.RateData
 import com.register.app.dto.RejectBulkPaymentDto
 import com.register.app.dto.RejectedPayment
 import com.register.app.enums.EventStatus
+import com.register.app.enums.EventType
 import com.register.app.model.Event
+import com.register.app.model.Group
 import com.register.app.model.Member
+import com.register.app.model.MembershipDto
 import com.register.app.repository.ActivityRepository
 import com.register.app.repository.GroupRepository
 import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.DataStoreManager
+import com.register.app.util.PAID
+import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -78,11 +78,77 @@ class ActivityViewModel @Inject constructor(
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
     val errorLiveData: LiveData<String?> = _errorLiveData
+    private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val paidActivities: LiveData<List<Event>?> = _paidActivities
+    private val _unpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
+    val unpaidActivities: LiveData<List<Event>?> = _unpaidActivities
+    private val _paymentRateLiveData: MutableLiveData<RateData?> = MutableLiveData()
+    val paymentRateLiveData: LiveData<RateData?> = _paymentRateLiveData
+    private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
+    val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
+    private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
+    val groupEvents: LiveData<List<Event>?> = _groupEvents
+
 
     init {
         viewModelScope.launch {
             getEventFeeds()
         }
+    }
+
+    suspend fun getActivitiesForGroup(group: Group) {
+        val member = getMember(group.memberList)
+
+        // Get all events for for group and filter into paid and unpaid for user
+        _groupEvents.value = groupRepository.getAllActivitiesForGroup(group.groupId)
+
+        //get user activity rate
+        getActivityRate(member?.membershipId, member?.joinedDateTime, group.groupId)
+    }
+
+    fun populateActivities(type: String, userEmail: String?) {
+        when (type) {
+            PAID -> {
+                //filter paid activities
+                val paid = groupEvents.value?.filter { event ->
+                    event.contributions?.any { it.memberEmail == userEmail } == true
+                }
+                _paidActivities.value = paid
+            }
+
+            UNPAID -> {
+                //filter unpaid activities
+                val unpaid = groupEvents.value?.filter { event ->
+                    event.contributions.isNullOrEmpty() || event.contributions.none { it.memberEmail == userEmail }
+                }?.toMutableList()
+                //Remove freewill donations that are completed
+                _unpaidActivities.value = unpaid?.filter {event ->
+                    (!(event.eventType == EventType.FREE_WILL.name && event.eventStatus == "COMPLETED"))
+                }
+            }
+
+            else -> {}
+        }
+    }
+
+    suspend fun getActivityRate(membershipId: String?, joinedDateTime: String?, groupId: Int) {
+        val activityRate = groupRepository.getMemberActivityRate(
+            membershipId, joinedDateTime, groupId
+        ).data
+        _paymentRateLiveData.value = activityRate
+        _activityRateLiveData.value = activityRate?.let { calculateActivityRate(it) }
+    }
+
+    private fun calculateActivityRate(activityRate: RateData): Float {
+        return if (activityRate.eventsDue > 0) {
+            ((activityRate.eventsPaid / activityRate.eventsDue) * 100).toFloat()
+        } else {
+            0.0f
+        }
+    }
+
+    private suspend fun getMember(memberList: List<MembershipDto>?): MembershipDto? {
+        return memberList?.find { it.emailAddress == dataStoreManager.readUserData()?.emailAddress }
     }
 
     private suspend fun getEventFeeds() {
@@ -119,10 +185,9 @@ class ActivityViewModel @Inject constructor(
 
     suspend fun setSelectedEvent(eventFeed: Event) {
         _selectedEvent.value = eventFeed
-        if (eventFeed.contributions?.any { contributionDto ->
-            contributionDto.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true) {
-            _hasUserPaid.value = true
-        }
+        _hasUserPaid.value = eventFeed.contributions?.any { contributionDto ->
+            contributionDto.memberEmail == dataStoreManager.readUserData()?.emailAddress }
+
         viewModelScope.launch {
             getMembershipIdByGroupId(eventFeed.groupId!!)
             val paidMembers = mutableListOf<Member>()

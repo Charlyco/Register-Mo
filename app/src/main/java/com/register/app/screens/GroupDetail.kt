@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -29,8 +28,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -41,7 +38,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBar
@@ -86,11 +82,9 @@ import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.JoinChatPayload
-import com.register.app.enums.Designation
 import com.register.app.enums.FormStatus
 import com.register.app.model.Group
 import com.register.app.model.Member
-import com.register.app.model.MembershipDto
 import com.register.app.util.CircularIndicator
 import com.register.app.util.EventItem
 import com.register.app.util.ImageLoader
@@ -121,6 +115,10 @@ fun GroupDetail(
     val questionnaires = questionnaireViewModel.groupQuestionnaires.observeAsState().value
     var showQuestionnaireDialog by rememberSaveable { mutableStateOf(false) }
 
+    LaunchedEffect(group) {
+        activityViewModel.getActivitiesForGroup(group!!)
+    }
+
     LaunchedEffect(questionnaires) {
         if (questionnaires != null) {
             showQuestionnaireDialog = questionnaires.any { it.status ==  FormStatus.ACTIVE.name && !it.responders.contains(membershipId)}
@@ -147,7 +145,7 @@ fun GroupDetail(
     ) {
         GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
         if (showAllMembers) {
-            AllMembersList(group, groupViewModel, authViewModel, navController, isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
+            AllMembersList(group, groupViewModel, forumViewModel, navController, isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
         }
             if(showQuestionnaireDialog) {
                 QuestionnaireDialog(navController) { showQuestionnaireDialog = it}
@@ -186,7 +184,9 @@ fun QuestionnaireDialog(navController: NavController, onDismiss: (Boolean) -> Un
                             launchSingleTop = true
                         }
                     },
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                    modifier = Modifier
+                        .height(dimensionResource(id = R.dimen.button_height))
+                        .padding(top = 16.dp, bottom = 8.dp)
                     ) {
                     Text(text = stringResource(id = R.string.take_action))
                 }
@@ -406,10 +406,8 @@ fun GroupDetailScreen(
     group: Group?
 ) {
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
-    var showAdminList by rememberSaveable { mutableStateOf(false) }
-    var showActivities by rememberSaveable { mutableStateOf(true) }
+    var showActivities by rememberSaveable { mutableStateOf(false) }
     val loadingState = groupViewModel.loadingState.observeAsState().value
-    val verticalScrollState = rememberScrollState(initial = 0)
     val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
     val coroutineScope = rememberCoroutineScope()
     val refreshState = rememberPullRefreshState(
@@ -418,11 +416,6 @@ fun GroupDetailScreen(
     Surface(
         Modifier
             .fillMaxSize(),
-//            .verticalScroll(
-//                state = verticalScrollState,
-//                enabled = true,
-//                reverseScrolling = false
-//            ),
         color = MaterialTheme.colorScheme.background
     ) {
         if (loadingState == true) {
@@ -436,7 +429,7 @@ fun GroupDetailScreen(
         ) {
             item{ TopSection(group, groupViewModel) }
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
-            item{ ActivityRate(groupViewModel) }
+            item{ ActivityRate(activityViewModel) }
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
             item{ ActivitiesHeader(group, showActivities) { showActivities = it} }
             if (showActivities) {
@@ -448,11 +441,11 @@ fun GroupDetailScreen(
                 item{ GroupProfile(group, groupViewModel) }
             }
             item{ HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
-            item{ GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it} }
-
-            if (showAdminList) {
-                item{ GroupAdminList(group, groupViewModel, navController) }
-            }
+//            item{ GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it} }
+//
+//            if (showAdminList) {
+//                item{ GroupAdminList(group, groupViewModel, navController) }
+//            }
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
         }
     }
@@ -460,10 +453,8 @@ fun GroupDetailScreen(
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ActivityRate(groupViewModel: GroupViewModel) {
-    val context = LocalContext.current
-    val activityRate = groupViewModel.activityRateLiveData.observeAsState().value
-    val paymentRate = groupViewModel.paymentRateLiveData.observeAsState().value
+fun ActivityRate(activityViewModel: ActivityViewModel) {
+    val paymentRate = activityViewModel.paymentRateLiveData.observeAsState().value
     val percentPaid = (paymentRate?.eventsPaid?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
     val percentUnpaid = ((paymentRate?.eventsDue?.minus(paymentRate.eventsPaid))?.times(100))?.div(if (paymentRate.eventsDue == 0) 1 else paymentRate.eventsDue)?.toFloat()
     val chartData = PieChartData(
@@ -617,6 +608,8 @@ fun Activities(
     navController: NavController,
     group: Group) {
     var showPaid by rememberSaveable { mutableStateOf(true) }
+    val membershipId = groupViewModel.membershipId.observeAsState().value
+    val userEmail = group.memberList?.find { it.membershipId == membershipId }?.emailAddress
     Column(
         Modifier
             .fillMaxWidth()
@@ -624,7 +617,7 @@ fun Activities(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        ActivitySwitch { showPaid = it }
+        ActivitySwitch(activityViewModel, userEmail) { showPaid = it }
         if (showPaid) {
             PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
         }else {
@@ -641,7 +634,9 @@ fun PaidEvents(
     navController: NavController,
     group: Group?
 ) {
-    val eventList = groupViewModel.paidActivities.observeAsState().value
+    val eventList = activityViewModel.paidActivities.observeAsState().value
+    val membershipId = groupViewModel.membershipId.observeAsState().value
+    val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
     ConstraintLayout (
         Modifier
@@ -667,7 +662,7 @@ fun PaidEvents(
                 Modifier
                     .clickable {
                         coroutineScope.launch {
-                            groupViewModel.populateActivities(PAID)
+                            activityViewModel.populateActivities(PAID, userEmail)
                             activityViewModel.getBulkPayments(group?.groupId)
                         }
                         navController.navigate("events/Paid Activities")
@@ -716,7 +711,9 @@ fun UnpaidEvents(
     navController: NavController,
     group: Group?
 ) {
-    val eventList = groupViewModel.unpaidActivities.observeAsState().value
+    val eventList = activityViewModel.unpaidActivities.observeAsState().value
+    val membershipId = groupViewModel.membershipId.observeAsState().value
+    val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
     ConstraintLayout (
         Modifier
@@ -742,7 +739,7 @@ fun UnpaidEvents(
                 Modifier
                     .clickable {
                         coroutineScope.launch {
-                            groupViewModel.populateActivities(UNPAID)
+                            activityViewModel.populateActivities(UNPAID, userEmail)
                             activityViewModel.getBulkPayments(group?.groupId)
                         }
                         navController.navigate("events/Unpaid Activities")
@@ -1029,207 +1026,207 @@ fun GroupProfile(group: Group?, groupViewModel: GroupViewModel) {
     }
 }
 
-@Composable
-fun GroupAdminHeader(group: Group?, groupViewModel: GroupViewModel, showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
-    val coroutineScope = rememberCoroutineScope()
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-            .clickable {
-                coroutineScope.launch {
-                    group?.memberList?.let { groupViewModel.filterAdmins(it) }
-                }
-                shouldShow(!showAdminList)
-            },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(id = R.string.group_admin),
-            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-            fontWeight = FontWeight.SemiBold
-        )
-        if (showAdminList) {
-            Icon(
-                painter = painterResource(id = R.drawable.up_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable { shouldShow(false) }
-            )
-        }else {
-            Icon(
-                painter = painterResource(id = R.drawable.forward_arrow_solid),
-                contentDescription = "",
-                Modifier
-                    .size(16.dp)
-                    .clickable {
-                        coroutineScope.launch {
-                            group?.memberList?.let { groupViewModel.filterAdmins(it) }
-                        }
-                        shouldShow(true)
-                    }
-            )
-        }
-    }
-}
-
-@Composable
-fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
-    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
-    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
-    if (group?.memberList?.isNotEmpty() == true) {
-        val loadingState = groupViewModel.loadingState.observeAsState().value
-        val adminList: List<Member>? = groupViewModel.groupAdminList.observeAsState().value
-        Column(
-            Modifier
-                .fillMaxWidth()
-        ) {
-            if (loadingState == true) {
-                LinearProgressIndicator(
-                    Modifier
-                        .height(4.dp)
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    trackColor = MaterialTheme.colorScheme.secondary,
-                )
-            }
-            if (adminList?.isNotEmpty() == true) {
-                LazyRow(
-                    Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                        .height(204.dp),
-                    state = rememberLazyListState(),
-                    contentPadding = PaddingValues(vertical = 2.dp)
-                ) {
-                    items(adminList) { admin ->
-                        val membershipDto = group.memberList.find { membershipDto -> membershipDto.emailAddress == admin.emailAddress }
-                        if (membershipDto != null) {
-                            AdminItem(admin, membershipDto)
-                        }
-                    }
-                    if (isAdmin == true) {
-                        item{
-                            Surface(
-                                Modifier
-                                    .height(200.dp)
-                                    .width(itemWidth.dp)
-                                    .padding(horizontal = 8.dp)
-                                    .clickable {
-                                        navController.navigate("modify_admin") {
-                                            launchSingleTop = true
-                                        }
-                                    },
-                                shape = MaterialTheme.shapes.small,
-                                shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-                                color = MaterialTheme.colorScheme.background
-                            ) {
-                                ConstraintLayout(
-                                    Modifier.fillMaxSize()
-                                ) {
-                                    val (icon, text) = createRefs()
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "edit",
-                                        Modifier.constrainAs(icon) {
-                                            centerHorizontallyTo(parent)
-                                            centerVerticallyTo(parent)
-                                        })
-                                    Text(
-                                        text = stringResource(id = R.string.change_admin),
-                                        Modifier.constrainAs(text) {
-                                            top.linkTo(icon.bottom, margin = 8.dp)
-                                            centerHorizontallyTo(parent)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AdminItem(admin: Member, membershipDto: MembershipDto) {
-    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
-    val context = LocalContext.current
-    Surface(
-        Modifier
-            .width(itemWidth.dp)
-            .height(200.dp)
-            .padding(horizontal = 4.dp, vertical = 2.dp),
-        shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.background
-    ) {
-        ConstraintLayout(
-            Modifier.fillMaxWidth()
-        ) {
-            val (profilePic, name, office, phone, email) = createRefs()
-
-            Text(
-                text = membershipDto.memberOffice,
-                Modifier.constrainAs(office) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(parent.top, margin = 8.dp) },
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Surface(
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .constrainAs(profilePic) {
-                        centerHorizontallyTo(parent)
-                        top.linkTo(office.bottom, margin = 16.dp)
-                    },
-                ) {
-                ImageLoader(
-                    imageUrl = admin.imageUrl ?: "",
-                    context = context,
-                    height = 44,
-                    width = 44,
-                    placeHolder = R.drawable.placeholder
-                )
-            }
-
-            Text(
-                text = admin.fullName,
-                Modifier
-                    .padding(horizontal = 2.dp)
-                    .constrainAs(name) {
-                        centerHorizontallyTo(parent)
-                        top.linkTo(profilePic.bottom, margin = 8.dp)
-                    },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Text(
-                text = admin.phoneNumber,
-                Modifier.constrainAs(phone) {
-                    centerHorizontallyTo(parent)
-                    top.linkTo(name.bottom, margin = 8.dp) },
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    }
-}
+//@Composable
+//fun GroupAdminHeader(group: Group?, groupViewModel: GroupViewModel, showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
+//    val coroutineScope = rememberCoroutineScope()
+//    Row(
+//        Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 16.dp, vertical = 16.dp)
+//            .clickable {
+//                coroutineScope.launch {
+//                    group?.memberList?.let { groupViewModel.filterAdmins(it) }
+//                }
+//                shouldShow(!showAdminList)
+//            },
+//        horizontalArrangement = Arrangement.SpaceBetween,
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Text(
+//            text = stringResource(id = R.string.group_admin),
+//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+//            fontWeight = FontWeight.SemiBold
+//        )
+//        if (showAdminList) {
+//            Icon(
+//                painter = painterResource(id = R.drawable.up_arrow_solid),
+//                contentDescription = "",
+//                Modifier
+//                    .size(16.dp)
+//                    .clickable { shouldShow(false) }
+//            )
+//        }else {
+//            Icon(
+//                painter = painterResource(id = R.drawable.forward_arrow_solid),
+//                contentDescription = "",
+//                Modifier
+//                    .size(16.dp)
+//                    .clickable {
+//                        coroutineScope.launch {
+//                            group?.memberList?.let { groupViewModel.filterAdmins(it) }
+//                        }
+//                        shouldShow(true)
+//                    }
+//            )
+//        }
+//    }
+//}
+//
+//@Composable
+//fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
+//    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
+//    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
+//    if (group?.memberList?.isNotEmpty() == true) {
+//        val loadingState = groupViewModel.loadingState.observeAsState().value
+//        val adminList: List<Member>? = groupViewModel.groupAdminList.observeAsState().value
+//        Column(
+//            Modifier
+//                .fillMaxWidth()
+//        ) {
+//            if (loadingState == true) {
+//                LinearProgressIndicator(
+//                    Modifier
+//                        .height(4.dp)
+//                        .fillMaxWidth()
+//                        .padding(horizontal = 8.dp),
+//                    color = MaterialTheme.colorScheme.surface,
+//                    trackColor = MaterialTheme.colorScheme.secondary,
+//                )
+//            }
+//            if (adminList?.isNotEmpty() == true) {
+//                LazyRow(
+//                    Modifier
+//                        .padding(start = 8.dp, end = 8.dp)
+//                        .height(204.dp),
+//                    state = rememberLazyListState(),
+//                    contentPadding = PaddingValues(vertical = 2.dp)
+//                ) {
+//                    items(adminList) { admin ->
+//                        val membershipDto = group.memberList.find { membershipDto -> membershipDto.emailAddress == admin.emailAddress }
+//                        if (membershipDto != null) {
+//                            AdminItem(admin, membershipDto)
+//                        }
+//                    }
+//                    if (isAdmin == true) {
+//                        item{
+//                            Surface(
+//                                Modifier
+//                                    .height(200.dp)
+//                                    .width(itemWidth.dp)
+//                                    .padding(horizontal = 8.dp)
+//                                    .clickable {
+//                                        navController.navigate("modify_admin") {
+//                                            launchSingleTop = true
+//                                        }
+//                                    },
+//                                shape = MaterialTheme.shapes.small,
+//                                shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+//                                color = MaterialTheme.colorScheme.background
+//                            ) {
+//                                ConstraintLayout(
+//                                    Modifier.fillMaxSize()
+//                                ) {
+//                                    val (icon, text) = createRefs()
+//                                    Icon(
+//                                        imageVector = Icons.Default.Edit,
+//                                        contentDescription = "edit",
+//                                        Modifier.constrainAs(icon) {
+//                                            centerHorizontallyTo(parent)
+//                                            centerVerticallyTo(parent)
+//                                        })
+//                                    Text(
+//                                        text = stringResource(id = R.string.change_admin),
+//                                        Modifier.constrainAs(text) {
+//                                            top.linkTo(icon.bottom, margin = 8.dp)
+//                                            centerHorizontallyTo(parent)
+//                                        }
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//fun AdminItem(admin: Member, membershipDto: MembershipDto) {
+//    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
+//    val context = LocalContext.current
+//    Surface(
+//        Modifier
+//            .width(itemWidth.dp)
+//            .height(200.dp)
+//            .padding(horizontal = 4.dp, vertical = 2.dp),
+//        shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+//        shape = MaterialTheme.shapes.small,
+//        color = MaterialTheme.colorScheme.background
+//    ) {
+//        ConstraintLayout(
+//            Modifier.fillMaxWidth()
+//        ) {
+//            val (profilePic, name, office, phone, email) = createRefs()
+//
+//            Text(
+//                text = membershipDto.memberOffice,
+//                Modifier.constrainAs(office) {
+//                    centerHorizontallyTo(parent)
+//                    top.linkTo(parent.top, margin = 8.dp) },
+//                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+//                fontWeight = FontWeight.SemiBold,
+//                color = MaterialTheme.colorScheme.onBackground
+//            )
+//
+//            Surface(
+//                Modifier
+//                    .size(48.dp)
+//                    .clip(CircleShape)
+//                    .constrainAs(profilePic) {
+//                        centerHorizontallyTo(parent)
+//                        top.linkTo(office.bottom, margin = 16.dp)
+//                    },
+//                ) {
+//                ImageLoader(
+//                    imageUrl = admin.imageUrl ?: "",
+//                    context = context,
+//                    height = 44,
+//                    width = 44,
+//                    placeHolder = R.drawable.placeholder
+//                )
+//            }
+//
+//            Text(
+//                text = admin.fullName,
+//                Modifier
+//                    .padding(horizontal = 2.dp)
+//                    .constrainAs(name) {
+//                        centerHorizontallyTo(parent)
+//                        top.linkTo(profilePic.bottom, margin = 8.dp)
+//                    },
+//                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+//                color = MaterialTheme.colorScheme.onBackground
+//            )
+//
+//            Text(
+//                text = admin.phoneNumber,
+//                Modifier.constrainAs(phone) {
+//                    centerHorizontallyTo(parent)
+//                    top.linkTo(name.bottom, margin = 8.dp) },
+//                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+//                color = MaterialTheme.colorScheme.onBackground
+//            )
+//        }
+//    }
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllMembersList(
     group: Group?,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel,
+    forumViewModel: ForumViewModel,
     navController: NavController,
     isUserAdmin: Boolean?,
     function: (show: Boolean) -> Unit
@@ -1252,7 +1249,7 @@ fun AllMembersList(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center)
 
-        GroupMemberList(members, group, navController, groupViewModel, authViewModel){function(it)}
+        GroupMemberList(members, group, navController, groupViewModel, forumViewModel){function(it)}
     }
 }
 
@@ -1262,7 +1259,7 @@ fun GroupMemberList(
     group: Group?,
     navController: NavController,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel,
+    forumViewModel: ForumViewModel,
     function: (Boolean) -> Unit
 ) {
     var searchTag by rememberSaveable { mutableStateOf("") }
@@ -1310,7 +1307,7 @@ fun GroupMemberList(
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(members.filter { member -> member.fullName.contains(searchTag, ignoreCase = true) }) { member ->
-                        MemberItem(member, group, navController, groupViewModel, authViewModel){function(it)}
+                        MemberItem(member, group, navController, groupViewModel, forumViewModel){function(it)}
                 }
             }
         }
@@ -1323,7 +1320,7 @@ fun MemberItem(
     group: Group?,
     navController: NavController,
     groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel,
+    forumViewModel: ForumViewModel,
     displayCallback: (showState: Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -1355,15 +1352,20 @@ fun MemberItem(
         Column(
             Modifier.fillMaxWidth()
         ) {
-            Row(
+            ConstraintLayout(
                 Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
             ) {
+                val (profile, name, icon) = createRefs()
+
                 Surface(
-                    Modifier.padding(end = 16.dp),
+                    Modifier
+                        .constrainAs(profile) {
+                            start.linkTo(parent.start)
+                            centerVerticallyTo(parent)
+                        },
                     color = MaterialTheme.colorScheme.background,
                     border = BorderStroke(1.dp, Color.Gray),
-                    shape = MaterialTheme.shapes.small
+                    shape = MaterialTheme.shapes.large
                 ) {
                     ImageLoader(
                         imageUrl = member.imageUrl ?: "",
@@ -1377,27 +1379,56 @@ fun MemberItem(
                 Text(
                     text = member.fullName,
                     fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .constrainAs(name) {
+                            start.linkTo(profile.end, margin = 8.dp)
+                            centerVerticallyTo(parent)
+                        }
                 )
 
-                if (designation == Designation.ADMIN.name) {
+                //if (designation == Designation.ADMIN.name) {
                     Icon(
-                        painter = painterResource(id = R.drawable.icon_admin),
+                        painter = painterResource(id = R.drawable.message_circle_lines),
                         contentDescription = "",
-                        Modifier.padding(start = 8.dp),
+                        Modifier
+                            .size(24.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    val recipientId =
+                                        group?.memberList?.find { it.emailAddress == member.emailAddress }!!.membershipId
+                                    val senderId = groupViewModel.membershipId.value
+                                    forumViewModel.fetUserChats(recipientId, senderId!!)
+                                    forumViewModel.subScribeToDirectChat(member.emailAddress, group)
+                                }
+                                navController.navigate("admin_chat/${member.emailAddress}") {
+                                    launchSingleTop = true
+                                }
+                            }
+                            .constrainAs(icon) {
+                                end.linkTo(parent.end, margin = 8.dp)
+                                centerVerticallyTo(parent)
+                            },
                         tint = Color(context.getColor(R.color.purple_700))
                     )
-                }
+                //}
             }
-            HorizontalDivider(Modifier.padding(2.dp))
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
         }
     }
 }
 
 @Composable
-fun ActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
+fun ActivitySwitch(activityViewModel: ActivityViewModel, userEmail: String?, switchView: (showDetails: Boolean) -> Unit) {
     val screenWidth = LocalConfiguration.current.screenWidthDp / 2
     var showPaid by rememberSaveable { mutableStateOf(true)}
+
+    LaunchedEffect(showPaid) {
+        activityViewModel.populateActivities(PAID, userEmail)
+    }
+
     ConstraintLayout(
         Modifier.fillMaxSize()
     ) {
@@ -1410,6 +1441,7 @@ fun ActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
                 .padding(top = 4.dp)
                 .clickable {
                     showPaid = true
+                    activityViewModel.populateActivities(PAID, userEmail)
                     switchView(showPaid)
                 }
                 .constrainAs(paid) {
@@ -1426,6 +1458,7 @@ fun ActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
                 .padding(top = 4.dp)
                 .clickable {
                     showPaid = false
+                    activityViewModel.populateActivities(UNPAID, userEmail)
                     switchView(showPaid)
                 }
                 .constrainAs(unPaid) {

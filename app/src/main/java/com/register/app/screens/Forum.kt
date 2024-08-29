@@ -19,7 +19,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,13 +57,12 @@ import com.register.app.R
 import com.register.app.dto.GroupStateItem
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
-import com.register.app.model.Group
 import com.register.app.util.BottomNavBar
-import com.register.app.util.GroupStateSaver
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -358,13 +356,14 @@ fun RemoteMessageItem(item: MessageData) {
                         .fillMaxWidth()
                 )
                 Text(
-                    text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
+                    text = if (LocalDateTime.parse(item.sendTime).isBefore(LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0)))) {
+                        LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    } else {
+                        LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm"))
+                    },
                     fontSize = TextUnit(10.0f, TextUnitType.Sp),
                     color = Color.Gray,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 4.dp),
-                    textAlign = TextAlign.End
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
         }
@@ -396,7 +395,11 @@ fun MyMessageItem(item: MessageData) {
                 )
 
                 Text(
-                    text = LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm")),
+                    text = if (LocalDateTime.parse(item.sendTime).isBefore(LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0)))) {
+                        LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                    } else {
+                        LocalDateTime.parse(item.sendTime).format(DateTimeFormatter.ofPattern("HH:mm"))
+                    },
                     fontSize = TextUnit(10.0f, TextUnitType.Sp),
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 4.dp)
@@ -448,7 +451,7 @@ fun MessageBox(
             onClick = {
                 keyboardController?.hide()
                 coroutineScope.launch {
-                    forumViewModel?.sendMessage(membershipId, message, group)
+                    forumViewModel?.sendMessageToForum(membershipId, message, group)
                     message = ""
                 } },
             modifier = Modifier.constrainAs(btn) {

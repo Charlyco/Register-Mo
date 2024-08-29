@@ -143,7 +143,8 @@ fun HomeScreenContent(
     questionnaireViewModel: QuestionnaireViewModel,
     navController: NavController
 ) {
-    val loadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
+    val homeLoadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
+    val groupLoadingState = authViewModel.progressLiveData.observeAsState().value
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val isRefreshing by rememberSaveable { mutableStateOf(false)}
     val coroutineScope = rememberCoroutineScope()
@@ -165,7 +166,7 @@ fun HomeScreenContent(
             .fillMaxWidth()
 
     ) {
-        if (loadingState == true) {
+        if (homeLoadingState == true || groupLoadingState == true) {
             CircularIndicator()
         }
         LazyColumn(
@@ -396,6 +397,7 @@ fun DiscoverSection(
         }
     }
 }
+
 @Composable
 fun TopGroups(questionnaireViewModel: QuestionnaireViewModel, groupViewModel: GroupViewModel, navController: NavController) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
@@ -525,8 +527,8 @@ fun EventItemHome(
             val (eventImages, dotIndicator, eventTitle, groupName, levyAmount, icon) = createRefs()
             Surface(
                 modifier = Modifier
-                    .width(72.dp)
-                    .height(72.dp)
+                    .width(80.dp)
+                    .height(80.dp)
                     .constrainAs(eventImages) {
                         start.linkTo(parent.start)
                         centerVerticallyTo(parent)
@@ -542,8 +544,8 @@ fun EventItemHome(
                     eventFeed.imageUrlList?.get(pageState.currentPage)?.let { imageUrl  -> ImageLoader(
                         imageUrl,
                         context,
-                        72,
-                        72,
+                        80,
+                        80,
                         R.drawable.event
                     ) }
                 }

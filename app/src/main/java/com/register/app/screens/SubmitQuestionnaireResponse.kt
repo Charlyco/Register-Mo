@@ -224,9 +224,9 @@ fun QuestionnaireItemContextMenu(
                         .clickable {
                             coroutineScope.launch {
                                questionnaireViewModel.getUserResponses(questionnaire)
-                            }
-                            navController.navigate("user_responses/${questionnaire.title}") {
-                                launchSingleTop = true
+                                navController.navigate("user_responses/${questionnaire.title}") {
+                                    launchSingleTop = true
+                                }
                             }
                             onDismiss(false)
                         }

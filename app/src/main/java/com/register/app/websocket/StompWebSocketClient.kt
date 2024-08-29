@@ -1,5 +1,6 @@
 package com.register.app.websocket
 
+import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.SupportMessageDto
@@ -20,4 +21,6 @@ interface StompWebSocketClient {
     )
 
     suspend fun sendSupportMessage(message: String, onSend: (path: String, message: String) -> Unit)
+    suspend fun subscribeToDirectChat(directChatMessageData: DirectChatMessageData, callback: (message: DirectChatMessageData) -> Unit)
+    suspend fun sendDirectChat(directChatMessage: DirectChatMessageData, onSend: (path: String, message: String) -> Unit)
 }

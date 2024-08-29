@@ -2,6 +2,7 @@ package com.register.app.websocket
 
 import android.util.Log
 import com.google.gson.Gson
+import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.SupportMessageDto
@@ -17,6 +18,8 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
     private val compositeDisposable = CompositeDisposable()
 
     private var subscription: Disposable? = null
+    private var supportSubscription: Disposable? = null
+    private var directChatSubscription: Disposable? = null
 
     override suspend fun connect(jwtToken: String) {
         val headers: MutableList<StompHeader> = ArrayList()
@@ -34,7 +37,7 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         payload: JoinChatPayload,
         callback: (topicMessage: MessageData) -> Unit
     ) {
-        if (subscription !=null) {
+        if (subscription != null) {
             if (!subscription?.isDisposed!!) {
                 subscription?.dispose()
             }
@@ -53,12 +56,12 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         payload: SupportMessageDto,
         callback: (supportMessageDto: SupportMessageDto) -> Unit
     ) {
-        if (subscription !=null) {
-            if (!subscription?.isDisposed!!) {
-                subscription?.dispose()
+        if (supportSubscription != null) {
+            if (!supportSubscription?.isDisposed!!) {
+                supportSubscription?.dispose()
             }
         }
-        subscription = client.topic("/support/${payload.email}").subscribe({ message ->
+        supportSubscription = client.topic("/support/${payload.email}").subscribe({ message ->
             val chatMessage = Gson().fromJson(message.payload, SupportMessageDto::class.java)
             callback(chatMessage)
         }, { throwable ->
@@ -90,6 +93,38 @@ class StompWebSocketClientImpl(url: String) : StompWebSocketClient {
         val disposable = client.send(path, message).subscribe({
             Log.d("REGISTER_STOMP", "SENT")
             onSend(path, message)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+        })
+        compositeDisposable.add(disposable)
+    }
+
+    override suspend fun subscribeToDirectChat(
+        directChatMessageData: DirectChatMessageData,
+        callback: (message: DirectChatMessageData) -> Unit
+    ) {
+        if (directChatSubscription != null) {
+            if (!directChatSubscription?.isDisposed!!) {
+                directChatSubscription?.dispose()
+            }
+        }
+        directChatSubscription = client.topic("/direct/${directChatMessageData.senderId}").subscribe({ message ->
+            val chatMessage = Gson().fromJson(message.payload, DirectChatMessageData::class.java)
+            callback(chatMessage)
+        }, { throwable ->
+            Log.d("STOMPERROR", throwable.message ?: "Unknown error")
+            client.send("/app/direct/initiate", Gson().toJson(directChatMessageData))
+        })
+    }
+
+    override suspend fun sendDirectChat(
+        directChatMessage: DirectChatMessageData,
+        onSend: (path: String, message: String) -> Unit
+    ) {
+        val path = "/app/direct/send"
+        val disposable = client.send(path, Gson().toJson(directChatMessage)).subscribe({
+            Log.d("REGISTER_STOMP", "SENT")
+            onSend(path, Gson().toJson(directChatMessage))
         }, { throwable ->
             Log.d("STOMPERROR", throwable.message ?: "Unknown error")
         })

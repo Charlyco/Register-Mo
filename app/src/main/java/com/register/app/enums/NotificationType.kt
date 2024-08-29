@@ -7,5 +7,6 @@ enum class NotificationType {
     EVENT,
     FORM,
     ELECTION,
-    GENERAL
+    GENERAL,
+    DIRECT_CHAT
 }

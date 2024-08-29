@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.register.app.screens.AddRemoveMember
+import com.register.app.screens.AdminChat
 import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
@@ -44,6 +45,7 @@ import com.register.app.screens.SubmitQuestionnaireResponse
 import com.register.app.screens.SuggestedGroups
 import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
+import com.register.app.util.ADMIN_CHAT
 import com.register.app.util.DataStoreManager
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
@@ -243,7 +245,17 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
             AllUserActivities(
                 activityViewModel = activityViewModel,
                 groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
                 navController = navController
+            )
+        }
+        composable(ADMIN_CHAT) { backStackEntry ->
+            AdminChat(
+                forumViewModel = forumViewModel,
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
+                navController = navController,
+                remoteUserEmail = backStackEntry.arguments?.getString("remoteUserEmail")
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import co.yml.charts.common.model.PlotType
@@ -64,6 +66,7 @@ import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.enums.Designation
 import com.register.app.enums.MemberStatus
 import com.register.app.model.Event
 import com.register.app.model.Group
@@ -72,6 +75,7 @@ import com.register.app.model.MembershipDto
 import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
+import com.register.app.util.MemberActivitySwitch
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
 import com.register.app.viewmodel.ActivityViewModel
@@ -105,6 +109,7 @@ fun MemberDetailsUi(
 ) {
     val context = LocalContext.current
     val isLoading = groupViewModel.loadingState.observeAsState().value
+    val screenHeight = LocalConfiguration.current.screenHeightDp
 
     Surface(
         Modifier
@@ -114,6 +119,7 @@ fun MemberDetailsUi(
     ) {
         ConstraintLayout(
             Modifier
+                .fillMaxHeight()
                 .fillMaxWidth()
         ) {
             val (navBtn, pic, info, progress ) = createRefs()
@@ -131,10 +137,11 @@ fun MemberDetailsUi(
                     })
             Surface(
                 Modifier
-                    .fillMaxSize()
+                    .height((screenHeight - 192).dp)
                     .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                     .constrainAs(info) {
-                        top.linkTo(pic.bottom, margin = (-40).dp)
+                        //top.linkTo(pic.bottom, margin = (-40).dp)
+                        bottom.linkTo(parent.bottom)
                         centerHorizontallyTo(parent)
                     },
                 color = MaterialTheme.colorScheme.background
@@ -147,7 +154,7 @@ fun MemberDetailsUi(
                     .size(160.dp)
                     .clip(CircleShape)
                     .constrainAs(pic) {
-                        top.linkTo(parent.top, margin = 32.dp)
+                        bottom.linkTo(info.top, margin = (-40).dp)
                         centerHorizontallyTo(parent)
                     }
             ) {
@@ -203,11 +210,12 @@ fun MemberInfo(
             fontWeight = FontWeight.SemiBold)
 
         Text(
-            text = "Phone: ${memberDetail?.phoneNumber!!}" ,
+            text = memberDetail?.phoneNumber!! ,
             modifier = Modifier
                 .padding(start = 16.dp)
                 .constrainAs(phone) {
                     top.linkTo(name.bottom, margin = 4.dp)
+                    centerHorizontallyTo(parent)
                 },
             fontSize = TextUnit(14.0f, TextUnitType.Sp))
 
@@ -217,6 +225,7 @@ fun MemberInfo(
                 .padding(start = 16.dp)
                 .constrainAs(id) {
                     top.linkTo(phone.bottom, margin = 4.dp)
+                    centerHorizontallyTo(parent)
                 },
             fontSize = TextUnit(14.0f, TextUnitType.Sp))
 
@@ -275,6 +284,7 @@ fun AdminMemberActions(
     val coroutineScope = rememberCoroutineScope()
     val isUnblockEnabled = (member?.memberStatus == MemberStatus.SUSPENDED.name)
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    var showChangeRoleDialog by rememberSaveable { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxWidth(),
@@ -369,7 +379,7 @@ fun AdminMemberActions(
                         if (isUnblockEnabled) {
                             Toast.makeText(context, "This member is currently not eligible", Toast.LENGTH_LONG).show()
                         } else{
-                            //
+                            showChangeRoleDialog = true
                         }
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -447,6 +457,95 @@ fun AdminMemberActions(
             border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         ) {
             Text(text = stringResource(id = R.string.payment_record))
+        }
+    }
+
+    if (showChangeRoleDialog) {
+        ChangeRoleDialog(groupViewModel, navController, member, memberDetail) { showChangeRoleDialog = it }
+    }
+}
+
+@Composable
+fun ChangeRoleDialog(
+    groupViewModel: GroupViewModel,
+    navController: NavController,
+    membership: MembershipDto?,
+    member: Member,
+    onDismiss: (Boolean) -> Unit
+) {
+    val isAdmin = membership?.designation == Designation.ADMIN.name
+    var isChecked by rememberSaveable { mutableStateOf(false) }
+    var newOffice by rememberSaveable { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val officeList = listOf("Select Office",
+        "PRESIDENT",
+        "SECRETARY",
+        "TREASURER",
+        "FINANCIAL_SECRETARY",
+        "ADMIN",
+        "LEADER",
+        "ORGANIZER",
+        "CHIEF")
+
+    Dialog(
+        onDismissRequest = { onDismiss(false) },
+        ) {
+        Surface(
+            Modifier.fillMaxWidth()
+                .height(180.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(id = R.string.change_role),
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                if (isAdmin) {
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = {isChecked = !isChecked})
+                    if (isChecked) {
+                        Text(
+                            text = "Are you sure you want to remove ${member.fullName} as Admin?",
+                            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        )
+                    }
+                }else {
+                    SelectOffice(officeList = officeList) { newOffice = it }
+                }
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            if (isChecked) {
+                                val response = groupViewModel.removeAdmin(membership, "MEMBER")
+                                Toast.makeText(context, "Action ${response.message}", Toast.LENGTH_LONG).show()
+                                if (response.status) {
+                                    navController.navigateUp()
+                                }
+                            }else {
+                                val response = groupViewModel.makeAdmin(membership, newOffice)
+                                Toast.makeText(context, "Action ${response.message}", Toast.LENGTH_LONG).show()
+                                if (response.status) {
+                                    navController.navigateUp()
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp, vertical = 16.dp),
+                    shape = MaterialTheme.shapes.medium
+                    ) {
+                    Text(text = stringResource(id = R.string.submit))
+                }
+            }
         }
     }
 }
@@ -667,7 +766,7 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
         showSliceLabels = true,
         labelFontSize = TextUnit(20.0f, TextUnitType.Sp),
         labelColor = MaterialTheme.colorScheme.onBackground,
-        strokeWidth = 24f,
+        strokeWidth = 32f,
         activeSliceAlpha = .9f,
         labelVisible = true,
         isAnimationEnable = true,
@@ -694,7 +793,7 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
 
         DonutPieChart(
             modifier = Modifier
-                .size(140.dp)
+                .size(120.dp)
                 .constrainAs(chart) {
                     start.linkTo(parent.start, margin = 16.dp)
                     top.linkTo(title.bottom, margin = 16.dp)
@@ -755,75 +854,5 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
             fontSize = TextUnit(14.0f, TextUnitType.Sp)
         )
 
-    }
-}
-
-@Composable
-fun MemberActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp / 2
-    var showPaid by rememberSaveable { mutableStateOf(true)}
-    ConstraintLayout(
-        Modifier.fillMaxWidth()
-    ) {
-        val (paid, unPaid, paidLiner, unPaidLiner) = createRefs()
-        Text(
-            text = stringResource(id = R.string.paid_activities),
-            Modifier
-                .width((screenWidth - 24).dp)
-                .padding(top = 4.dp)
-                .clickable {
-                    showPaid = true
-                    switchView(showPaid)
-                }
-                .constrainAs(paid) {
-                    start.linkTo(parent.start)
-                },
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = stringResource(id = R.string.unpaid_activities),
-            Modifier
-                .width((screenWidth - 24).dp)
-                .padding(top = 4.dp)
-                .clickable {
-                    showPaid = false
-                    switchView(showPaid)
-                }
-                .constrainAs(unPaid) {
-                    end.linkTo(parent.end)
-                },
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.SemiBold
-        )
-        if (showPaid) {
-            Surface(
-                Modifier
-                    .width((screenWidth - 24).dp)
-                    .height(4.dp)
-                    .padding(vertical = 1.dp)
-                    .constrainAs(paidLiner) {
-                        start.linkTo(parent.start, margin = 1.dp)
-                        top.linkTo(paid.bottom, margin = 8.dp)
-                    },
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primary
-            ) {}
-        }
-
-        if (!showPaid) {
-            Surface(
-                Modifier
-                    .width((screenWidth - 24).dp)
-                    .height(4.dp)
-                    .padding(vertical = 1.dp)
-                    .constrainAs(unPaidLiner) {
-                        end.linkTo(parent.end, margin = 1.dp)
-                        top.linkTo(unPaid.bottom, margin = 8.dp)
-                    },
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primary
-            ) {}
-        }
     }
 }

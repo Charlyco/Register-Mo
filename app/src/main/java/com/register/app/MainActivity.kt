@@ -5,18 +5,23 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
+import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.MessageData
+import com.register.app.dto.notifications.DirectNotification
 import com.register.app.dto.notifications.ElectionNotification
 import com.register.app.enums.NotificationType
 import com.register.app.model.NotificationModel
 import com.register.app.ui.theme.RegisterTheme
+import com.register.app.util.ADMIN_CHAT
 import com.register.app.util.DataStoreManager
 import com.register.app.util.NOTIFICATION_CONTENT
 import com.register.app.util.NOTIFICATION_REQUEST_CODE
@@ -53,14 +58,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        lifecycleScope.launch {
-        if (dataStoreManager.readUserData() != null) {
-                authViewModel.getUserDetails()
-            }
-        }
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        lifecycleScope.launch {
+//        if (dataStoreManager.readUserData() != null) {
+//                authViewModel.getUserDetails()
+//            }
+//        }
+//    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -80,6 +85,23 @@ class MainActivity : ComponentActivity() {
                             homeViewModel.setHomeDestination("forum")
                             groupViewModel.reloadGroup(data.groupId)
                             forumViewModel.loadGroupChats(data.groupId)
+                        }
+                    }
+                }
+
+                NotificationType.DIRECT_CHAT.name -> {
+                    val content = intent.getStringExtra(NOTIFICATION_CONTENT)
+                    if (content != null) {
+                        val data = Gson().fromJson(content, DirectChatMessageData::class.java)
+                        lifecycleScope.launch {
+                            val group = groupViewModel.reloadGroup(data.groupId)
+                            val remoteUser = group?.memberList?.find { it.membershipId == data.senderId }
+                            if (remoteUser != null) {
+                                homeViewModel.setHomeDestination("admin_chat/${remoteUser.emailAddress}")
+                                forumViewModel.setRemoteUser(remoteUser)
+                                forumViewModel.fetUserChats(data.recipientId!!, data.senderId!!)
+                                forumViewModel.subScribeToDirectChat(remoteUser.emailAddress, group)
+                            }
                         }
                     }
                 }
@@ -110,6 +132,17 @@ class MainActivity : ComponentActivity() {
                             groupViewModel.reloadGroup(election.groupId)
                             homeViewModel.addNotification(notification)
                         }
+                    }
+                }
+
+                NotificationType.ADMIN.name -> {
+                    val type = intent.getStringExtra(NOTIFICATION_TYPE)
+                    val title = intent.getStringExtra(NOTIFICATION_TITLE)
+                    val content = intent.getStringExtra(NOTIFICATION_CONTENT)
+                    val notification = NotificationModel(null, title, content, type)
+                    lifecycleScope.launch {
+                        homeViewModel.setHomeDestination("notifications")
+                        homeViewModel.addNotification(notification)
                     }
                 }
             }

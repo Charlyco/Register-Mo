@@ -11,7 +11,10 @@ import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.register.app.dto.ChatMessage
 import com.register.app.dto.ChatMessageResponse
+import com.register.app.dto.DirectChatMessageData
+import com.register.app.dto.DirectChatMessages
 import com.register.app.dto.MessageData
+import com.register.app.dto.notifications.DirectNotification
 import com.register.app.dto.notifications.ElectionNotification
 import com.register.app.enums.NotificationType
 import com.register.app.model.NotificationModel
@@ -71,9 +74,13 @@ class NotificationService : FirebaseMessagingService() {
         notificationManager: NotificationManager
     ) {
         var chatMessage: MessageData? = null
+        var directChat: DirectChatMessageData? = null
         var election: ElectionNotification? = null
         if (data?.type == NotificationType.CHAT.name) {
             chatMessage = Gson().fromJson(data.content, MessageData::class.java)
+        }
+        if (data?.type == NotificationType.DIRECT_CHAT.name) {
+            directChat = Gson().fromJson(data.content, DirectChatMessageData::class.java)
         }
 
         if (data?.type == NotificationType.ELECTION.name) {
@@ -103,6 +110,28 @@ class NotificationService : FirebaseMessagingService() {
             putExtra(NOTIFICATION_TITLE, data?.title)
             putExtra(NOTIFICATION_CONTENT, data?.content)
         }
+
+        val adminIntent = Intent(this, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            putExtra(NOTIFICATION, "admin")
+            putExtra(NOTIFICATION_TYPE, data?.type)
+            putExtra(NOTIFICATION_TITLE, data?.title)
+            putExtra(NOTIFICATION_CONTENT, data?.content)
+        }
+
+        val directChatIntent = Intent(this, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            putExtra(NOTIFICATION, "admin")
+            putExtra(NOTIFICATION_TYPE, data?.type)
+            putExtra(NOTIFICATION_TITLE, data?.title)
+            putExtra(NOTIFICATION_CONTENT, data?.content)
+        }
+
+        val directChatPendingIntent = PendingIntent.getActivity(this, GENERAL_NOTIFICATION_REQUEST_CODE, directChatIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val adminPendingIntent = PendingIntent.getActivity(this, GENERAL_NOTIFICATION_REQUEST_CODE, adminIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val chatPendingIntent = PendingIntent.getActivity(this, FORUM_NOTIFICATION_REQUEST_CODE, chatIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -134,6 +163,22 @@ class NotificationService : FirebaseMessagingService() {
                 }
             }
 
+            NotificationType.DIRECT_CHAT.name -> {
+                val channelId = getString(R.string.register_notification_channel_id)
+                val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+                val directChatNotification = NotificationCompat.Builder(this, channelId)
+                    .setSmallIcon(R.drawable.register_logo)
+                    .setContentTitle(data.title)
+                    .setContentText(directChat?.message?: data.content)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(directChatPendingIntent)
+                    .setSound(defaultSoundUri)
+                    .setAutoCancel(true)
+
+                notificationManager.notify(getUniqueNotificationId(), directChatNotification.build())
+            }
+
             NotificationType.GENERAL.name -> {
                 val channelId = getString(R.string.register_notification_channel_id)
                 val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -162,6 +207,21 @@ class NotificationService : FirebaseMessagingService() {
                     .setAutoCancel(true)
 
                 notificationManager.notify(getUniqueNotificationId(), generalNotification.build())
+            }
+
+            NotificationType.ADMIN.name -> {
+                val channelId = getString(R.string.register_notification_channel_id)
+                val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                val adminNotification = NotificationCompat.Builder(this, channelId)
+                    .setSmallIcon(R.drawable.register_logo)
+                    .setContentTitle(data.title)
+                    .setContentText(data.content)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(adminPendingIntent)
+                    .setSound(defaultSoundUri)
+                    .setAutoCancel(true)
+
+                notificationManager.notify(getUniqueNotificationId(), adminNotification.build())
             }
 
             else -> {}

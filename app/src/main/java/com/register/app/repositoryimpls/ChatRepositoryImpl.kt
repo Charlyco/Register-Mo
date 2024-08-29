@@ -3,13 +3,15 @@ package com.register.app.repositoryimpls
 import android.util.Log
 import com.google.gson.Gson
 import com.register.app.api.ChatService
+import com.register.app.dto.DirectChatMessageData
+import com.register.app.dto.DirectChatMessages
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
 import com.register.app.dto.SupportMessageDto
-import com.register.app.dto.UserChatMessages
+import com.register.app.dto.ForumMessages
 import com.register.app.repository.ChatRepository
 import com.register.app.websocket.StompWebSocketClient
 import retrofit2.Call
@@ -131,7 +133,7 @@ class ChatRepositoryImpl @Inject constructor(
         callback: (SupportMessageDto) -> Unit?
     ) {
         val jsonString = Gson().toJson(message)
-        stompWebSocketClient.sendMessage("/app/customer/sendMessage", jsonString) { topic1, message1 ->
+        stompWebSocketClient.sendSupportMessage(jsonString) { topic1, message1 ->
             val response = Gson().fromJson(message1, SupportMessageDto::class.java)
             Log.d("MESSAGE", response.toString())
             callback(
@@ -150,13 +152,13 @@ class ChatRepositoryImpl @Inject constructor(
         stompWebSocketClient.close()
     }
 
-    override suspend fun fetchUserChats(groupId: Int): UserChatMessages? {
+    override suspend fun fetchUserChats(recipientId: String, senderId: String): DirectChatMessages? {
         return suspendCoroutine { continuation ->
-            val call = chatService.getUserChatMessages(groupId)
-            call.enqueue(object : Callback<UserChatMessages> {
+            val call = chatService.getUserChatMessages(recipientId, senderId)
+            call.enqueue(object : Callback<DirectChatMessages?> {
                 override fun onResponse(
-                    call: Call<UserChatMessages>,
-                    response: Response<UserChatMessages>
+                    call: Call<DirectChatMessages?>,
+                    response: Response<DirectChatMessages?>
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
@@ -171,10 +173,75 @@ class ChatRepositoryImpl @Inject constructor(
                     }
                 }
 
-                override fun onFailure(call: Call<UserChatMessages>, t: Throwable) {
+                override fun onFailure(call: Call<DirectChatMessages?>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
             })
         }
     }
+
+    override suspend fun getForumMessages(groupId: Int): ForumMessages? {
+        return suspendCoroutine { continuation ->
+            val call = chatService.getForumMessages(groupId)
+            call.enqueue(object : Callback<ForumMessages?> {
+                override fun onResponse(
+                    call: Call<ForumMessages?>,
+                    response: Response<ForumMessages?>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume( null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<ForumMessages?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun subScribeToDirectChat(
+        directChatMessageData: DirectChatMessageData,
+        callback: (DirectChatMessageData) -> Unit
+    ) {
+        stompWebSocketClient.subscribeToDirectChat(directChatMessageData) { chatMessage ->
+            callback(chatMessage)
+        }
+    }
+
+    override suspend fun sendDirectMessage(
+        chatMessageData: DirectChatMessageData,
+        callback: (DirectChatMessageData) -> Unit
+    ) {
+        val jsonString = Gson().toJson(chatMessageData)
+        stompWebSocketClient.sendDirectChat(chatMessageData) { topic1, message1 ->
+            val response = Gson().fromJson(message1, DirectChatMessageData::class.java)
+            Log.d("MESSAGE", response.toString())
+            callback(
+                DirectChatMessageData(
+                    response.id,
+                    response.message,
+                    response.senderName,
+                    response.senderId,
+                    response.recipientId,
+                    response.recipientEmail,
+                    response.imageUrl,
+                    response.sendTime,
+                    response.groupName,
+                    response.groupId,
+                    null
+                )
+            )
+        }
+    }
+
+
 }

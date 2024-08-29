@@ -2,6 +2,7 @@ package com.register.app.api
 
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
+import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
 import com.register.app.dto.CreateEventModel
@@ -15,12 +16,14 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.UpdateAdminDto
 import com.register.app.dto.VoteDto
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -80,4 +83,8 @@ interface GroupService {
     fun startElection(@Path("electionId") electionId: Int?): Call<GenericResponse>
     @PUT("election-service/api/v1/{electionId}/end")
     fun endElection(@Path("electionId") electionId: Int?): Call<GenericResponse>
+    @POST("group-service/api/v1/group/admin/new")
+    fun makeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
+    @DELETE("group-service/api/v1/group/admin/remove")
+    fun removeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
 }

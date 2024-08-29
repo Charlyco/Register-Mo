@@ -108,7 +108,7 @@
     <string name="all_members">All members</string>
     <string name="suspend_user">Suspend</string>
     <string name="expel_member">Expel</string>
-    <string name="change_role">Change role</string>
+    <string name="change_role">Change Office</string>
     <string name="recall_member">Recall</string>
     <string name="username">Username</string>
     <string name="creator_office">Your post/office</string>
@@ -127,7 +127,7 @@
     <string name="delete_activity_description">Are you sure you want to delete this activity?</string>
     <string name="archive_activity_description">Are you sure you want to move this activity to archive?</string>
     <string name="payment_record">Activity records</string>
-    <string name="no_paid_activities">This member has not paid for any activities yet</string>
+    <string name="no_paid_activities">No activities have been paid for</string>
     <string name="no_outstanding_activities">This member has no outstanding activities to pay for.</string>
     <string name="search_members">Enter a member\'s name to search</string>
     <string name="event_type_mandatory">Mandatory contribution</string>

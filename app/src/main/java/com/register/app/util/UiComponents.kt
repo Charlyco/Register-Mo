@@ -417,6 +417,7 @@ fun GroupItem(
         Row(
             Modifier
                 .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
             ) {
             //val (logo, name, description, memberCount, memberIcons) = createRefs()
@@ -434,7 +435,7 @@ fun GroupItem(
 
             Column(
                 Modifier
-                    .width((width - 96).dp),
+                    .width((width - 120).dp),
 //                    .constrainAs(name) {
 //                        top.linkTo(parent.top, margin = 12.dp)
 //                        start.linkTo(logo.end, margin = 4.dp)
@@ -462,6 +463,7 @@ fun GroupItem(
             }
 
             Column(
+                Modifier.padding(end = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -497,6 +499,76 @@ fun GroupItem(
                 }
             }
 
+        }
+    }
+}
+
+@Composable
+fun MemberActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp / 2
+    var showPaid by rememberSaveable { mutableStateOf(true)}
+    ConstraintLayout(
+        Modifier.fillMaxWidth()
+    ) {
+        val (paid, unPaid, paidLiner, unPaidLiner) = createRefs()
+        Text(
+            text = stringResource(id = R.string.paid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = true
+                    switchView(showPaid)
+                }
+                .constrainAs(paid) {
+                    start.linkTo(parent.start)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = stringResource(id = R.string.unpaid_activities),
+            Modifier
+                .width((screenWidth - 24).dp)
+                .padding(top = 4.dp)
+                .clickable {
+                    showPaid = false
+                    switchView(showPaid)
+                }
+                .constrainAs(unPaid) {
+                    end.linkTo(parent.end)
+                },
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(paidLiner) {
+                        start.linkTo(parent.start, margin = 1.dp)
+                        top.linkTo(paid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
+        }
+
+        if (!showPaid) {
+            Surface(
+                Modifier
+                    .width((screenWidth - 24).dp)
+                    .height(4.dp)
+                    .padding(vertical = 1.dp)
+                    .constrainAs(unPaidLiner) {
+                        end.linkTo(parent.end, margin = 1.dp)
+                        top.linkTo(unPaid.bottom, margin = 8.dp)
+                    },
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary
+            ) {}
         }
     }
 }

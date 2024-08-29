@@ -1,14 +1,12 @@
 package com.register.app.repositoryimpls
 
-import android.graphics.Paint.Join
-import androidx.compose.foundation.Image
 import com.register.app.api.ActivityService
 import com.register.app.api.GroupService
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
+import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
-import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
@@ -19,6 +17,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.UpdateAdminDto
 import com.register.app.dto.VoteDto
 import com.register.app.model.Event
 import com.register.app.model.Group
@@ -672,6 +671,89 @@ class GroupRepositoryImpl @Inject constructor(
                 override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
+            })
+        }
+    }
+
+    override suspend fun makeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.makeAdmin(updateAdminDto)
+            call.enqueue(object : Callback<AdminUpdateResponse> {
+                override fun onResponse(
+                    call: Call<AdminUpdateResponse>,
+                    response: Response<AdminUpdateResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    AdminUpdateResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                AdminUpdateResponse(
+                                    "Please check Internet connection and try again",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<AdminUpdateResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun removeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.removeAdmin(updateAdminDto)
+            call.enqueue(object : Callback<AdminUpdateResponse> {
+                override fun onResponse(
+                    call: Call<AdminUpdateResponse>,
+                    response: Response<AdminUpdateResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    AdminUpdateResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                AdminUpdateResponse(
+                                    "Please check Internet connection and try again",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<AdminUpdateResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
             })
         }
     }

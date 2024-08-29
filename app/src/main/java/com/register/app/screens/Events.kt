@@ -246,7 +246,7 @@ fun EventScreenDetail(
     activityViewModel: ActivityViewModel,
     isUnpaid: Boolean
 ) {
-    val feedList = groupViewModel.groupEvents.observeAsState().value
+    val feedList = activityViewModel.groupEvents.observeAsState().value
     var selectedEvents = mutableListOf<Event>()
 
     Surface(

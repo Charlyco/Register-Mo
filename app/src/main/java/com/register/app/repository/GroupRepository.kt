@@ -2,6 +2,7 @@ package com.register.app.repository
 
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
+import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
@@ -14,6 +15,7 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.JoinGroupDto
 import com.register.app.dto.MembershipDtoWrapper
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.UpdateAdminDto
 import com.register.app.dto.VoteDto
 import com.register.app.model.Event
 import com.register.app.model.Group
@@ -44,4 +46,6 @@ interface GroupRepository {
     suspend fun checkIfUserHasVoted(user: String?, electionId: Int?): GenericResponse
     suspend fun startElection(electionId: Int?): GenericResponse
     suspend fun endElection(electionId: Int?): GenericResponse
+    suspend fun makeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
+    suspend fun removeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
 }

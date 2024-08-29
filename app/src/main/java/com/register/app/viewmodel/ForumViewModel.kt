@@ -1,12 +1,10 @@
 package com.register.app.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.register.app.dto.ChatMessageResponse
-import com.register.app.dto.GroupStateItem
+import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
@@ -14,6 +12,7 @@ import com.register.app.dto.SupportMessageDto
 import com.register.app.enums.MessageType
 import com.register.app.model.Group
 import com.register.app.model.Member
+import com.register.app.model.MembershipDto
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,12 +25,14 @@ class ForumViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _remoteUser: MutableLiveData<MembershipDto> = MutableLiveData()
+    val remoteUser: LiveData<MembershipDto> = _remoteUser
     private val _supportMessages: MutableLiveData<List<SupportMessageDto>?> = MutableLiveData()
     val supportMessages: LiveData<List<SupportMessageDto>?> = _supportMessages
     private val _chatMessages: MutableLiveData<List<MessageData>?> = MutableLiveData()
     val chatMessages: LiveData<List<MessageData>?> = _chatMessages
-    private val _remoteChatMessages: MutableLiveData<ChatMessageResponse?> = MutableLiveData()
-    val remoteChatMessages: MutableLiveData<ChatMessageResponse?> = _remoteChatMessages
+    private val _directChatMessages: MutableLiveData<List<DirectChatMessageData>?> = MutableLiveData()
+    val directChatMessages: MutableLiveData<List<DirectChatMessageData>?> = _directChatMessages
     private val _selectedGroup: MutableLiveData<Group?> = MutableLiveData()
     val selectedGroup: LiveData<Group?> = _selectedGroup
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
@@ -57,30 +58,85 @@ class ForumViewModel @Inject constructor(
         }
     }
 
+suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
+        val currentUser = dataStoreManager.readUserData()
+        val recipientId = group.memberList?.find { it.emailAddress == recipientEmail }?.membershipId
+        val senderId = group.memberList?.find { it.emailAddress == currentUser?.emailAddress }?.membershipId
+        val chatMessage = DirectChatMessageData(
+            null,
+            null,
+            currentUser?.fullName!!,
+            senderId!!,
+            recipientId!!,
+            recipientEmail,
+            currentUser.imageUrl,
+            LocalDateTime.now().toString(),
+            group.groupName,
+            group.groupId,
+            dataStoreManager.readTokenData()
+        )
+        chatRepository.subScribeToDirectChat(chatMessage) {
+            val messageList = _directChatMessages.value
+            val newMessageList = mutableListOf<DirectChatMessageData>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            newMessageList.add(it)
+            _directChatMessages.postValue(newMessageList)
+        }
+    }
 
-    suspend fun fetUserChats() {
+    suspend fun sendDirectMessage(recipientEmail: String, group: Group, message: String) {
+        val currentUser = dataStoreManager.readUserData()
+        val recipientId = group.memberList?.find { it.emailAddress == recipientEmail }?.membershipId
+        val senderId = group.memberList?.find { it.emailAddress == currentUser?.emailAddress }?.membershipId
+        val chatMessage = DirectChatMessageData(
+            null,
+            message,
+            currentUser?.fullName!!,
+            senderId!!,
+            recipientId!!,
+            recipientEmail,
+            currentUser.imageUrl,
+            LocalDateTime.now().toString(),
+            group.groupName,
+            group.groupId,
+            dataStoreManager.readTokenData()
+        )
+        chatRepository.sendDirectMessage(chatMessage) {
+            val messageList = _directChatMessages.value
+            val newMessageList = mutableListOf<DirectChatMessageData>()
+            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            newMessageList.add(it)
+            _directChatMessages.postValue(newMessageList)
+        }
+    }
+
+    suspend fun fetUserChats(recipientId: String, senderId: String) {
         _isLoadingLiveData.value = true
-        val userChats = chatRepository.fetchUserChats(selectedGroup.value?.groupId!!)
+        _directChatMessages.postValue(mutableListOf())
+        val userChats = chatRepository.fetchUserChats(recipientId, senderId)
         _isLoadingLiveData.value = false
         if (userChats?.data?.isNotEmpty() == true) {
             val data = userChats.data
-            val messageList = _chatMessages.value
-            val newMessageList = mutableListOf<MessageData>()
-            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
+            val newMessageList = mutableListOf<DirectChatMessageData>()
+           // newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
             data.forEach {
                 newMessageList.add(
-                    MessageData(
-                        it.groupId,
-                        it.groupName,
+                    DirectChatMessageData(
+                        it.id,
                         it.message,
-                        it.membershipId,
                         it.senderName,
+                        it.senderId,
+                        it.recipientId,
+                        it.recipientEmail,
                         it.imageUrl,
-                        it.sendTime
+                        it.sendTime,
+                        it.groupName,
+                        it.groupId,
+                        null
                     )
                 )
             }
-            _chatMessages.value = newMessageList
+            _directChatMessages.postValue(newMessageList)
         }
     }
 
@@ -129,7 +185,7 @@ class ForumViewModel @Inject constructor(
         }
     }
 
-    suspend fun sendMessage(membershipId: String, message: String, group: Group?) {
+    suspend fun sendMessageToForum(membershipId: String, message: String, group: Group?) {
         val groupId = selectedGroup.value?.groupId?: group?.groupId  //if the user has not selected a group, use the default group
         val groupName = selectedGroup.value?.groupName?: group?.groupName
         val chatMessage = MessagePayload(
@@ -148,7 +204,8 @@ class ForumViewModel @Inject constructor(
 
     suspend fun loadGroupChats(groupId: Int?) {
         _isLoadingLiveData.value = true
-        val groupChats = groupId.let { chatRepository.fetchUserChats(it!!) }
+        _chatMessages.value = mutableListOf()
+        val groupChats = groupId.let { chatRepository.getForumMessages(it!!) }
         _isLoadingLiveData.value = false
         if (groupChats?.data?.isNotEmpty() == true) {
             val data = groupChats.data
@@ -188,5 +245,9 @@ class ForumViewModel @Inject constructor(
             newMessageList.add(it)
             _supportMessages.value = newMessageList
         }
+    }
+
+    fun setRemoteUser(remoteUser: MembershipDto) {
+        _remoteUser.value = remoteUser
     }
 }

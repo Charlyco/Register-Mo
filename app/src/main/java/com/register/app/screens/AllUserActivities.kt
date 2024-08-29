@@ -1,10 +1,12 @@
 package com.register.app.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,25 +29,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.BottomNavBar
+import com.register.app.util.MemberActivitySwitch
 import com.register.app.viewmodel.ActivityViewModel
+import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 
 @Composable
 fun AllUserActivities(
     activityViewModel: ActivityViewModel,
     groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
     navController: NavController
 ) {
     Scaffold(
         bottomBar = { BottomNavBar(navController) }
     ) {
-       AllActivitiesContent(Modifier.padding(it),activityViewModel, groupViewModel, navController)
+       AllActivitiesContent(Modifier.padding(it),activityViewModel, groupViewModel, authViewModel, navController)
 
     }
 }
@@ -55,9 +64,14 @@ fun AllActivitiesContent(
     modifier: Modifier,
     activityViewModel: ActivityViewModel,
     groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
     navController: NavController
 ) {
     val activityList = activityViewModel.eventFeeds.observeAsState().value
+    val userEmail = authViewModel.userLideData.observeAsState().value?.emailAddress
+    val paidActivityList = activityList?.filter{ activity -> activity.contributions?.find { it.memberEmail == userEmail } != null}
+    val unPaidActivityList = activityList?.filter{ activity -> activity.contributions?.find { it.memberEmail == userEmail } == null}
+    var showPaid by rememberSaveable { mutableStateOf(true) }
     var searchTag by rememberSaveable { mutableStateOf("") }
 
     Surface(
@@ -72,6 +86,8 @@ fun AllActivitiesContent(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            MemberActivitySwitch { showPaid = it }
+
             Surface(
                 Modifier
                     .padding(horizontal = 16.dp)
@@ -103,13 +119,78 @@ fun AllActivitiesContent(
                 )
             }
 
-            LazyColumn(
-                state = rememberLazyListState(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (activityList != null) {
-                    items(activityList.filter { activity -> activity.eventTitle.contains(searchTag, ignoreCase = true) }) {
+            if (showPaid) {
+                if (paidActivityList != null) {
+                LazyColumn(
+                    state = rememberLazyListState(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(paidActivityList.filter { activity -> activity.eventTitle.contains(searchTag, ignoreCase = true) }) {
+
                         EventItemHome(navController, groupViewModel, activityViewModel, it)
+                    }
+                } }else{
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            Modifier
+                                .padding(top = 16.dp)
+                                .size(64.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.icon_activity),
+                                contentDescription = "",
+                                colorFilter = ColorFilter.tint(Color.White),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                        Text(
+                            text = stringResource(id = R.string.no_paid_activities),
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }else {
+                if (unPaidActivityList != null) {
+                LazyColumn(
+                    state = rememberLazyListState(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(unPaidActivityList.filter { activity -> activity.eventTitle.contains(searchTag, ignoreCase = true) }) {
+                        EventItemHome(navController, groupViewModel, activityViewModel, it)
+                        }
+                    }
+                }else{
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            Modifier
+                                .padding(top = 16.dp)
+                                .size(64.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.icon_activity),
+                                contentDescription = "",
+                                colorFilter = ColorFilter.tint(Color.White),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                        Text(
+                            text = stringResource(id = R.string.no_unpaid_activities),
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

@@ -81,7 +81,16 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
     var groupType by rememberSaveable { mutableStateOf("CLOSED") }
     var isClosedChecked by rememberSaveable { mutableStateOf(true) }
     var isOpenChecked by rememberSaveable { mutableStateOf(false) }
-    val officeList = listOf("Select Office", "PRESIDENT", "SECRETARY", "TREASURER", "FINANCIAL_SECRETARY, ADMIN, LEADER, ORGANIZER, CHIEF, LEADER")
+    val officeList = listOf("Select Office",
+        "PRESIDENT",
+        "SECRETARY",
+        "TREASURER",
+        "FINANCIAL_SECRETARY",
+        "ADMIN",
+        "LEADER",
+        "ORGANIZER",
+        "CHIEF",
+        "LEADER")
     var memberOffice by rememberSaveable { mutableStateOf("") }
     val scrollState = rememberScrollState(initial = 0)
     val logoUrl = groupViewModel.groupLogoLivedata.observeAsState().value

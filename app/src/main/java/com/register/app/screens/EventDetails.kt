@@ -88,6 +88,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import com.register.app.dto.Payment
 import com.register.app.enums.AdminActions
+import com.register.app.enums.EventType
 import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
 import com.register.app.util.Utils
@@ -480,14 +481,43 @@ fun ConfirmPaymentDialog(
             }
             Column(
                 Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
             ) {
-                ImageLoader(
-                    selectedPayment?.imageUrl ?: "",
-                    LocalContext.current,
-                    screenHeight - 180,
-                    screenWidth - 16,
-                    R.drawable.event
+                if (!selectedPayment?.imageUrl.isNullOrEmpty()) {
+                    ImageLoader(
+                        selectedPayment?.imageUrl ?: "",
+                        LocalContext.current,
+                        screenHeight - 180,
+                        screenWidth - 16,
+                        R.drawable.event
+                    )
+                }
+                Text(
+                    text = selectedPayment?.groupName!!,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "Title of activity: ${selectedPayment.eventTitle}",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    modifier = Modifier.padding(start = 8.dp)
+                    )
+
+                Text(
+                    text = "Payer: ${selectedPayment.payerFullName}",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+
+                Text(
+                    text = "Payment Method: ${selectedPayment.modeOfPayment}",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    modifier = Modifier.padding(start = 8.dp)
                 )
 
                 Surface(
@@ -1062,49 +1092,45 @@ fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewMode
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
-                    Modifier.clickable {
-                        descriptionText = R.string.confirm_event_completion
-                        action = AdminActions.COMPLETE.name
-                        showCompleteDialog = true
-                    },
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.completed_activity),
-                        contentDescription = "",
-                        Modifier.size(32.dp),
-                        tint = Color.Green)
-                    Text(text = stringResource(id = R.string.mark_completed),
-                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onBackground)
+                if (event?.eventType == EventType.FREE_WILL.name) {
+                    Column(
+                        Modifier.clickable {
+                            descriptionText = R.string.confirm_event_completion
+                            action = AdminActions.COMPLETE.name
+                            showCompleteDialog = true
+                        },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.completed_activity),
+                            contentDescription = "",
+                            Modifier.size(32.dp),
+                            tint = Color.Green)
+                        Text(text = stringResource(id = R.string.mark_completed),
+                            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                            color = MaterialTheme.colorScheme.onBackground)
+                    }
                 }
-                Column(
-                    Modifier.clickable {
-                        descriptionText = R.string.archive_activity_description
-                        action = AdminActions.ARCHIVE.name
-                        showCompleteDialog = true
-                    },
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.archive_down_minimlistic),
-                        contentDescription = "",
-                        Modifier.size(32.dp),
-                        tint = Color.Magenta)
-                    Text(text = stringResource(id = R.string.archive),
-                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onBackground)
+                if (event?.eventType == EventType.MANDATORY.name) {
+                    Column(
+                        Modifier.clickable {
+                            descriptionText = R.string.archive_activity_description
+                            action = AdminActions.ARCHIVE.name
+                            showCompleteDialog = true
+                        },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.archive_down_minimlistic),
+                            contentDescription = "",
+                            Modifier.size(32.dp),
+                            tint = Color.Magenta)
+                        Text(text = stringResource(id = R.string.archive),
+                            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                            color = MaterialTheme.colorScheme.onBackground)
+                    }
                 }
-            }
 
-            Row(
-                Modifier
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
                 Column(
                     Modifier.clickable {
                         descriptionText = R.string.delete_activity_description
@@ -1276,7 +1302,7 @@ fun AdminActionDialog(
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = stringResource(id = R.string.cancel))
+                    Text(text = stringResource(id = R.string.confirm))
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "cancel",
@@ -1357,6 +1383,7 @@ fun CommentBox(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
         )
         IconButton(onClick = { coroutineScope.launch {
             activityViewModel.postComment(commentText, event?.eventId) }
+            commentText = ""
             }
         ) {
             Icon(
@@ -1529,6 +1556,8 @@ fun CommentItem(
                                 commentReply,
                                 comment.commentId!!
                             )
+                            commentReply = ""
+
 //                            if (newReplyItem != null) {
 //                                val newCommentReplyList =
 //                                    commentReplyList.toMutableList() // creates a mutable list of the reply list defined above
