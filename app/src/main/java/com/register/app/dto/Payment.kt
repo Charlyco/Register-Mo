@@ -9,5 +9,6 @@ data class Payment(
     val eventId: Int,
     val modeOfPayment: String,
     val groupName: String,
-    val groupId: Int
+    val groupId: Int,
+    val amountPaid: Double?
 )

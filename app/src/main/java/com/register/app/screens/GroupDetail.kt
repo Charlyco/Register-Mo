@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -87,6 +88,7 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.CircularIndicator
 import com.register.app.util.EventItem
+import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.UNPAID
@@ -213,7 +215,7 @@ fun GroupDetailTopBar(
     TopAppBar(
         title = { Text(
             text = group?.groupName!!,
-            Modifier.padding(start = 32.dp),
+            Modifier.padding(start = 8.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
             ) },
@@ -239,7 +241,7 @@ fun GroupDetailTopBar(
                 imageVector = Icons.AutoMirrored.Filled.Message,
                 contentDescription = "",
                 modifier = Modifier
-                    .padding(end = 16.dp)
+                    .padding(end = 8.dp)
                     .clickable {
                         coroutineScope.launch {
                             navController.navigate("forum") {
@@ -255,6 +257,21 @@ fun GroupDetailTopBar(
                         }
                     }
                 )
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = "",
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .clickable {
+                        coroutineScope.launch {
+                            navController.navigate(GROUP_NOTIFICATIONS) {
+                                launchSingleTop = true
+                            }
+                            groupViewModel.getGroupNotifications(group?.groupId)
+                        }
+                    },
+                tint = MaterialTheme.colorScheme.secondary
+            )
 
             if (isAdmin == true) {
                 Box(
@@ -271,7 +288,7 @@ fun GroupDetailTopBar(
                         painter = painterResource(id = R.drawable.invite_members),
                         contentDescription = "",
                         modifier = Modifier
-                            .padding(end = 14.dp)
+                            .padding(end = 8.dp)
                             .size(32.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -382,8 +399,6 @@ fun GroupDetailTopBar(
                                     popUpTo("group_detail") {inclusive = true}
                                 }
                                 authViewModel.reloadUserData()
-                                homeViewModel.refreshHomeContents()
-                                activityViewModel.refreshHomeContents()
                                 groupViewModel.getAllGroupsForUser()
                             }
                         }

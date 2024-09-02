@@ -1,17 +1,12 @@
 package com.register.app.screens
 
-import android.content.ContentResolver
-import android.database.Cursor
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,9 +27,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -45,7 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -54,16 +50,11 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
-import com.register.app.util.GetCustomFiles
-import com.register.app.util.ImageLoader
-import com.register.app.util.Utils
 import com.register.app.util.Utils.copyTextToClipboard
 import com.register.app.util.Utils.getFileNameFromUri
 import com.register.app.viewmodel.ActivityViewModel
@@ -81,6 +72,7 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var modeOfPayment by rememberSaveable { mutableStateOf("") }
+    var amountPaid by rememberSaveable { mutableStateOf("") }
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -204,7 +196,30 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                 }
             }
 
-            if (modeOfPayment != PaymentMethod.CASH.name) {
+            if (modeOfPayment == PaymentMethod.CASH.name) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+                ) {
+                    TextField(
+                        value = amountPaid,
+                        onValueChange = { amountPaid = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(dimensionResource(id = R.dimen.text_field_height)),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        placeholder = { Text(text = stringResource(id = R.string.amount_paid)) }
+                    )
+                }
+            }else {
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -234,11 +249,17 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val response = activityViewModel.submitEvidenceOfPayment(group?.groupName!!, group.groupId, membershipId!!, modeOfPayment)
-                        if (response.status) {
-                            Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                        if (modeOfPayment != PaymentMethod.CASH.name && fileName == null) {
+                            Toast.makeText(context, "Please select a payment method", Toast.LENGTH_SHORT).show()
+                        }else if(modeOfPayment == PaymentMethod.CASH.name && amountPaid.isEmpty()) {
+                            Toast.makeText(context, "Please enter amount paid", Toast.LENGTH_SHORT).show()
                         }else {
-                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            val response = activityViewModel.submitEvidenceOfPayment(group?.groupName!!, group.groupId, membershipId!!, modeOfPayment, amountPaid)
+                            if (response.status) {
+                                Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                            }else {
+                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 },

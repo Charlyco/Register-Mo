@@ -7,5 +7,6 @@ data class MessagePayload(
     val imageUrl: String,
     val groupName: String,
     val groupId: Int,
-    val sendTime: String
+    val sendTime: String,
+    val originalMessageId: Long
 )

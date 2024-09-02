@@ -71,7 +71,7 @@ fun AllActivitiesContent(
     val userEmail = authViewModel.userLideData.observeAsState().value?.emailAddress
     val paidActivityList = activityList?.filter{ activity -> activity.contributions?.find { it.memberEmail == userEmail } != null}
     val unPaidActivityList = activityList?.filter{ activity -> activity.contributions?.find { it.memberEmail == userEmail } == null}
-    var showPaid by rememberSaveable { mutableStateOf(true) }
+    var showPaid by rememberSaveable { mutableStateOf(false) }
     var searchTag by rememberSaveable { mutableStateOf("") }
 
     Surface(

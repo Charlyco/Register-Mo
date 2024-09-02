@@ -67,7 +67,7 @@ fun NotificationList(
             state = rememberLazyListState()
         ) {
             items(notificationList) { notification ->
-                NotificationItem(notification, activityViewModel, groupViewModel, authViewModel, navController)
+                NotificationItem(notification)
             }
         }
     }
@@ -75,11 +75,7 @@ fun NotificationList(
 
 @Composable
 fun NotificationItem(
-    notification: NotificationModel,
-    activityViewModel: ActivityViewModel,
-    groupViewModel: GroupViewModel,
-    authViewModel: AuthViewModel,
-    navController: NavController
+    notification: NotificationModel
 ) {
     val context = LocalContext.current
     Surface(

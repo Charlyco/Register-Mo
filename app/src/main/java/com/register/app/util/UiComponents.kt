@@ -484,11 +484,6 @@ fun GroupItem(
                 }
 
                 Surface(
-//                    Modifier
-//                        .constrainAs(memberCount) {
-//                            top.linkTo(memberIcons.bottom, margin = 4.dp)
-//                            centerHorizontallyTo(memberIcons)
-//                        },
                     color = MaterialTheme.colorScheme.tertiary,
                     shape = MaterialTheme.shapes.medium
                 ) {
@@ -506,7 +501,7 @@ fun GroupItem(
 @Composable
 fun MemberActivitySwitch(switchView: (showDetails: Boolean) -> Unit) {
     val screenWidth = LocalConfiguration.current.screenWidthDp / 2
-    var showPaid by rememberSaveable { mutableStateOf(true)}
+    var showPaid by rememberSaveable { mutableStateOf(false)}
     ConstraintLayout(
         Modifier.fillMaxWidth()
     ) {

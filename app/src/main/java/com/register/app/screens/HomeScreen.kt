@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -102,7 +103,7 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = { HomeTopBar(authViewModel) },
+        topBar = { HomeTopBar(authViewModel, homeViewModel, navController) },
         bottomBar = { BottomNavBar(navController) },
     ) {
             HomeScreenContent(
@@ -618,10 +619,13 @@ fun EventItemHome(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    homeViewModel: HomeViewModel,
+    navController: NavController
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val userData = authViewModel.userLideData.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
     Surface {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -637,6 +641,23 @@ fun HomeTopBar(
                 modifier = Modifier.width((screenWidth - 40).dp),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface),
+                actions = {
+                    Icon(imageVector = Icons.Default.Notifications,
+                        contentDescription = stringResource(
+                        id = R.string.notifications),
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .clickable {
+                                navController.navigate("notifications") {
+                                    launchSingleTop = true
+                                    coroutineScope.launch {
+                                        homeViewModel.populateNotifications()
+                                    }
+                                }
+                            }
+                        )
+                }
             )
         }
     }

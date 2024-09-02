@@ -1,5 +1,6 @@
 package com.register.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -41,6 +42,8 @@ class ForumViewModel @Inject constructor(
     val isLoadingLiveData: LiveData<Boolean?> = _isLoadingLiveData
     private val _currentUser: MutableLiveData<String?> = MutableLiveData()
     val currentUser: LiveData<String?> = _currentUser
+    private val _messageToReply: MutableLiveData<MessageData?> = MutableLiveData()
+    val messageToReply: LiveData<MessageData?> = _messageToReply
 
     init {
         viewModelScope.launch {
@@ -148,13 +151,15 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
             newMessageList.add(
                 MessageData(
+                    it.id,
                     it.groupId,
                     it.groupName,
                     it.message,
                     it.membershipId,
                     it.senderName,
                     it.imageUrl,
-                    it.sendTime
+                    it.sendTime,
+                    it.originalMessageId
                 )
             )
             _chatMessages.postValue(newMessageList)
@@ -167,13 +172,15 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
         newMessageList.add(
             MessageData(
+                it.id,
                 it.groupId,
                 it.groupName,
                 it.message,
                 it.membershipId,
                 it.senderName,
                 it.imageUrl,
-                it.sendTime
+                it.sendTime,
+                it.originalMessageId
             )
         )
         _chatMessages.postValue(newMessageList)
@@ -185,7 +192,12 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         }
     }
 
-    suspend fun sendMessageToForum(membershipId: String, message: String, group: Group?) {
+    suspend fun sendMessageToForum(
+        membershipId: String,
+        message: String,
+        group: Group?,
+        messageToReply: MessageData?
+    ) {
         val groupId = selectedGroup.value?.groupId?: group?.groupId  //if the user has not selected a group, use the default group
         val groupName = selectedGroup.value?.groupName?: group?.groupName
         val chatMessage = MessagePayload(
@@ -195,7 +207,8 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             dataStoreManager.readUserData()?.imageUrl?: "",
             groupName!!,
             groupId!!,
-            LocalDateTime.now().toString())
+            LocalDateTime.now().toString(),
+            messageToReply?.id!!)
         chatRepository.sendMessage(groupId, chatMessage) {
             //Log.d("SEND_MESSAGE", it.toString())
             //transformToChatMessage(it)
@@ -249,5 +262,10 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
 
     fun setRemoteUser(remoteUser: MembershipDto) {
         _remoteUser.value = remoteUser
+    }
+
+    fun captureMessageToReply(messageData: MessageData?) {
+        _messageToReply.value = messageData
+        Log.d("REPLY: ", messageToReply.value.toString())
     }
 }

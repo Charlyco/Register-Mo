@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,7 +59,10 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import co.yml.charts.common.extensions.isNotNull
 import com.register.app.R
+import com.register.app.dto.GroupDetailWrapper
+import com.register.app.enums.GroupType
 import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
@@ -116,6 +120,8 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
             }
         }
     )
+    var response by remember { mutableStateOf<GroupDetailWrapper?>(null) }
+    var showErrorText by rememberSaveable { mutableStateOf(false) }
 
     if (showBottomSheet == true) {
         ModalBottomSheet(
@@ -132,7 +138,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                    .verticalScroll(scrollState)
            ) {
                val (closeBtn, title, divider, name, nameBox, description, descriptionBox,
-                   office, officeSelector, logo, uploadBtn, type, createBtn, indicator) = createRefs()
+                   office, officeSelector, logo, uploadBtn, type, createBtn, indicator, error) = createRefs()
 
                Surface(
                    Modifier
@@ -195,7 +201,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                        .constrainAs(nameBox) {
                            top.linkTo(name.bottom, margin = 4.dp)
                        },
-                   shape = MaterialTheme.shapes.small,
+                   shape = MaterialTheme.shapes.medium,
                    color = MaterialTheme.colorScheme.background,
                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
                ) {
@@ -229,7 +235,7 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                        .constrainAs(descriptionBox) {
                            top.linkTo(description.bottom, margin = 4.dp)
                        },
-                   shape = MaterialTheme.shapes.small,
+                   shape = MaterialTheme.shapes.medium,
                    color = MaterialTheme.colorScheme.background,
                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
                ) {
@@ -259,13 +265,13 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                    modifier = Modifier
                        .width(screenWidth.dp)
                        .height(50.dp)
-                       .padding(end = 8.dp)
+                       .padding(horizontal = 8.dp)
                        .constrainAs(officeSelector) {
                            top.linkTo(office.bottom, margin = 8.dp)
-                           start.linkTo(parent.start, margin = 8.dp)
+                           centerHorizontallyTo(parent)
                        },
                    color = MaterialTheme.colorScheme.background,
-                   shape = MaterialTheme.shapes.large,
+                   shape = MaterialTheme.shapes.medium,
                    border = BorderStroke(1.dp, Color.Gray)
                ) {
                    SelectOffice(officeList) {
@@ -329,58 +335,51 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                        )
                    }
                }
-               Surface(
+               Box(
                    Modifier
-                       .size(120.dp)
                        .constrainAs(logo) {
                            centerHorizontallyTo(parent)
                            top.linkTo(type.bottom, margin = 16.dp)
-                       },
-                   shape = MaterialTheme.shapes.small,
-                   color = MaterialTheme.colorScheme.background,
-                   border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
+                       } ,
+                   contentAlignment = Alignment.BottomEnd
+               ) {
+                   Surface(
+                       Modifier
+                           .size(120.dp)
+                       ,
+                       shape = MaterialTheme.shapes.small,
+                       color = MaterialTheme.colorScheme.background,
+                       border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
                    ) {
-                   ImageLoader(
-                       imageUrl = logoUrl?: "",
-                       context = context,
-                       height = 120,
-                       width = 120,
-                       placeHolder = R.drawable.placeholder
-                   )
-               }
-
-               Button(
-                   onClick = {
-                       filePicker.launch("image/*")
-                   },
-                   Modifier
-                       .fillMaxWidth()
-                       .padding(horizontal = 64.dp)
-                       .height(50.dp)
-                       .constrainAs(uploadBtn) {
-                           top.linkTo(logo.bottom, margin = 8.dp)
-                           centerHorizontallyTo(parent)
-                       },
-                   colors = ButtonDefaults.buttonColors(
-                       containerColor = MaterialTheme.colorScheme.secondary,
-                       contentColor = MaterialTheme.colorScheme.onBackground
-                   )
-                   ) {
-                   Text(text = stringResource(id = R.string.upload))
+                       ImageLoader(
+                           imageUrl = logoUrl?: "",
+                           context = context,
+                           height = 120,
+                           width = 120,
+                           placeHolder = R.drawable.placeholder
+                       )
+                   }
+                   Icon(
+                       imageVector = Icons.Default.CameraAlt,
+                       contentDescription = "",
+                       modifier = Modifier
+                           .size(32.dp)
+                           .clickable {
+                               filePicker.launch("image/*")
+                           })
                }
 
                Button(
                    onClick = {
                        coroutineScope.launch {
-                           val response = groupViewModel.createNewGroup(groupName, groupDescription, memberOffice, groupType)
-                           if (response != null && response.groupName == groupName) {
-                               Toast.makeText(context, "Group Created Successfully", Toast.LENGTH_SHORT).show()
-                               groupViewModel.showCreateGroupSheet.postValue(false)
-                               groupViewModel.setSelectedGroupDetail(response)
-                               groupViewModel.isUserAdmin(response) //grants the user admin rights
+                           response = groupViewModel.createNewGroup(groupName, groupDescription, memberOffice, groupType)
+                           if (response.isNotNull() &&  response?.status == true) {
+                               Toast.makeText(context, response?.message, Toast.LENGTH_SHORT).show()
                                navController.navigate("group_detail")
-                           } else {
-                               Toast.makeText(context, AN_ERROR_OCCURRED, Toast.LENGTH_SHORT).show()
+                           } else if (response.isNotNull() && response?.status == false && response?.data != null) {
+                               showErrorText = true
+                           }else {
+                               Toast.makeText(context, response?.message, Toast.LENGTH_SHORT).show()
                            }
                        }
                    },
@@ -389,16 +388,56 @@ fun CreateGroupScreen(groupViewModel: GroupViewModel, navController: NavControll
                        .padding(start = 32.dp, end = 32.dp)
                        .height(50.dp)
                        .constrainAs(createBtn) {
-                           top.linkTo(uploadBtn.bottom, margin = 16.dp)
+                           top.linkTo(logo.bottom, margin = 16.dp)
                            bottom.linkTo(parent.bottom, margin = 48.dp)
                            centerHorizontallyTo(parent)
                        },
                    colors = ButtonDefaults.buttonColors(
-                       containerColor = MaterialTheme.colorScheme.primary,
-                       contentColor = MaterialTheme.colorScheme.onBackground
+                       containerColor = MaterialTheme.colorScheme.primary
                    ),
                ) {
                    Text(text = stringResource(id = R.string.create_group_btn))
+               }
+
+               if (showErrorText) {
+                   Row(
+                       modifier = Modifier
+                           .constrainAs(error) {
+                               top.linkTo(createBtn.bottom, margin = 4.dp)
+                               start.linkTo(parent.start)
+                           },
+                       verticalAlignment = Alignment.CenterVertically
+                   ) {
+                       Text(
+                           text = response?.message!!,
+                           modifier = Modifier
+                               .padding(start = 8.dp),
+                           color = MaterialTheme.colorScheme.secondary
+                       )
+
+                       Text(
+                           text = if (response?.data?.groupType == GroupType.OPEN.name) {
+                               stringResource(id = R.string.join_group)
+                           }else{
+                               stringResource(id = R.string.request_to_join)
+                           },
+                           modifier = Modifier
+                               .padding(start = 8.dp, end = 8.dp)
+                               .clickable {
+                                   coroutineScope.launch {
+                                       val joinGroupResponse =
+                                           groupViewModel.requestToJoinGroup(response?.data!!)
+                                       if (joinGroupResponse.status) {
+                                           groupViewModel.reloadGroup(response?.data!!.groupId)
+                                           navController.navigate("group_detail") {
+                                               launchSingleTop = true
+                                           }
+                                       }
+                                   }
+                               },
+                           color = Color.Green
+                       )
+                   }
                }
 
                if (loadingState == true) {

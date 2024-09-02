@@ -2,6 +2,7 @@ package com.register.app.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -249,6 +253,7 @@ fun ForumScreen(
     val conversations = forumViewModel?.chatMessages?.observeAsState()?.value
     val membershipId = groupViewModel.membershipId.value
     val userFullName = forumViewModel?.currentUser?.observeAsState()?.value
+    val coroutineScope = rememberCoroutineScope()
 
     // Create and remember the LazyListState
     val listState = rememberLazyListState()
@@ -283,15 +288,18 @@ fun ForumScreen(
                 ) {
                     items(conversations) { item ->
                         if (item.senderName == userFullName) {
-                            MyMessageItem(item)
+                            MyMessageItem(forumViewModel, item, conversations){
+                                coroutineScope.launch { listState.scrollToItem(it) }
+                            }
                         } else {
-                            RemoteMessageItem(item)
+                            RemoteMessageItem(forumViewModel, item, conversations){
+                                coroutineScope.launch { listState.scrollToItem(it) }
+                            }
                         }
                     }
                 }
             }
         }
-
         Surface(
             color = MaterialTheme.colorScheme.background,
             modifier = Modifier
@@ -307,7 +315,16 @@ fun ForumScreen(
 
 
 @Composable
-fun RemoteMessageItem(item: MessageData) {
+fun RemoteMessageItem(
+    forumViewModel: ForumViewModel?,
+    item: MessageData,
+    conversations: List<MessageData>,
+    scrollToItem: (Int) -> Unit
+    ) {
+    var originalMessage by remember {  mutableStateOf<MessageData?>(null)}
+    if (item.originalMessageId != null) {
+        originalMessage = conversations.find { it.id == item.originalMessageId }
+    }
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -337,8 +354,23 @@ fun RemoteMessageItem(item: MessageData) {
             shape = MaterialTheme.shapes.small
         ) {
             Column(
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier
+                    .clickable {
+                        if (originalMessage != null) {
+                            scrollToItem(conversations.indexOf(originalMessage!!))
+                        }
+                    }
             ) {
+                if (item.originalMessageId != null) {
+                    Text(
+                        text = originalMessage?.message!!,
+                        color = MaterialTheme.colorScheme.onTertiary,
+                        fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onTertiary)
+                }
                 Text(
                     text = item.senderName!!,
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
@@ -365,13 +397,34 @@ fun RemoteMessageItem(item: MessageData) {
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 4.dp)
                 )
+                Text(
+                    text = stringResource(id = R.string.reply),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            forumViewModel?.captureMessageToReply(item)
+                        }
+                        .padding(end = 4.dp),
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    textAlign = TextAlign.End
+                )
             }
         }
     }
 }
 
 @Composable
-fun MyMessageItem(item: MessageData) {
+fun MyMessageItem(
+    forumViewModel: ForumViewModel?,
+    item: MessageData,
+    conversations: List<MessageData>,
+    scrollToItem: (Int) -> Unit
+    ) {
+    var originalMessage by remember {  mutableStateOf<MessageData?>(null)}
+    if (item.originalMessageId != null) {
+        originalMessage = conversations.find { it.id == item.originalMessageId }
+    }
     Row(
         modifier = Modifier
             .padding(top = 2.dp, bottom = 2.dp, start = 42.dp)
@@ -386,7 +439,25 @@ fun MyMessageItem(item: MessageData) {
             tonalElevation = 2.dp,
             shape = MaterialTheme.shapes.small
         ) {
-            Column {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.clickable {
+                    if (originalMessage != null) {
+                        scrollToItem(conversations.indexOf(originalMessage!!))
+                    }
+                }
+            ) {
+                if (item.originalMessageId != null) {
+                    Text(
+                        text = originalMessage?.message!!,
+                        color = Color.Gray,
+                        fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onTertiary)
+                }
                 Text(
                     text = item.message!!,
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
@@ -403,6 +474,19 @@ fun MyMessageItem(item: MessageData) {
                     fontSize = TextUnit(10.0f, TextUnitType.Sp),
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 4.dp)
+                )
+
+                Text(
+                    text = stringResource(id = R.string.reply),
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .fillMaxWidth()
+                        .clickable {
+                            forumViewModel?.captureMessageToReply(item)
+                        },
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    textAlign = TextAlign.Start
                 )
             }
         }
@@ -422,43 +506,70 @@ fun MessageBox(
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val group = groupViewModel.groupDetailLiveData.value
+    val messageToReply = forumViewModel?.messageToReply?.observeAsState()?.value
 
-    ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
-        val (box, btn) = createRefs()
-        Surface(
-            modifier = Modifier
-                .width(screenWidth.dp)
-                .constrainAs(box) {
-                    start.linkTo(parent.start, margin = 4.dp)
-                },
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.background,
-            border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
-        ) {
-            TextField(
-                value = message,
-                onValueChange = { message =it},
-                placeholder = { Text(text = stringResource(id = R.string.message)) },
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (messageToReply != null) {
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.onTertiary)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+
+                Text(
+                    text = messageToReply.message!!,
+                    color = Color.Gray,
+                    fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
+                Icon(
+                    imageVector = Icons.Default.Cancel,
+                    contentDescription = "",
+                    modifier = Modifier.clickable {
+                        forumViewModel.captureMessageToReply(null)
+                    }
+                )
+            }
+        }
+
+        Row {
+            Surface(
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .width(screenWidth.dp),
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.background,
+                border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
+            ) {
+                TextField(
+                    value = message,
+                    onValueChange = { message =it},
+                    placeholder = { Text(text = stringResource(id = R.string.message)) },
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
                     )
                 )
-        }
-        IconButton(
-            onClick = {
-                keyboardController?.hide()
-                coroutineScope.launch {
-                    forumViewModel?.sendMessageToForum(membershipId, message, group)
-                    message = ""
-                } },
-            modifier = Modifier.constrainAs(btn) {
-                end.linkTo(parent.end, margin = 4.dp)
             }
-        ) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
+            IconButton(
+                onClick = {
+                    keyboardController?.hide()
+                    coroutineScope.launch {
+                        forumViewModel?.sendMessageToForum(membershipId, message, group, messageToReply)
+                        message = ""
+                        forumViewModel?.captureMessageToReply(null)
+                    } },
+                modifier = Modifier
+                    .padding(end = 4.dp),
+            ) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
+            }
         }
     }
 }

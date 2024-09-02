@@ -14,6 +14,8 @@ import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.Election
 import com.register.app.dto.EventComment
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupDetailWrapper
+import com.register.app.dto.GroupNotification
 import com.register.app.dto.GroupUpdateDto
 import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.JoinGroupDto
@@ -50,6 +52,8 @@ class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
     private val authRepository: AuthRepository): ViewModel() {
+        private val _groupNotificationList: MutableLiveData<List<GroupNotification>?> = MutableLiveData()
+    val groupNotificationList: LiveData<List<GroupNotification>?> = _groupNotificationList
     private val _electionsLideData: MutableLiveData<List<Election>?> = MutableLiveData()
     val electionsLiveData: LiveData<List<Election>?> = _electionsLideData
     private val _electionDetail: MutableLiveData<Election?> = MutableLiveData()
@@ -120,14 +124,14 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun setSelectedGroupDetail(group: Group) {
-        _loadingState.value = true
+        //_loadingState.value = true
         _groupDetailLiveData.value = group
         //get membership id
         val member = getMember(group.memberList)
         _membershipId.value = member?.membershipId
         isUserAdmin(group)
         //getMembershipId(group)
-        _loadingState.value = false
+        //_loadingState.value = false
     }
 
     private suspend fun getMember(memberList: List<MembershipDto>?): MembershipDto? {
@@ -243,8 +247,7 @@ class GroupViewModel @Inject constructor(
         groupDescription: String,
         memberOffice: String,
         groupType: String
-    ): Group? {
-        _loadingState.value = true
+    ): GroupDetailWrapper? {
         val groupModel = CreateGroupModel(
             groupName,
             groupDescription,
@@ -254,12 +257,16 @@ class GroupViewModel @Inject constructor(
             groupType,
             groupLogoLivedata.value ?: ""
         )
+        _loadingState.value = true
         val response = groupRepository.createNewGroup(groupModel)
         _loadingState.value = false
-        if (response != null) {
+        if (response?.status == true) {
+            showCreateGroupSheet.postValue(false)
+            setSelectedGroupDetail(response.data!!)
+            isUserAdmin(response.data) //grants the user admin rights
             return response
         } else {
-            return null
+            return response
         }
     }
 
@@ -559,5 +566,12 @@ class GroupViewModel @Inject constructor(
             _groupDetailLiveData.value = response.data!!
         }
         return response
+    }
+
+    suspend fun getGroupNotifications(groupId: Int?) {
+        _loadingState.value = true
+        val response = groupRepository.getGroupNotifications(groupId)
+        _groupNotificationList.value = response.data
+        _loadingState.value = false
     }
 }

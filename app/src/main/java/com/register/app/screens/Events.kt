@@ -56,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -173,67 +174,6 @@ fun EventListTopBar(
                         }
                     }
                 }
-                IconButton(
-                    onClick = { isExpanded = !isExpanded }) {
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu))
-                }
-                DropdownMenu(
-                    expanded = isExpanded,
-                    onDismissRequest = { isExpanded = false },
-                    modifier = Modifier.width(160.dp)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.settings)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        colors = MenuDefaults.itemColors(
-
-                        ),
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(id = R.string.settings)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.privacy)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.PrivacyTip,
-                            contentDescription = stringResource(id = R.string.privacy)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.about)) },
-                        onClick = {
-                            isExpanded = false
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.Details,
-                            contentDescription = stringResource(id = R.string.about)
-                        ) }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.sign_out)) },
-                        onClick = {
-                            isExpanded = false
-                            navController.navigate("signin") {
-                                popUpTo("home") {
-                                    inclusive = true
-                                }
-                            }
-                        },
-                        leadingIcon = { Icon(
-                            imageVector = Icons.Default.ArrowOutward,
-                            contentDescription = stringResource(id = R.string.sign_out)
-                        ) }
-                    )
-                }
             }
         )
     }
@@ -279,7 +219,7 @@ fun EventScreenDetail(
                     )
             }
             EventList(navController, groupViewModel, activityViewModel, isUnpaid, feedList) {
-                selectedEvents = it.toMutableList()
+                selectedEvents = it!!.toMutableList()
                 var totalAmount = 0.0
                 if (selectedEvents.isNotEmpty()) {
                     totalAmount = selectedEvents.sumOf { it.levyAmount?: 0.0 }
@@ -300,37 +240,51 @@ fun EventList(
     activityViewModel: ActivityViewModel,
     isUnpaid: Boolean,
     feedList: List<Event>?,
-    onItemsSelected: (List<Event>) -> Unit
+    onItemsSelected: (List<Event>?) -> Unit
 ) {
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
-    val selectedEvents = mutableListOf<Event>()
-    if (feedList?.isNotEmpty() == true) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .fillMaxWidth(),
-            rememberLazyListState()
-        ) {
-            if (selectedEvents.isNotEmpty()) {
-                item{
-                    Text(
-                        text = stringResource(id = R.string.pay_selection),
-                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        modifier = Modifier
-                            .padding(vertical = 8.dp)
-                            .clickable {
-                                onItemsSelected(selectedEvents)
-                            }
-                    )
-                }
-            }
-            items(feedList) {eventFeed ->
-                EventFeedItem(eventFeed, group!!, groupViewModel, activityViewModel,  navController, isUnpaid) {
-                    if (it) selectedEvents.add(eventFeed) else selectedEvents.remove(eventFeed)
+    var selectedEvents by remember { mutableStateOf<List<Event>?>(mutableListOf()) }
+    Column(
+        Modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.Start
+    ) {
+        if (!selectedEvents.isNullOrEmpty()) {
+            Text(
+                text = stringResource(id = R.string.pay_selection),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier
+                    .padding(start = 8.dp, bottom = 8.dp)
+                    .clickable {
+                        onItemsSelected(selectedEvents)
+                    }
+            )
+        }
+
+        if (feedList?.isNotEmpty() == true) {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .fillMaxWidth(),
+                rememberLazyListState()
+            ) {
+                items(feedList) {eventFeed ->
+                    EventFeedItem(eventFeed, group!!, groupViewModel, activityViewModel,  navController, isUnpaid) {
+                        if (it) {
+                            val tempList = selectedEvents?.toMutableList()
+                            tempList?.add(eventFeed)
+                            selectedEvents = tempList
+                        } else {
+                            val tempList = selectedEvents?.toMutableList()
+                            tempList?.remove(eventFeed)
+                            selectedEvents = tempList
+                        }
+                    }
                 }
             }
         }
     }
+
 }
 
 @Composable

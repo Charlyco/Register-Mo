@@ -116,6 +116,7 @@ class ChatRepositoryImpl @Inject constructor(
             Log.d("MESSAGE", response.toString())
             callback(
                 MessageData(
+                    response.id,
                     response.groupId,
                     response.groupName,
                     response.message,
@@ -123,6 +124,7 @@ class ChatRepositoryImpl @Inject constructor(
                     response.senderName,
                     response.imageUrl,
                     response.sendTime,
+                    response.originalMessageId
                 )
             )
         }

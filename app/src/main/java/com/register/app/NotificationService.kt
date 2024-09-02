@@ -9,8 +9,6 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
-import com.register.app.dto.ChatMessage
-import com.register.app.dto.ChatMessageResponse
 import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.DirectChatMessages
 import com.register.app.dto.MessageData

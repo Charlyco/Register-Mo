@@ -51,7 +51,12 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 @Composable
-fun BulkPayment(navController: NavController, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, totalAmount: Double) {
+fun BulkPayment(
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    totalAmount: Double
+) {
     val fileName = activityViewModel.fileName.observeAsState().value
     val loadingState = activityViewModel.loadingState.observeAsState().value
     var showBankDetails by rememberSaveable { mutableStateOf(false) }
@@ -96,6 +101,14 @@ fun BulkPayment(navController: NavController, groupViewModel: GroupViewModel, ac
                 textAlign = TextAlign.Start,
                 fontSize = TextUnit(14.0f, TextUnitType.Sp)
             )
+
+            Text(
+                text = "Total amount to pay: $totalAmount",
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                textAlign = TextAlign.Start,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.secondary
+                )
 
             Text(
                 text = stringResource(id = R.string.view_bank_detail),
@@ -198,10 +211,7 @@ fun BulkPaymentTopBarDesign(navController: NavController) {
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        navController.navigate("event_detail") {
-                            launchSingleTop = true
-                            popUpTo("home") { inclusive = true }
-                        }
+                        navController.navigateUp()
                     }
                     .constrainAs(navBtn) {
                         start.linkTo(parent.start, margin = 8.dp)

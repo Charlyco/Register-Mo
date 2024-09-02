@@ -5,11 +5,11 @@ import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
-import com.register.app.dto.CreateEventModel
 import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
+import com.register.app.dto.GroupNotificationWrapper
 import com.register.app.dto.GroupUpdateDto
 import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
@@ -36,7 +36,7 @@ interface GroupService {
     @POST("group-service/api/v1/group/all")
     fun getAllGroupsForUser(@Body groupIds: List<Int>?): Call<List<Group>?>
     @POST("group-service/api/v1/group")
-    fun createNewGroup(@Body groupModel: CreateGroupModel): Call<Group>
+    fun createNewGroup(@Body groupModel: CreateGroupModel): Call<GroupDetailWrapper?>
     @GET("event-service/api/v1/event/event/member/{membershipId}")
     fun getMemberActivityRate(@Path("membershipId") membershipId: String?, @Query("date") dateJoined: String?, @Query("groupId") groupId: Int): Call<ActivityRate>
     @PUT("group-service/api/v1/group/{groupId}")
@@ -87,4 +87,6 @@ interface GroupService {
     fun makeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
     @DELETE("group-service/api/v1/group/admin/remove")
     fun removeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
+    @GET("messaging-service/api/notifications/{groupId}")
+    fun getGroupNotifications(@Path("groupId") groupId: Int?): Call<GroupNotificationWrapper>
 }

@@ -11,6 +11,7 @@ import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
+import com.register.app.dto.GroupNotificationWrapper
 import com.register.app.dto.GroupUpdateDto
 import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
@@ -95,25 +96,25 @@ class GroupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createNewGroup(groupModel: CreateGroupModel): Group? {
+    override suspend fun createNewGroup(groupModel: CreateGroupModel) : GroupDetailWrapper? {
         return suspendCoroutine { continuation ->
             val call = groupService.createNewGroup(groupModel)
-            call.enqueue(object : Callback<Group> {
-                override fun onResponse(call: Call<Group>, response: Response<Group>) {
+            call.enqueue(object : Callback<GroupDetailWrapper?> {
+                override fun onResponse(call: Call<GroupDetailWrapper?>, response: Response<GroupDetailWrapper?>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
                         val responseCode = response.code()
                         when (responseCode) {
                             401 -> {
-                                continuation.resume(null)
+                                GroupDetailWrapper("Invalid Credentials", false, null)
                             }
-                            500 -> continuation.resume(null)
+                            500 -> GroupDetailWrapper("Please check Internet connection and try again", false, null)
                         }
                     }
                 }
 
-                override fun onFailure(call: Call<Group>, t: Throwable) {
+                override fun onFailure(call: Call<GroupDetailWrapper?>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
             })
@@ -751,6 +752,48 @@ class GroupRepositoryImpl @Inject constructor(
                 }
 
                 override fun onFailure(call: Call<AdminUpdateResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getGroupNotifications(groupId: Int?): GroupNotificationWrapper {
+        return suspendCoroutine { continuation ->
+            val call = groupService.getGroupNotifications(groupId)
+            call.enqueue(object : Callback<GroupNotificationWrapper> {
+                override fun onResponse(
+                    call: Call<GroupNotificationWrapper>,
+                    response: Response<GroupNotificationWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    GroupNotificationWrapper(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                GroupNotificationWrapper(
+                                    "Please check Internet connection and try again",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GroupNotificationWrapper>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

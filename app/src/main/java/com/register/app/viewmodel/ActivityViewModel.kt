@@ -233,13 +233,29 @@ class ActivityViewModel @Inject constructor(
         }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
-    suspend fun submitEvidenceOfPayment(groupName: String, groupId: Int, membershipId: String, modeOfPayment: String): GenericResponse {
+    suspend fun submitEvidenceOfPayment(
+        groupName: String,
+        groupId: Int,
+        membershipId: String,
+        modeOfPayment: String,
+        amountPaid: String? = null
+    ): GenericResponse {
         val imageUrl = paymentEvidence.value
         val eventTitle = selectedEvent.value?.eventTitle
         val eventId = selectedEvent.value?.eventId
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
         val payerFullName = dataStoreManager.readUserData()?.fullName
-        val payment = Payment(imageUrl?: "", membershipId, payerEmail!!, payerFullName!!, eventTitle!!, eventId!!,modeOfPayment, groupName, groupId)
+        val payment = Payment(
+            imageUrl?: "",
+            membershipId,
+            payerEmail!!,
+            payerFullName!!,
+            eventTitle!!,
+            eventId!!,
+            modeOfPayment,
+            groupName,
+            groupId,
+            amountPaid?.toDouble())
         _loadingState.value = true
         val response = activityRepository.submitEvidenceOfPayment(payment)
         _loadingState.value = false
@@ -300,7 +316,7 @@ class ActivityViewModel @Inject constructor(
             selectedPayment.eventId,
             groupId,
             selectedPayment.groupName,
-            amountPaid,
+            selectedPayment.amountPaid?: amountPaid,
             outstanding,
             selectedPayment.modeOfPayment,
             dataStoreManager.readUserData()?.fullName!!

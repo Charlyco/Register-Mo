@@ -9,6 +9,7 @@ import com.register.app.dto.CreateGroupModel
 import com.register.app.dto.Election
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.GroupDetailWrapper
+import com.register.app.dto.GroupNotificationWrapper
 import com.register.app.dto.GroupUpdateDto
 import com.register.app.dto.GroupsWrapper
 import com.register.app.dto.ImageUploadResponse
@@ -25,7 +26,7 @@ import okhttp3.RequestBody
 interface GroupRepository {
     suspend fun getAllGroupsForUser(groupIds: List<Int>?): List<Group>?
     suspend fun getAllActivitiesForGroup(groupId: Int): List<Event>?
-    suspend fun createNewGroup(groupModel: CreateGroupModel): Group?
+    suspend fun createNewGroup(groupModel: CreateGroupModel): GroupDetailWrapper?
     suspend fun getMemberActivityRate(membershipId: String?, dateJoined: String?, groupId: Int): ActivityRate
     suspend fun updateGroup(groupId: Int, group: GroupUpdateDto): GenericResponse?
     suspend fun addMemberToGroup(groupId: Int?, emailAddress: String): GenericResponse
@@ -48,4 +49,5 @@ interface GroupRepository {
     suspend fun endElection(electionId: Int?): GenericResponse
     suspend fun makeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
     suspend fun removeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
+    suspend fun getGroupNotifications(groupId: Int?): GroupNotificationWrapper
 }

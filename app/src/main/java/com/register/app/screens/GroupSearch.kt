@@ -327,12 +327,8 @@ fun JoinGroupDialog(
                                         "You have successfully joined ${selectedGroup.groupName}",
                                         Toast.LENGTH_LONG).show()
                                     function(false)
-                                    navController.navigateUp()
-                                    authViewModel.reloadUserData()
-                                    homeViewModel.refreshHomeContents()
-                                    activityViewModel.refreshHomeContents()
-                                    groupViewModel.getAllGroupsForUser()
-
+                                    navController.navigate("group_detail")
+                                    groupViewModel.reloadGroup(selectedGroup.groupId)
                                 }else {
                                     Toast.makeText(context, "You are a member of this group already", Toast.LENGTH_LONG).show()
                                 }

@@ -26,6 +26,7 @@ import com.register.app.screens.EvidenceOfPayment
 import com.register.app.screens.Faq
 import com.register.app.screens.Forum
 import com.register.app.screens.GroupDetail
+import com.register.app.screens.GroupNotificationScreen
 import com.register.app.screens.GroupUpdateScreen
 import com.register.app.screens.HomeScreen
 import com.register.app.screens.LiveChatSupport
@@ -46,7 +47,10 @@ import com.register.app.screens.SuggestedGroups
 import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.ADMIN_CHAT
+import com.register.app.util.ALL_USER_ACTIVITIES
 import com.register.app.util.DataStoreManager
+import com.register.app.util.GROUP_NOTIFICATIONS
+import com.register.app.util.HOME
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
@@ -82,7 +86,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         composable("signin") {
             LoginScreen(authViewModel = authViewModel, navController = navController, dataStoreManager)
         }
-        composable("home") {
+        composable(HOME) {
             HomeScreen(
                 homeViewModel = homeViewModel,
                 navController = navController,
@@ -241,7 +245,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 formTitle = backStackEntry.arguments?.getString("form_title")
             )
         }
-        composable("all_user_activities") {
+        composable(ALL_USER_ACTIVITIES) {
             AllUserActivities(
                 activityViewModel = activityViewModel,
                 groupViewModel = groupViewModel,
@@ -257,6 +261,11 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 navController = navController,
                 remoteUserEmail = backStackEntry.arguments?.getString("remoteUserEmail")
             )
+        }
+        composable(GROUP_NOTIFICATIONS) {
+        GroupNotificationScreen(
+            groupViewModel = groupViewModel,
+            navController = navController)
         }
     }
 }
