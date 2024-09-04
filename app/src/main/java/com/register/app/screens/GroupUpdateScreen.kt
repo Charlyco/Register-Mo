@@ -50,19 +50,20 @@ import com.register.app.dto.BankDetail
 import com.register.app.model.Group
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
-import com.register.app.util.GetCustomFiles
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
-import java.io.File
 import java.io.IOException
 
 @Composable
 fun GroupUpdateScreen(navController: NavController, groupViewModel: GroupViewModel) {
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.update_group), navController = navController, navRoute = "group_detail")}
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.update_group),
+            navController = navController
+        )}
     ) {
         if (group != null) {
             GroupUpdateUi(Modifier.padding(it), group, navController, groupViewModel)

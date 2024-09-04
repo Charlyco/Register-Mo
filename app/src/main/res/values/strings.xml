@@ -48,7 +48,6 @@
     <string name="submit">Submit</string>
     <string name="upload_payment">Upload evidence of payment</string>
     <string name="payment_hint">Make your payment to the official group account and upload the evidence of payment below.
-        \nAcceptable formats are .pdf, .png, and .jpeg.
     \nYou will be notified once your payment is confirmed by the admin.</string>
     <string name="view_bank_detail">Click here to view bank account details</string>
     <string name="contact_info">Contact information</string>
@@ -211,4 +210,14 @@
     <string name="exit_app_title">Exit app</string>
     <string name="download_responses_confirmation">Continue to download all responses?</string>
     <string name="group_notification">Group notification</string>
+    <string name="suspended">You are currently suspended. Please contact group admin</string>
+    <string name="removeAdmin">This member is currently an admin</string>
+    <string name="assign_levy">Assign special levy</string>
+    <string name="levy_title">Levy title</string>
+    <string name="assign_levy_header">To assign a special levy, due or fine to the this member, fill the required info and submit</string>
+    <string name="levy_description">Description</string>
+    <string name="special_levy">Special levies</string>
+    <string name="choose_source">Choose image source</string>
+    <string name="camera">Camera</string>
+    <string name="from_file">Gallery</string>
 </resources>

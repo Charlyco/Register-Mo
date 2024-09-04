@@ -65,8 +65,10 @@ fun CreateQuestionnaireScreen(
 ) {
     val isLoading = questionnaireViewModel.loadingState.observeAsState().value
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.questionnaire),
-            navController = navController, navRoute = "group")},
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.questionnaire),
+            navController = navController
+        )},
         containerColor = MaterialTheme.colorScheme.background
     ) {
         CreateQuestionnaireScreenContent(Modifier.padding(it), questionnaireViewModel, groupViewModel, navController)

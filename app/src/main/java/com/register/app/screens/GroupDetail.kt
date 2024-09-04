@@ -214,7 +214,7 @@ fun GroupDetailTopBar(
     val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     TopAppBar(
         title = { Text(
-            text = group?.groupName!!,
+            text = group?.groupName?: "Refresh screen",
             Modifier.padding(start = 8.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -852,7 +852,7 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
             color = MaterialTheme.colorScheme.onTertiary
         ) {
             ImageLoader(
-                imageUrl = group?.logoUrl!!,
+                imageUrl = group?.logoUrl?: "",
                 context = context,
                 height = 80,
                 width = 80,

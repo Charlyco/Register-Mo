@@ -5,7 +5,7 @@ data class ConfirmPaymentModel(
     val payerEmail: String,
     val payerName: String,
     val eventTitle: String,
-    val eventId: Int,
+    val eventId: Long,
     val groupId: Int,
     val groupName: String,
     val amountPaid: Double,

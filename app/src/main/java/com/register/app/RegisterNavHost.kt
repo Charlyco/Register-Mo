@@ -1,5 +1,6 @@
 package com.register.app
 
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
@@ -12,11 +13,13 @@ import com.register.app.screens.EventDetails
 import com.register.app.screens.Events
 import com.register.app.screens.AllGroups
 import com.register.app.screens.AllUserActivities
+import com.register.app.screens.AssignSpecialLevi
 import com.register.app.screens.AuthScreen
 import com.register.app.screens.BulkPayment
 import com.register.app.screens.CreateElectionScreen
 import com.register.app.screens.CreateEvent
 import com.register.app.screens.CreateQuestionnaireScreen
+import com.register.app.screens.SavedChatList
 import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EditProfile
 import com.register.app.screens.ElectionDetail
@@ -36,6 +39,7 @@ import com.register.app.screens.MembershipRequests
 import com.register.app.screens.ModifyAdmin
 import com.register.app.screens.NewPasswordEntry
 import com.register.app.screens.NotificationScreen
+import com.register.app.screens.PaySpecialLevy
 import com.register.app.screens.ProfileScreen
 import com.register.app.screens.QuestionnaireResponses
 import com.register.app.screens.ResetPassword
@@ -48,9 +52,13 @@ import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.ADMIN_CHAT
 import com.register.app.util.ALL_USER_ACTIVITIES
+import com.register.app.util.ASSIGN_LEVY
+import com.register.app.util.DIRECT_CHAT
 import com.register.app.util.DataStoreManager
 import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.HOME
+import com.register.app.util.NOTIFICATIONS
+import com.register.app.util.PAY_SPECIAL_LEVY
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
@@ -59,7 +67,11 @@ import com.register.app.viewmodel.HomeViewModel
 import com.register.app.viewmodel.QuestionnaireViewModel
 
 @Composable
-fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreManager) {
+fun RegisterAppNavHost(
+    mainActivity: MainActivity,
+    dataStoreManager: DataStoreManager,
+    takePicture: ActivityResultLauncher<Void?>
+) {
     val authViewModel: AuthViewModel by mainActivity.viewModels()
     val homeViewModel: HomeViewModel by mainActivity.viewModels()
     val groupViewModel: GroupViewModel by mainActivity.viewModels()
@@ -113,7 +125,12 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
                 questionnaireViewModel = questionnaireViewModel)
         }
         composable("payment") {
-            EvidenceOfPayment(navController = navController, groupViewModel = groupViewModel, activityViewModel = activityViewModel)
+            EvidenceOfPayment(
+                navController = navController,
+                groupViewModel = groupViewModel,
+                activityViewModel = activityViewModel,
+                cameraActivityResult = takePicture
+                )
         }
         composable("group_detail") {
             GroupDetail(navController = navController,
@@ -209,7 +226,7 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         composable("election_result") {
             ElectionResults(groupViewModel = groupViewModel, navController = navController)
         }
-        composable("notifications") {
+        composable(NOTIFICATIONS) {
             NotificationScreen(
                 authViewModel = authViewModel,
                 homeViewModel = homeViewModel,
@@ -266,6 +283,28 @@ fun RegisterAppNavHost(mainActivity: MainActivity, dataStoreManager: DataStoreMa
         GroupNotificationScreen(
             groupViewModel = groupViewModel,
             navController = navController)
+        }
+        composable(DIRECT_CHAT) {
+            SavedChatList(
+                forumViewModel = forumViewModel,
+                navController = navController,
+                groupViewModel = groupViewModel
+            )
+        }
+        composable(ASSIGN_LEVY) {
+            AssignSpecialLevi(
+                activityViewModel = activityViewModel,
+                groupViewModel = groupViewModel,
+                navController = navController
+            )
+        }
+        composable(PAY_SPECIAL_LEVY) {
+            PaySpecialLevy(
+                activityViewModel = activityViewModel,
+                groupViewModel = groupViewModel,
+                navController = navController,
+                cameraActivityResult = takePicture
+            )
         }
     }
 }

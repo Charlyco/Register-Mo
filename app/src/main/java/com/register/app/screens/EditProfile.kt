@@ -59,7 +59,7 @@ import java.io.IOException
 fun EditProfile(authViewModel: AuthViewModel, navController: NavController) {
     val user = authViewModel.userLideData.observeAsState().value
     Scaffold(
-        topBar = { GenericTopBar(title = "Edit Profile", navController = navController, navRoute = "profile")},
+        topBar = { GenericTopBar(title = "Edit Profile", navController = navController)},
         containerColor = MaterialTheme.colorScheme.background
     ) {
         EditProfileUi(Modifier.padding(it), user, authViewModel, navController)

@@ -3,6 +3,7 @@ package com.register.app.repositoryimpls
 import android.util.Log
 import com.google.gson.Gson
 import com.register.app.api.ChatService
+import com.register.app.db.ChatContactDao
 import com.register.app.dto.DirectChatMessageData
 import com.register.app.dto.DirectChatMessages
 import com.register.app.dto.FirebaseTokenModel
@@ -12,6 +13,7 @@ import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
 import com.register.app.dto.SupportMessageDto
 import com.register.app.dto.ForumMessages
+import com.register.app.model.DirectChatContact
 import com.register.app.repository.ChatRepository
 import com.register.app.websocket.StompWebSocketClient
 import retrofit2.Call
@@ -24,7 +26,8 @@ import kotlin.coroutines.suspendCoroutine
 
 class ChatRepositoryImpl @Inject constructor(
     private val chatService: ChatService,
-    private val stompWebSocketClient: StompWebSocketClient
+    private val stompWebSocketClient: StompWebSocketClient,
+    private val chatContactDao: ChatContactDao
 ): ChatRepository {
 
     override suspend fun checkTokenWithDeviceId(deviceId: String, token: String): GenericResponse {
@@ -245,5 +248,13 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun fetchChatContactList(): List<DirectChatContact>? {
+        return chatContactDao.fetchAllMembers()
+    }
+
+    override suspend fun saveChatContact(userData: DirectChatContact) {
+        Log.d("SAVING IN REPO", userData.contactName?: "No User")
+        chatContactDao.saveMemberChat(userData)
+    }
 
 }

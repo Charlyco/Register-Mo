@@ -1,6 +1,5 @@
 package com.register.app.screens
 
-import android.service.autofill.UserData
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +40,6 @@ import com.register.app.R
 import com.register.app.dto.SupportMessageDto
 import com.register.app.model.Member
 import com.register.app.util.GenericTopBar
-import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
 import com.register.app.viewmodel.HomeViewModel
@@ -60,8 +57,7 @@ fun LiveChatSupport(
     Scaffold(
         topBar = { GenericTopBar(
             title = "Live chat support",
-            navController = navController,
-            navRoute = "support"
+            navController = navController
         ) }
     ) {
        LiveChatSupportScreen(Modifier.padding(it), homeViewModel, forumViewModel, navController, authViewModel)

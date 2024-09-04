@@ -26,8 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -40,7 +38,7 @@ import com.register.app.viewmodel.HomeViewModel
 @Composable
 fun Faq(homeViewModel: HomeViewModel, navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = "FAQ", navController = navController, navRoute = "support") },
+        topBar = { GenericTopBar(title = "FAQ", navController = navController) },
     ) {
         FaqScreen(Modifier.padding(it), homeViewModel, navController)
     }

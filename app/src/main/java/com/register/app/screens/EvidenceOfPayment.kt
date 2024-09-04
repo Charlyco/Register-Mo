@@ -2,7 +2,9 @@ package com.register.app.screens
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -26,11 +28,14 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -45,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -55,6 +61,9 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
+import com.register.app.util.ImageLoader
+import com.register.app.util.Utils
+import com.register.app.util.Utils.ImageSourceChooserDialog
 import com.register.app.util.Utils.copyTextToClipboard
 import com.register.app.util.Utils.getFileNameFromUri
 import com.register.app.viewmodel.ActivityViewModel
@@ -63,8 +72,14 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 @Composable
-fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel) {
+fun EvidenceOfPayment(
+    navController: NavController,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    cameraActivityResult: ActivityResultLauncher<Void?>
+    ) {
     val fileName = activityViewModel.fileName.observeAsState().value
+    val imageUrl = activityViewModel.paymentEvidence.observeAsState().value
     val loadingState = activityViewModel.loadingState.observeAsState().value
     var showBankDetails by rememberSaveable { mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
@@ -73,6 +88,7 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
     val coroutineScope = rememberCoroutineScope()
     var modeOfPayment by rememberSaveable { mutableStateOf("") }
     var amountPaid by rememberSaveable { mutableStateOf("") }
+    var showImageSourceChooserDialog by rememberSaveable { mutableStateOf(false) }
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -224,15 +240,21 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                     Modifier
                         .fillMaxWidth()
                         .padding(start = 8.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    if (fileName != null) {
-                        Text(text = fileName)
+                    if (imageUrl != null) {
+                        ImageLoader(
+                            imageUrl = imageUrl?: "",
+                            context = context,
+                            height = 120,
+                            width = 120,
+                            placeHolder = R.drawable.placeholder
+                        )
                     }
                     Button(
                         onClick = {
-                            filePicker.launch("image/*") },
+                            showImageSourceChooserDialog = true
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.onBackground
@@ -285,6 +307,9 @@ fun EvidenceOfPayment(navController: NavController, groupViewModel: GroupViewMod
                 )
             }
 
+            if (showImageSourceChooserDialog) {
+                ImageSourceChooserDialog(filePicker, cameraActivityResult) { showImageSourceChooserDialog = it }
+            }
         }
     }
 }

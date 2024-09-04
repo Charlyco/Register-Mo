@@ -6,7 +6,7 @@ data class Payment(
     val payerEmail: String,
     val payerFullName: String,
     val eventTitle: String,
-    val eventId: Int,
+    val eventId: Long?,
     val modeOfPayment: String,
     val groupName: String,
     val groupId: Int,

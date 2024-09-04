@@ -2,7 +2,7 @@ package com.register.app.dto
 
 data class RejectedPayment(
     val eventTitle: String?,
-    val eventId: Int?,
+    val eventId: Long?,
     val imageUrl: String?,
     val membershipId: String?,
     val payerFullName: String?,

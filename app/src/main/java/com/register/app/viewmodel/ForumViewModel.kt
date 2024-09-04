@@ -11,9 +11,11 @@ import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
 import com.register.app.dto.SupportMessageDto
 import com.register.app.enums.MessageType
+import com.register.app.model.DirectChatContact
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
+import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,8 +26,11 @@ import javax.inject.Inject
 @HiltViewModel
 class ForumViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _directChatList: MutableLiveData<List<DirectChatContact>?> = MutableLiveData()
+    val directChatList: LiveData<List<DirectChatContact>?> = _directChatList
     private val _remoteUser: MutableLiveData<MembershipDto> = MutableLiveData()
     val remoteUser: LiveData<MembershipDto> = _remoteUser
     private val _supportMessages: MutableLiveData<List<SupportMessageDto>?> = MutableLiveData()
@@ -58,6 +63,7 @@ class ForumViewModel @Inject constructor(
                 loadGroupChats(initialGroupId)
                 connectToChat(payload)
             }
+            _directChatList.value = chatRepository.fetchChatContactList()
         }
     }
 
@@ -105,12 +111,13 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             dataStoreManager.readTokenData()
         )
         chatRepository.sendDirectMessage(chatMessage) {
-            val messageList = _directChatMessages.value
+            val messageList = directChatMessages.value
             val newMessageList = mutableListOf<DirectChatMessageData>()
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
             newMessageList.add(it)
             _directChatMessages.postValue(newMessageList)
         }
+        saveChatContactFromLocalMessage(chatMessage, recipientEmail)
     }
 
     suspend fun fetUserChats(recipientId: String, senderId: String) {
@@ -210,8 +217,6 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             LocalDateTime.now().toString(),
             messageToReply?.id!!)
         chatRepository.sendMessage(groupId, chatMessage) {
-            //Log.d("SEND_MESSAGE", it.toString())
-            //transformToChatMessage(it)
         }
     }
 
@@ -222,10 +227,6 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         _isLoadingLiveData.value = false
         if (groupChats?.data?.isNotEmpty() == true) {
             val data = groupChats.data
-            //val messageList = _chatMessages.value
-//            val newMessageList = mutableListOf<MessageData>()
-//            newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
-//            newMessageList.addAll(data)
             _chatMessages.value = data
         }
     }
@@ -267,5 +268,44 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
     fun captureMessageToReply(messageData: MessageData?) {
         _messageToReply.value = messageData
         Log.d("REPLY: ", messageToReply.value.toString())
+    }
+
+    suspend fun saveDirectChatContactFromNotification(data: DirectChatMessageData?) {
+        val chatContact = DirectChatContact(
+            null,
+            data?.groupId,
+            data?.groupName,
+            data?.senderId,
+            data?.recipientId,
+            data?.senderName,
+            data?.imageUrl,
+            data?.sendTime
+        )
+        chatRepository.saveChatContact(chatContact)
+    }
+
+    private suspend fun saveChatContactFromLocalMessage(
+        chatMessage: DirectChatMessageData,
+        recipientEmail: String
+    ) {
+        val user = authRepository.reloadUserData(recipientEmail)
+        val chatContact = DirectChatContact(
+            null,
+            chatMessage.groupId,
+            chatMessage.groupName,
+            chatMessage.recipientId,
+            chatMessage.senderId,
+            user?.fullName,
+            user?.imageUrl,
+            chatMessage.sendTime
+        )
+        Log.d("SAVING IN VIEWMODEL", chatContact.contactName?: "No User")
+        chatRepository.saveChatContact(chatContact)
+    }
+
+    suspend fun fetchDirectChatList() {
+        val chats = chatRepository.fetchChatContactList()
+        Log.d("CHAT_LIST", chats.toString())
+        _directChatList.value = chats
     }
 }

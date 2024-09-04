@@ -38,8 +38,8 @@ fun GroupNotificationScreen(groupViewModel: GroupViewModel, navController: NavCo
     Scaffold(
         topBar = { GenericTopBar(
             title = stringResource(id = R.string.group_notification),
-            navController = navController,
-            navRoute = "group_detail")}
+            navController = navController
+        )}
     ) {
         GroupNotificationList(Modifier.padding(it), groupViewModel)
         if (isLoading == true) {
@@ -114,6 +114,14 @@ fun GroupNotificationItem(
                     NotificationType.EVENT.name -> {
                         Icon(
                             painter = painterResource(id = R.drawable.events_icoc),
+                            contentDescription = "",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    NotificationType.GENERAL.name -> {
+                        Icon(
+                            painter = painterResource(id = R.drawable.reshot_icon_notification),
                             contentDescription = "",
                             modifier = Modifier.size(32.dp)
                         )

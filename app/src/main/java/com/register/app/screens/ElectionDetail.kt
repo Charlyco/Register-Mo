@@ -56,7 +56,6 @@ import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.GroupViewModel
 import kotlinx.coroutines.launch
-import kotlin.math.truncate
 
 @Composable
 fun ElectionDetail(groupViewModel: GroupViewModel, navController: NavController) {
@@ -65,7 +64,7 @@ fun ElectionDetail(groupViewModel: GroupViewModel, navController: NavController)
     val election = groupViewModel.electionDetail.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
-        topBar = { GenericTopBar(title = "Elections", navController = navController, navRoute = "elections") },
+        topBar = { GenericTopBar(title = "Elections", navController = navController) },
         floatingActionButton = { AddContestantFab(groupViewModel) {showAddContestantDialog = it} },
         floatingActionButtonPosition = FabPosition.EndOverlay,
         containerColor = MaterialTheme.colorScheme.surface

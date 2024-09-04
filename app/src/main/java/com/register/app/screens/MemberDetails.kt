@@ -73,6 +73,7 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.util.AN_ERROR_OCCURRED
+import com.register.app.util.ASSIGN_LEVY
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
 import com.register.app.util.MemberActivitySwitch
@@ -446,17 +447,42 @@ fun AdminMemberActions(
             }
 
         }
-        Button(
-            onClick = { callback(true) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 16.dp),
-            shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary),
-            border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        Row(
+            Modifier
+               .fillMaxWidth()
+               .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = stringResource(id = R.string.payment_record))
+            Button(
+                onClick = { callback(true) },
+                modifier = Modifier
+                    .width(180.dp)
+                    .padding(horizontal = 8.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Text(text = stringResource(id = R.string.payment_record))
+            }
+
+            Button(
+                onClick = {
+                    navController.navigate(ASSIGN_LEVY) {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier
+                    .width(180.dp)
+                    .padding(horizontal = 8.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Text(text = stringResource(id = R.string.assign_levy))
+            }
         }
     }
 
@@ -492,8 +518,9 @@ fun ChangeRoleDialog(
         onDismissRequest = { onDismiss(false) },
         ) {
         Surface(
-            Modifier.fillMaxWidth()
-                .height(180.dp),
+            Modifier
+                .fillMaxWidth()
+                .height(200.dp),
             shape = MaterialTheme.shapes.medium
         ) {
             Column(
@@ -507,14 +534,19 @@ fun ChangeRoleDialog(
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 if (isAdmin) {
-                    Checkbox(
-                        checked = isChecked,
-                        onCheckedChange = {isChecked = !isChecked})
-                    if (isChecked) {
-                        Text(
-                            text = "Are you sure you want to remove ${member.fullName} as Admin?",
-                            fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        )
+                    Text(text = stringResource(id = R.string.removeAdmin))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = {isChecked = !isChecked})
+                            Text(
+                                text = "Are you sure you want to remove ${member.fullName} as Admin?",
+                                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                            )
                     }
                 }else {
                     SelectOffice(officeList = officeList) { newOffice = it }
@@ -530,10 +562,14 @@ fun ChangeRoleDialog(
                                     navController.navigateUp()
                                 }
                             }else {
-                                val response = groupViewModel.makeAdmin(membership, newOffice)
-                                Toast.makeText(context, "Action ${response.message}", Toast.LENGTH_LONG).show()
-                                if (response.status) {
-                                    navController.navigateUp()
+                                if (newOffice.isNotEmpty()) {
+                                    val response = groupViewModel.makeAdmin(membership, newOffice)
+                                    Toast.makeText(context, "Action ${response.message}", Toast.LENGTH_LONG).show()
+                                    if (response.status) {
+                                        navController.navigateUp()
+                                    }
+                                }else {
+                                    Toast.makeText(context, "Please select an office", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
@@ -543,7 +579,7 @@ fun ChangeRoleDialog(
                         .padding(horizontal = 32.dp, vertical = 16.dp),
                     shape = MaterialTheme.shapes.medium
                     ) {
-                    Text(text = stringResource(id = R.string.submit))
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             }
         }
@@ -582,7 +618,7 @@ fun MemberActivities(
     activityViewModel: ActivityViewModel,
     navController: NavController,
 ) {
-    var showPaid by rememberSaveable { mutableStateOf(true) }
+    var showPaid by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxWidth()

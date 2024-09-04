@@ -7,11 +7,37 @@ import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
+import android.content.Intent
 import android.database.Cursor
+import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.launch
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.getString
 import com.register.app.R
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -89,4 +115,77 @@ object Utils {
             val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+
+    fun convertBitmapToJPEG(context: Context, bitmap: Bitmap): File? {
+        // Create a new file to save the JPEG image
+        val jpegFile = File(context.filesDir, "captured_image.jpg")
+
+        return try {
+            // Convert Bitmap to JPEG and save it to the file
+            val outputStream = FileOutputStream(jpegFile)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            outputStream.close()
+            jpegFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun takePhoto(cameraActivityResult: ActivityResultLauncher<Void?>) {
+        //val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraActivityResult.launch()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun ImageSourceChooserDialog(
+        filePicker: ManagedActivityResultLauncher<String, Uri?>,
+        cameraActivityResult: ActivityResultLauncher<Void?>,
+        onDismiss: (Boolean) -> Unit
+    ) {
+        ModalBottomSheet(
+            onDismissRequest = {onDismiss(false)},
+            modifier = Modifier.fillMaxWidth(),
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = MaterialTheme.colorScheme.background
+        ) {
+            Text(
+                text = stringResource(id = R.string.choose_source),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = {
+                        takePhoto(cameraActivityResult)
+                        onDismiss(false)
+                    },
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .width(160.dp)
+                ) {
+                    Text(text = stringResource(id = R.string.camera))
+                }
+                Button(
+                    onClick = {
+                        filePicker.launch("image/*")
+                        onDismiss(false)
+                    },
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .width(160.dp)
+                ) {
+                    Text(text = stringResource(id = R.string.from_file))
+                }
+            }
+        }
+    }
 }

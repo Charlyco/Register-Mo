@@ -64,7 +64,7 @@ fun AllGroups(
     }
 
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.groups), navController, navRoute = "home") },
+        topBar = { GenericTopBar(title = stringResource(id = R.string.groups), navController) },
         floatingActionButton = { NewGroupFab(navController, dataStoreManager, groupViewModel) },
         floatingActionButtonPosition = FabPosition.End
     ) {

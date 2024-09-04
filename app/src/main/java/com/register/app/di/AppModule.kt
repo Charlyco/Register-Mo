@@ -2,8 +2,9 @@ package com.register.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.register.app.db.ChatContactDao
 import com.register.app.db.NotificationDao
-import com.register.app.db.NotificationDb
+import com.register.app.db.RegisterDb
 import com.register.app.util.DataStoreManager
 import com.register.app.websocket.StompWebSocketClient
 import com.register.app.websocket.StompWebSocketClientImpl
@@ -33,9 +34,23 @@ object AppModule {
     @Provides
     fun provideNotificationDao(@ApplicationContext context: Context): NotificationDao {
         val db = Room.databaseBuilder(
-            context, NotificationDb::class.java, "notification_db"
-        ).build()
+            context, RegisterDb::class.java, "register_db"
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
         return db.notificationDao()
+    }
+
+    @Singleton
+    @Provides
+    fun providesMemberDao(@ApplicationContext context: Context): ChatContactDao {
+        val db = Room.databaseBuilder(
+            context, RegisterDb::class.java, "register_db"
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+
+        return db.chatContactDao()
     }
 }

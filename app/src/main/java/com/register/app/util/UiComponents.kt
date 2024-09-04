@@ -100,9 +100,10 @@ fun CircularIndicator() {
 fun BottomNavBar(navController: NavController) {
     val backStackEntry = navController.currentBackStackEntry
     val bottomBarItems = listOf(
-        BottomBarItem("home", R.drawable.icon_home),
-        BottomBarItem("forum", R.drawable.messages),
-        BottomBarItem("all_user_activities", R.drawable.icon_activity),
+        BottomBarItem(HOME, R.drawable.icon_home),
+        BottomBarItem("forum", R.drawable.chat),
+        BottomBarItem(DIRECT_CHAT, R.drawable.members_2),
+        BottomBarItem(ALL_USER_ACTIVITIES, R.drawable.icon_activity),
         BottomBarItem("profile", R.drawable.profile_simple)
     )
 BottomAppBar(
@@ -143,9 +144,7 @@ BottomAppBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GenericTopBar(title: String, navController: NavController, navRoute: String) {
-    var isExpanded by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
+fun GenericTopBar(title: String, navController: NavController) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -161,9 +160,7 @@ fun GenericTopBar(title: String, navController: NavController, navRoute: String)
             navigationIcon = { Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "",
-                Modifier.clickable { navController.navigate(navRoute) {
-                    launchSingleTop = true
-                } },
+                Modifier.clickable { navController.navigateUp()},
                 tint = MaterialTheme.colorScheme.onBackground
             )},
             colors = TopAppBarDefaults.topAppBarColors(

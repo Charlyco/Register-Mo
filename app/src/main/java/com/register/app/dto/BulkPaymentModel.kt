@@ -14,6 +14,6 @@ data class BulkPaymentModel(
 
 data class EventItemDto(
     val eventTitle: String,
-    val eventId: Int,
+    val eventId: Long,
     val amountPaid: Double
 )

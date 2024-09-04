@@ -65,7 +65,7 @@ fun SuggestedGroups(
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var selectedGroup : Group? = null
     Scaffold(
-        topBar = { GenericTopBar(title = "Find a Group", navController = navController, navRoute = "home") },
+        topBar = { GenericTopBar(title = "Find a Group", navController = navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) {
         GroupList(Modifier.padding(it), groupViewModel = groupViewModel, navController = navController){ show, group ->

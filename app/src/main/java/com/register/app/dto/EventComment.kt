@@ -6,7 +6,7 @@ data class EventComment(
     val dateOfComment: String,
     val comment: String?,
     val commentReplies: List<CommentReply>?,
-    val eventId: Int?
+    val eventId: Long?
 )
 
 data class CommentReply(

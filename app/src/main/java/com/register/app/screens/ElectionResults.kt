@@ -34,7 +34,7 @@ import com.register.app.viewmodel.GroupViewModel
 @Composable
 fun ElectionResults(groupViewModel: GroupViewModel, navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = "Election Results", navController = navController, navRoute = "election_detail") },
+        topBar = { GenericTopBar(title = "Election Results", navController = navController) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         ElectionResultsScreen(Modifier.padding(it), groupViewModel, navController)

@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -41,7 +40,7 @@ fun QuestionnaireResponses(
     formTitle: String?
 ) {
     Scaffold(
-        topBar = { GenericTopBar(title = formTitle!!, navController =navController, navRoute = "quest_response")}
+        topBar = { GenericTopBar(title = formTitle!!, navController =navController)}
     ) {
         QuestionnaireResponsesList(Modifier.padding(it), questionnaireViewModel, navController)
     }

@@ -1,8 +1,9 @@
 package com.register.app.enums
 
 enum class MemberStatus {
-    EXPELLED,
     ACTIVE,
+    INACTIVE,
     SUSPENDED,
-    PROBATION
+    EXPELLED,
+    PROBATION,
 }

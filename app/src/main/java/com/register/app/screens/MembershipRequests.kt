@@ -57,8 +57,10 @@ fun MembershipRequests(
     authViewModel: AuthViewModel
 ) {
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.membership_requests),
-            navController = navController, navRoute = "group_detail") },
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.membership_requests),
+            navController = navController
+        ) },
         containerColor = MaterialTheme.colorScheme.background
     ) {
         val group = groupViewModel.groupDetailLiveData.observeAsState().value

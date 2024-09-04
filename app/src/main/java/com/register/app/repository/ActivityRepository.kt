@@ -14,6 +14,8 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
 import com.register.app.dto.RejectedPayment
+import com.register.app.dto.SpecialLeviesWrapper
+import com.register.app.dto.SpecialLevy
 import com.register.app.model.Event
 import com.register.app.model.Member
 import okhttp3.RequestBody
@@ -25,15 +27,18 @@ interface ActivityRepository {
     suspend fun createNewActivity(newActivity: CreateEventModel): GenericResponse
     suspend fun confirmPayment(contribution: ConfirmPaymentModel): GenericResponse
     suspend fun getMemberDetails(memberEmail: String?): Member?
-    suspend fun changeEventStatus(eventId: Int, status: String): EventDetailWrapper
-    suspend fun deleteActivity(eventId: Int): GenericResponse
+    suspend fun changeEventStatus(eventId: Long, status: String): EventDetailWrapper
+    suspend fun deleteActivity(eventId: Long): GenericResponse
     suspend fun submitBulkPaymentEvidence(payment: BulkPaymentModel): GenericResponse
     suspend fun getPendingBulkPayments(groupId: Int?): BulkPaymentWrapper
     suspend fun confirmBulkPayment(confirmBulkPaymentDto: ConfirmBulkPaymentDto): GenericResponse
     suspend fun rejectBulkPayment(rejectedBulkPaymentDto: RejectBulkPaymentDto): GenericResponse
     suspend fun rejectPayment(rejectedPayment: RejectedPayment): GenericResponse
-    suspend fun generateReport(eventId: Int?): ResponseBody?
+    suspend fun generateReport(eventId: Long?): ResponseBody?
     suspend fun postComment(commentModel: EventComment): EventCommentResponse
     suspend fun postCommentReply(replyModel: CommentReply): EventCommentResponse
-    suspend fun getEventDetails(eventId: Int): Event?
+    suspend fun getEventDetails(eventId: Long): Event?
+    suspend fun assignSpecialLevy(levy: SpecialLevy): GenericResponse
+    suspend fun getSpecialLevies(emailAddress: String?): SpecialLeviesWrapper
+    suspend fun submitSpecialLevyPayment(payment: Payment): GenericResponse
 }

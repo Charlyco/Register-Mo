@@ -20,7 +20,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,7 +44,10 @@ fun NotificationScreen(
     activityViewModel: ActivityViewModel,
     navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.notifications), navController = navController, navRoute = "home") }
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.notifications),
+            navController = navController
+        ) }
     ) {
         NotificationList(Modifier.padding(it), homeViewModel, activityViewModel, groupViewModel, authViewModel, navController)
     }
@@ -123,6 +125,14 @@ fun NotificationItem(
                     NotificationType.EVENT.name -> {
                         Icon(
                             painter = painterResource(id = R.drawable.events_icoc),
+                            contentDescription = "",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    NotificationType.GENERAL.name -> {
+                        Icon(
+                            painter = painterResource(id = R.drawable.reshot_icon_notification),
                             contentDescription = "",
                             modifier = Modifier.size(32.dp)
                         )

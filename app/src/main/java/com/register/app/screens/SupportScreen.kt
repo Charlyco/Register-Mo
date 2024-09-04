@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -54,7 +53,6 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.SupportMessageDto
 import com.register.app.enums.MessageType
-import com.register.app.model.Member
 import com.register.app.util.GenericTopBar
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
@@ -70,7 +68,7 @@ fun SupportScreen(
     navController: NavController
 ) {
     Scaffold(
-        topBar = {GenericTopBar(title = "Support", navController = navController, navRoute = "home")},
+        topBar = {GenericTopBar(title = "Support", navController = navController)},
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         SupportScreenContent(Modifier.padding(it), forumViewModel, authViewModel, homeViewModel, navController)

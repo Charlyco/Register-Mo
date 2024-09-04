@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Button
@@ -47,7 +46,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun ResetPassword(authViewModel: AuthViewModel, navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.reset_password), navController = navController, navRoute = "login")},
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.reset_password),
+            navController = navController
+        )},
         containerColor = MaterialTheme.colorScheme.background
     ) {
         PasswordResetScreen(Modifier.padding(it), authViewModel, navController)

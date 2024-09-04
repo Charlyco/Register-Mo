@@ -79,7 +79,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +88,6 @@ import androidx.compose.ui.window.Dialog
 import com.register.app.dto.Payment
 import com.register.app.enums.AdminActions
 import com.register.app.enums.EventType
-import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
 import com.register.app.util.Utils
 import com.register.app.viewmodel.ActivityViewModel
@@ -1048,7 +1046,12 @@ fun Compliance(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
 }
 
 @Composable
-fun AdminActions(event: Event?, groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, navController: NavController) {
+fun AdminActions(
+    event: Event?,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController
+) {
     var showCompleteDialog by rememberSaveable { mutableStateOf(false) }
     var action by rememberSaveable { mutableStateOf("") }
     var descriptionText by rememberSaveable { mutableIntStateOf(0) }

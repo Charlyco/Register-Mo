@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,8 +77,7 @@ fun CreateEvent(groupViewModel: GroupViewModel, activityViewModel: ActivityViewM
     Scaffold(
         topBar = { GenericTopBar(
             title = "Create new Activity",
-            navController = navController,
-            navRoute = "group_detail"
+            navController = navController
         )}
     ) {
         ConstraintLayout(

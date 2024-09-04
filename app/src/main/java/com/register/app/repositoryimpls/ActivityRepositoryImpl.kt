@@ -1,9 +1,7 @@
 package com.register.app.repositoryimpls
 
-import com.google.common.io.ByteStreams
 import com.register.app.api.ActivityService
 import com.register.app.api.UserService
-import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
 import com.register.app.dto.CommentReply
@@ -18,6 +16,8 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
 import com.register.app.dto.RejectedPayment
+import com.register.app.dto.SpecialLeviesWrapper
+import com.register.app.dto.SpecialLevy
 import com.register.app.model.Event
 import com.register.app.model.Member
 import com.register.app.repository.ActivityRepository
@@ -28,7 +28,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import javax.inject.Inject
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -179,7 +178,7 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun changeEventStatus(eventId: Int, status: String): EventDetailWrapper {
+    override suspend fun changeEventStatus(eventId: Long, status: String): EventDetailWrapper {
         return suspendCoroutine { continuation ->
             val call = activityService.changeEventStatus(eventId, status)
             call.enqueue(object : Callback<EventDetailWrapper> {
@@ -207,7 +206,7 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteActivity(eventId: Int): GenericResponse {
+    override suspend fun deleteActivity(eventId: Long): GenericResponse {
         return suspendCoroutine { continuation ->
             val call = activityService.deleteActivity(eventId)
             call.enqueue(object : Callback<GenericResponse> {
@@ -381,7 +380,7 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun generateReport(eventId: Int?): ResponseBody? {
+    override suspend fun generateReport(eventId: Long?): ResponseBody? {
         return suspendCoroutine { continuation ->
             val call = activityService.generateReport(eventId)
             call.enqueue(object : Callback<ResponseBody> {
@@ -465,7 +464,7 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getEventDetails(eventId: Int): Event? {
+    override suspend fun getEventDetails(eventId: Long): Event? {
         return suspendCoroutine { continuation ->
             val call = activityService.getEventDetails(eventId)
             call.enqueue(object : Callback<Event?> {
@@ -484,6 +483,106 @@ class ActivityRepositoryImpl @Inject constructor(
                 }
 
                 override fun onFailure(call: Call<Event?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun assignSpecialLevy(levy: SpecialLevy): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.assignSpecialLevy(levy)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getSpecialLevies(emailAddress: String?): SpecialLeviesWrapper {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getSpecialLevies(emailAddress)
+            call.enqueue(object : Callback<SpecialLeviesWrapper> {
+                override fun onResponse(
+                    call: Call<SpecialLeviesWrapper>,
+                    response: Response<SpecialLeviesWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(SpecialLeviesWrapper("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(SpecialLeviesWrapper("Please check Internet connection and try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<SpecialLeviesWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun submitSpecialLevyPayment(payment: Payment): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.paySpecialLevy(payment)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    GenericResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                GenericResponse(
+                                    "Please check Internet connection and try again",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

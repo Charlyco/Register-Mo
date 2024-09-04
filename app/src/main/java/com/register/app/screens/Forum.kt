@@ -61,6 +61,7 @@ import com.register.app.R
 import com.register.app.dto.GroupStateItem
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.MessageData
+import com.register.app.enums.MemberStatus
 import com.register.app.util.BottomNavBar
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ForumViewModel
@@ -254,6 +255,7 @@ fun ForumScreen(
     val membershipId = groupViewModel.membershipId.value
     val userFullName = forumViewModel?.currentUser?.observeAsState()?.value
     val coroutineScope = rememberCoroutineScope()
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
 
     // Create and remember the LazyListState
     val listState = rememberLazyListState()
@@ -364,7 +366,7 @@ fun RemoteMessageItem(
             ) {
                 if (item.originalMessageId != null) {
                     Text(
-                        text = originalMessage?.message!!,
+                        text = originalMessage?.message?:"",
                         color = MaterialTheme.colorScheme.onTertiary,
                         fontSize = TextUnit(12.0f, TextUnitType.Sp),
                         modifier = Modifier.padding(start = 8.dp)
@@ -507,6 +509,7 @@ fun MessageBox(
     val keyboardController = LocalSoftwareKeyboardController.current
     val group = groupViewModel.groupDetailLiveData.value
     val messageToReply = forumViewModel?.messageToReply?.observeAsState()?.value
+    val isSuspended = groupViewModel.isUserSuspended.observeAsState().value
 
     Column(modifier = Modifier.fillMaxWidth()) {
         if (messageToReply != null) {
@@ -535,40 +538,50 @@ fun MessageBox(
                 )
             }
         }
-
-        Row {
-            Surface(
+        if (isSuspended == true) {
+            Text(
+                text = stringResource(id = R.string.suspended),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = Color.Red,
                 modifier = Modifier
-                    .padding(start = 4.dp)
-                    .width(screenWidth.dp),
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.background,
-                border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
-            ) {
-                TextField(
-                    value = message,
-                    onValueChange = { message =it},
-                    placeholder = { Text(text = stringResource(id = R.string.message)) },
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                textAlign = TextAlign.Center)
+        }else {
+            Row {
+                Surface(
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .width(screenWidth.dp),
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.background,
+                    border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary)
+                ) {
+                    TextField(
+                        value = message,
+                        onValueChange = { message =it},
+                        placeholder = { Text(text = stringResource(id = R.string.message)) },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        )
                     )
-                )
-            }
-            IconButton(
-                onClick = {
-                    keyboardController?.hide()
-                    coroutineScope.launch {
-                        forumViewModel?.sendMessageToForum(membershipId, message, group, messageToReply)
-                        message = ""
-                        forumViewModel?.captureMessageToReply(null)
-                    } },
-                modifier = Modifier
-                    .padding(end = 4.dp),
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
+                }
+                IconButton(
+                    onClick = {
+                        keyboardController?.hide()
+                        coroutineScope.launch {
+                            forumViewModel?.sendMessageToForum(membershipId, message, group, messageToReply)
+                            message = ""
+                            forumViewModel?.captureMessageToReply(null)
+                        } },
+                    modifier = Modifier
+                        .padding(end = 4.dp),
+                ) {
+                    Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = "Send message")
+                }
             }
         }
     }

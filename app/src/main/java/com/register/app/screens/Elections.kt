@@ -45,7 +45,7 @@ import com.register.app.viewmodel.GroupViewModel
 fun Elections(groupViewModel: GroupViewModel, navController: NavController) {
     val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     Scaffold(
-        topBar = { GenericTopBar(title = "Elections", navController = navController, navRoute = "group_detail") },
+        topBar = { GenericTopBar(title = "Elections", navController = navController) },
         floatingActionButton = { if (isAdmin == true) {
             CreateElectionFab(navController)
             }

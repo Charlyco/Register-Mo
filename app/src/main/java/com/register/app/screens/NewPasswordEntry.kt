@@ -40,8 +40,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun NewPasswordEntry(authViewModel: AuthViewModel, navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.enter_new_password),
-            navController = navController, navRoute = "reset_password")}
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.enter_new_password),
+            navController = navController
+        )}
     ) {
         NewPasswordScreen(Modifier.padding(it), authViewModel, navController)
     }

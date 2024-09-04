@@ -1,6 +1,5 @@
 package com.register.app.api
 
-import android.app.Activity
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
 import com.register.app.dto.CommentReply
@@ -15,7 +14,8 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
 import com.register.app.dto.RejectedPayment
-import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.SpecialLeviesWrapper
+import com.register.app.dto.SpecialLevy
 import com.register.app.model.Event
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -44,9 +44,9 @@ interface ActivityService {
     @POST("event-service/api/v1/event/payment/confirm")
     fun confirmPayment(@Body payment: ConfirmPaymentModel): Call<GenericResponse>
     @PUT("event-service/api/v1/event/{eventId}/status")
-    fun changeEventStatus(@Path("eventId") eventId: Int, @Query("status") status: String): Call<EventDetailWrapper>
+    fun changeEventStatus(@Path("eventId") eventId: Long, @Query("status") status: String): Call<EventDetailWrapper>
     @DELETE("event-service/api/v1/event/{eventId}")
-    fun deleteActivity(@Path("eventId") eventId: Int): Call<GenericResponse>
+    fun deleteActivity(@Path("eventId") eventId: Long): Call<GenericResponse>
     @POST("event-service/api/v1/event/payment/bulk")
     fun submitBulkPaymentEvidence(@Body payment: BulkPaymentModel): Call<GenericResponse>
     @GET("event-service/api/v1/event/payment/bulk")
@@ -58,11 +58,19 @@ interface ActivityService {
     @PUT("event-service/api/v1/event/payment/reject")
     fun rejectPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
     @GET("event-service/api/v1/event/{activityId}/report")
-    fun generateReport(@Path("activityId") eventId: Int?): Call<ResponseBody>
+    fun generateReport(@Path("activityId") eventId: Long?): Call<ResponseBody>
     @PUT("event-service/api/v1/event/comment")
     fun postComment(@Body commentModel: EventComment): Call<EventCommentResponse>
     @PUT("event-service/api/v1/event/comment/reply")
     fun postCommentReply(@Body replyModel: CommentReply): Call<EventCommentResponse>
     @GET("event-service/api/v1/event/{eventId}/details")
-    fun getEventDetails(@Path("eventId") eventId: Int): Call<Event?>
+    fun getEventDetails(@Path("eventId") eventId: Long): Call<Event?>
+    @POST("event-service/api/v1/event/specialLevy")
+    fun assignSpecialLevy(@Body levy: SpecialLevy): Call<GenericResponse>
+    @GET("event-service/api/v1/event/specialLevy")
+    fun getSpecialLevies(@Query("payeeEmail") emailAddress: String?): Call<SpecialLeviesWrapper>
+    @POST("event-service/api/v1/event/specialLevy/pay")
+    fun paySpecialLevy(@Body payment: Payment): Call<GenericResponse>
+    @POST("event-service/api/v1/event/specialLevy/payment/confirm")
+    fun confirmSpecialLevyPayment(@Body payment: ConfirmPaymentModel): Call<GenericResponse>
 }

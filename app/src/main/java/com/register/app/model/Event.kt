@@ -5,7 +5,7 @@ import com.register.app.dto.Payment
 import java.io.Serializable
 
 data class Event(
-    val eventId: Int,
+    val eventId: Long,
     val eventTitle: String,
     val eventDescription: String,
     val dateCreated: String,
@@ -33,7 +33,7 @@ data class EventReactionDto(
 )
 
 data class ContributionDto(
-    val id: Int?,
+    val id: Long?,
     val membershipId: String?,
     val memberEmail: String?,
     val payerName: String,

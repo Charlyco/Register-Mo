@@ -9,6 +9,8 @@ import com.register.app.dto.MessageData
 import com.register.app.dto.MessagePayload
 import com.register.app.dto.SupportMessageDto
 import com.register.app.dto.ForumMessages
+import com.register.app.model.DirectChatContact
+import com.register.app.model.Member
 
 interface ChatRepository {
     suspend fun checkTokenWithDeviceId(deviceId: String, token: String): GenericResponse
@@ -23,5 +25,7 @@ interface ChatRepository {
     suspend fun getForumMessages(groupId: Int): ForumMessages?
     suspend fun subScribeToDirectChat(directChatMessageData: DirectChatMessageData, callback: (DirectChatMessageData) -> Unit)
     suspend fun sendDirectMessage(chatMessageData: DirectChatMessageData, callback: (DirectChatMessageData) -> Unit)
+    suspend fun fetchChatContactList(): List<DirectChatContact>?
+    suspend fun saveChatContact(userData: DirectChatContact)
 
 }

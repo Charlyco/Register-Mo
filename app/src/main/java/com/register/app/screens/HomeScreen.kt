@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -30,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -74,12 +71,14 @@ import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.register.app.MainActivity
 import com.register.app.R
+import com.register.app.dto.SpecialLevy
 import com.register.app.model.Event
 import com.register.app.model.Member
 import com.register.app.util.BottomNavBar
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GroupItem
 import com.register.app.util.ImageLoader
+import com.register.app.util.PAY_SPECIAL_LEVY
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
@@ -146,6 +145,7 @@ fun HomeScreenContent(
 ) {
     val homeLoadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
     val groupLoadingState = authViewModel.progressLiveData.observeAsState().value
+    val specialLevies = activityViewModel.specialLevyList.observeAsState().value
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val isRefreshing by rememberSaveable { mutableStateOf(false)}
     val coroutineScope = rememberCoroutineScope()
@@ -181,7 +181,111 @@ fun HomeScreenContent(
             item{ SearchSection(groupViewModel, navController) }
             item {DiscoverSection(groupViewModel, authViewModel, homeViewModel, navController) }
             item {TopGroups(questionnaireViewModel, groupViewModel, navController) }
+            if (!specialLevies.isNullOrEmpty()) {
+                item {SpecialLevySection(specialLevies, navController, activityViewModel, groupViewModel) }
+            }
             item {ActivityFeedList(navController, groupViewModel, activityViewModel) }
+        }
+    }
+}
+
+@Composable
+fun SpecialLevySection(
+    specialLevies: List<SpecialLevy>,
+    navController: NavController,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel
+) {
+    Column(
+        Modifier
+            .padding(vertical = 16.dp)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(id = R.string.special_levy),
+            Modifier
+                .padding(start = 8.dp, bottom = 4.dp)
+                .fillMaxWidth(),
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        specialLevies.forEach { levy ->
+            SpecialLevyItem(levy, navController, activityViewModel, groupViewModel)
+        }
+    }
+}
+
+@Composable
+fun SpecialLevyItem(
+    levy: SpecialLevy,
+    navController: NavController,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Surface(
+        modifier = Modifier
+            .clickable {
+                coroutineScope.launch {
+                    activityViewModel.setSelectedSpecialLevy(levy)
+                    groupViewModel.reloadGroup(levy.groupId) // load group details
+                    navController.navigate(route = PAY_SPECIAL_LEVY) {
+                        launchSingleTop = true
+                    }
+                }
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val (eventTitle, groupName, levyAmount, icon) = createRefs()
+
+            Text(
+                text = levy.levyTitle!!,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.constrainAs(eventTitle) {
+                    top.linkTo(parent.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = levy.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(groupName) {
+                    top.linkTo(eventTitle.bottom, margin = 4.dp)
+                    bottom.linkTo(levyAmount.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                }
+            )
+
+            Text(
+                text = "Levy: ${levy.levyAmount.toString()}",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(levyAmount) {
+                    bottom.linkTo(parent.bottom, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "",
+                modifier = Modifier.constrainAs(icon) {
+                    centerVerticallyTo(parent)
+                    end.linkTo(parent.end, margin = 10.dp)
+                }
+            )
         }
     }
 }

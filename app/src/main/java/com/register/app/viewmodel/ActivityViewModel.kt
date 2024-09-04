@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
@@ -26,6 +27,7 @@ import com.register.app.dto.Payment
 import com.register.app.dto.RateData
 import com.register.app.dto.RejectBulkPaymentDto
 import com.register.app.dto.RejectedPayment
+import com.register.app.dto.SpecialLevy
 import com.register.app.enums.EventStatus
 import com.register.app.enums.EventType
 import com.register.app.model.Event
@@ -43,7 +45,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import java.io.InputStream
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -76,6 +80,8 @@ class ActivityViewModel @Inject constructor(
     val paidMembersList: LiveData<List<Member>?> = _paidMembersList
     private val _eventFeeds: MutableLiveData<List<Event>?> = MutableLiveData()
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
+    private val _specialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val specialLevyList: LiveData<List<SpecialLevy>?> = _specialLevyList
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
     val errorLiveData: LiveData<String?> = _errorLiveData
     private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
@@ -88,11 +94,14 @@ class ActivityViewModel @Inject constructor(
     val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
     private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
     val groupEvents: LiveData<List<Event>?> = _groupEvents
+    private val _selectedSpecialLevy: MutableLiveData<SpecialLevy?> = MutableLiveData()
+    val selectedSpecialLevy: LiveData<SpecialLevy?> = _selectedSpecialLevy
 
 
     init {
         viewModelScope.launch {
             getEventFeeds()
+
         }
     }
 
@@ -162,13 +171,20 @@ class ActivityViewModel @Inject constructor(
                 }
             }
         }
+        // get special levies if any
+        val specialLevyResponse =
+            activityRepository.getSpecialLevies(dataStoreManager.readUserData()?.emailAddress).data
+        val unpaid = specialLevyResponse?.filter { levy ->
+            levy.confirmedPayments?.none { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true
+        }
+        _specialLevyList.value = unpaid
         _loadingState.value = false
         if (events.isNotEmpty()) {
             _eventFeeds.value = events
         }
     }
 
-    suspend fun getEventDetails(eventId: Int) {
+    suspend fun getEventDetails(eventId: Long) {
         _loadingState.value = true
         val event = activityRepository.getEventDetails(eventId)
         if (event != null) {
@@ -222,7 +238,7 @@ class ActivityViewModel @Inject constructor(
         }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
-    suspend fun postComment(comment: String, eventId: Int?) {
+    suspend fun postComment(comment: String, eventId: Long?) {
         val user = dataStoreManager.readUserData()?.fullName
         val commentModel = EventComment(null, user, LocalDateTime.now().toString(), comment, null, eventId)
         _loadingState.value = true
@@ -313,7 +329,7 @@ class ActivityViewModel @Inject constructor(
             selectedPayment.payerEmail,
             selectedPayment.payerFullName,
             selectedPayment.eventTitle,
-            selectedPayment.eventId,
+            selectedPayment.eventId!!,
             groupId,
             selectedPayment.groupName,
             selectedPayment.amountPaid?: amountPaid,
@@ -509,5 +525,73 @@ class ActivityViewModel @Inject constructor(
         }catch (e: Exception) {
             Toast.makeText(context, "Error saving file: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    suspend fun assignSpecialLevy(
+        levyTitle: String,
+        levyDescription: String,
+        amount: Double,
+        group: Group?,
+        selectedMember: Member?
+    ): GenericResponse {
+        val membershipId = group?.memberList?.find { it.emailAddress == selectedMember?.emailAddress }?.membershipId
+        val levy = SpecialLevy(
+            null,
+            levyTitle,
+            levyDescription,
+            LocalDateTime.now().toString(),
+            dataStoreManager.readUserData()?.fullName,
+            group?.groupId,
+            group?.groupName,
+            amount,
+            selectedMember?.emailAddress,
+            membershipId,
+            listOf(),
+            listOf()
+        )
+        _loadingState.value = true
+        val response = activityRepository.assignSpecialLevy(levy)
+        _loadingState.value = false
+        return response
+    }
+
+    fun setSelectedSpecialLevy(levy: SpecialLevy) {
+        _selectedSpecialLevy.value = levy
+    }
+
+    suspend fun paySpecialLevy(
+        specialLevy: SpecialLevy?,
+        modeOfPayment: String,
+        amountPaid: String
+    ): GenericResponse {
+        val imageUrl = paymentEvidence.value
+        val fullName = dataStoreManager.readUserData()?.fullName
+        val payment = Payment(
+            imageUrl?: "",
+            specialLevy?.payeeMembershipId!!,
+            specialLevy.payeeEmail!!,
+            fullName!!,
+            specialLevy.levyTitle!!,
+            specialLevy.id,
+            modeOfPayment,
+            specialLevy.groupName!!,
+            specialLevy.groupId!!,
+            amountPaid.toDouble())
+
+        _loadingState.value = true
+        val response = activityRepository.submitSpecialLevyPayment(payment)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun uploadEvidenceOfPaymentFromCamera(jpegImage: File?) {
+        _loadingState.value = true
+        val requestBody = jpegImage?.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+        Log.d("PHOTO", requestBody.toString())
+        val response: ImageUploadResponse = activityRepository.uploadImage(requestBody!!, "file")
+        _loadingState.value = false
+        if (response.status) {
+            _paymentEvidence.value = response.data?.secureUrl
+        }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 }

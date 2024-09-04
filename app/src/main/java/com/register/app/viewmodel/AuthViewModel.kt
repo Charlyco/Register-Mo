@@ -13,6 +13,7 @@ import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
 import com.register.app.model.Member
+import com.register.app.model.MembershipDto
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
@@ -296,5 +297,4 @@ class AuthViewModel @Inject constructor(
     fun clearOtpVerificationLiveData(value: Boolean) {
         _isOtpVerified.value = null
     }
-
 }

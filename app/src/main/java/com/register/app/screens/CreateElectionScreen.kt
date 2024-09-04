@@ -1,6 +1,5 @@
 package com.register.app.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -37,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -61,8 +59,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
-import com.register.app.dto.Contestant
-import com.register.app.enums.ContestantStatus
 import com.register.app.model.Member
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
@@ -78,8 +74,10 @@ import java.time.LocalDateTime
 @Composable
 fun CreateElectionScreen(groupViewModel: GroupViewModel, authViewModel: AuthViewModel, navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(title = stringResource(id = R.string.create_election),
-            navController = navController, navRoute = "group_detail") },
+        topBar = { GenericTopBar(
+            title = stringResource(id = R.string.create_election),
+            navController = navController
+        ) },
         containerColor = MaterialTheme.colorScheme.background
     ) {
         CreateElectionUi(Modifier.padding(it), groupViewModel, authViewModel, navController)

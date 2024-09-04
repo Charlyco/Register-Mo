@@ -40,8 +40,7 @@ fun DiscoverScreen(
     Scaffold(
         topBar = { GenericTopBar(
             title = "Find Colleagues",
-            navController = navController,
-            navRoute = "home"
+            navController = navController
         )}
     ) {
         DiscoverScreenUi(Modifier.padding(it), groupViewModel, homeViewModel, navController)

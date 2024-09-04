@@ -68,8 +68,7 @@ fun SubmitQuestionnaireResponse(
     Scaffold(
         topBar = { GenericTopBar(
             title = "Questionnaire Response",
-            navController = navController,
-            navRoute = "group_detail"
+            navController = navController
         ) },
         containerColor = MaterialTheme.colorScheme.background
     ) {

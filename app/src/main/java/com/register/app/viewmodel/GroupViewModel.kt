@@ -28,6 +28,7 @@ import com.register.app.enums.ContestantStatus
 import com.register.app.enums.Designation
 import com.register.app.enums.ElectionStatus
 import com.register.app.enums.EventType
+import com.register.app.enums.MemberStatus
 import com.register.app.enums.VoteStatus
 import com.register.app.model.Event
 import com.register.app.model.Group
@@ -79,7 +80,8 @@ class GroupViewModel @Inject constructor(
     val groupAdminList: LiveData<List<Member>?> = _groupAdminList
     private val _pendingMembershipDetail: MutableLiveData<Member> = MutableLiveData()
     val pendingMemberLiveData: LiveData<Member> = _pendingMembershipDetail
-
+    private val _isSuspended: MutableLiveData<Boolean> = MutableLiveData(false)
+    val isUserSuspended: LiveData<Boolean> = _isSuspended
     private val _memberUnpaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
     val memberUnpaidActivities: LiveData<List<Event>?> = _memberUnpaidActivities
     private val _memberPaidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
@@ -130,8 +132,16 @@ class GroupViewModel @Inject constructor(
         val member = getMember(group.memberList)
         _membershipId.value = member?.membershipId
         isUserAdmin(group)
+        isUserSuspended(group)
         //getMembershipId(group)
         //_loadingState.value = false
+    }
+
+    private fun isUserSuspended(group: Group) {
+        val membership = group.memberList?.find { it.membershipId == membershipId.value }
+        if (membership?.memberStatus == MemberStatus.SUSPENDED.name) {
+            _isSuspended.value = true
+        } else _isSuspended.value = false
     }
 
     private suspend fun getMember(memberList: List<MembershipDto>?): MembershipDto? {
