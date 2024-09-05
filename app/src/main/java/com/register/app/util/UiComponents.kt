@@ -390,6 +390,7 @@ fun GroupItem(
     admins: List<Member>?,
     groupViewModel: GroupViewModel,
     questionnaireViewModel: QuestionnaireViewModel,
+    activityViewModel: ActivityViewModel,
     navController: NavController,
     width: Int
 ) {
@@ -405,6 +406,7 @@ fun GroupItem(
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
                     questionnaireViewModel.getQuestionnaires(group.groupId)
+                    activityViewModel.getAllSpecialLeviesForGroup(group.groupId)
                     navController.navigate("group_detail") { launchSingleTop = true }
                 }
             },

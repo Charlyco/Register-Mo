@@ -46,6 +46,7 @@ import com.register.app.model.Member
 import com.register.app.util.DataStoreManager
 import com.register.app.util.GenericTopBar
 import com.register.app.util.GroupItem
+import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.QuestionnaireViewModel
 
@@ -54,7 +55,8 @@ fun AllGroups(
     navController: NavController,
     dataStoreManager: DataStoreManager,
     groupViewModel: GroupViewModel,
-    questionnaireViewModel: QuestionnaireViewModel
+    questionnaireViewModel: QuestionnaireViewModel,
+    activityViewModel: ActivityViewModel
 ) {
     BackHandler {
         navController.navigate("home") {
@@ -68,7 +70,7 @@ fun AllGroups(
         floatingActionButton = { NewGroupFab(navController, dataStoreManager, groupViewModel) },
         floatingActionButtonPosition = FabPosition.End
     ) {
-        GroupsScreenContent(Modifier.padding(it), navController, questionnaireViewModel, groupViewModel)
+        GroupsScreenContent(Modifier.padding(it), navController, questionnaireViewModel, activityViewModel, groupViewModel, )
         CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
         }
@@ -102,6 +104,7 @@ fun GroupsScreenContent(
     modifier: Modifier,
     navController: NavController,
     questionnaireViewModel: QuestionnaireViewModel,
+    activityViewModel: ActivityViewModel,
     groupViewModel: GroupViewModel
 ) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
@@ -177,6 +180,7 @@ fun GroupsScreenContent(
                             admins,
                             groupViewModel,
                             questionnaireViewModel,
+                            activityViewModel,
                             navController,
                             screenWidth - 8
                         )

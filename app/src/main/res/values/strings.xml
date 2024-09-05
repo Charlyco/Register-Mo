@@ -215,9 +215,13 @@
     <string name="assign_levy">Assign special levy</string>
     <string name="levy_title">Levy title</string>
     <string name="assign_levy_header">To assign a special levy, due or fine to the this member, fill the required info and submit</string>
-    <string name="levy_description">Description</string>
+    <string name="levy_description">Levy description</string>
     <string name="special_levy">Special levies</string>
     <string name="choose_source">Choose image source</string>
     <string name="camera">Camera</string>
     <string name="from_file">Gallery</string>
+    <string name="admin">Admin</string>
+    <string name="complied">Member complied</string>
+    <string name="respond">Respond</string>
+    <string name="not_complied">Member not complied</string>
 </resources>

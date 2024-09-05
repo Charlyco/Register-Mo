@@ -58,6 +58,8 @@ class ActivityViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val dataStoreManager: DataStoreManager
 ): ViewModel() {
+    private val _allGroupSpecialLevies: MutableLiveData<List<SpecialLevy>> = MutableLiveData()
+    val allGroupSpecialLevies: LiveData<List<SpecialLevy>> = _allGroupSpecialLevies
     private val _pendingBulkPayments: MutableLiveData<List<BulkPaymentModel>?> = MutableLiveData(listOf())
     val pendingBulkPayments: LiveData<List<BulkPaymentModel>?> = _pendingBulkPayments
     private val _bulkPaymentSelection: MutableLiveData<List<Event>> = MutableLiveData(listOf())
@@ -593,5 +595,56 @@ class ActivityViewModel @Inject constructor(
         if (response.status) {
             _paymentEvidence.value = response.data?.secureUrl
         }else _errorLiveData.value = AN_ERROR_OCCURRED
+    }
+
+    suspend fun getAllSpecialLeviesForGroup(groupId: Int) {
+        _loadingState.value = true
+        val response  = activityRepository.getAllSpecialLeviesForGroup(groupId)
+        _loadingState.value = false
+        if (response.isNotEmpty()) {
+            _allGroupSpecialLevies.value = response
+        }
+    }
+
+    suspend fun confirmSpecialLevyPayment(
+        selectedPayment: Payment?,
+        amountPaid: Double,
+        outstanding: Double,
+        groupId: Int,
+    ): GenericResponse {
+        _loadingState.value = true
+        val contribution = ConfirmPaymentModel(
+            selectedPayment?.membershipId!!,
+            selectedPayment.payerEmail,
+            selectedPayment.payerFullName,
+            selectedPayment.eventTitle,
+            selectedPayment.eventId!!,
+            groupId,
+            selectedPayment.groupName,
+            selectedPayment.amountPaid ?: amountPaid,
+            outstanding,
+            selectedPayment.modeOfPayment,
+            dataStoreManager.readUserData()?.fullName!!
+        )
+        val response = activityRepository.confirmSpecialLevyPayment(contribution)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun rejectSpecialLevyPayment(paymentToReject: Payment?, reason: String): GenericResponse {
+        val rejectedPayment = RejectedPayment(
+            paymentToReject?.eventTitle,
+            paymentToReject?.eventId,
+            paymentToReject?.imageUrl,
+            paymentToReject?.membershipId,
+            paymentToReject?.payerFullName,
+            paymentToReject?.groupName,
+            dataStoreManager.readUserData()?.fullName!!,
+            reason
+        )
+        _loadingState.value = true
+        val response = activityRepository.rejectSpecialLevyPayment(rejectedPayment)
+        _loadingState.value = false
+        return response
     }
 }

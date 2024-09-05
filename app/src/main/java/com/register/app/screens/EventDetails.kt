@@ -478,7 +478,7 @@ fun ConfirmPaymentDialog(
                 }
             }
             Column(
-                Modifier.fillMaxSize(),
+                Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start
             ) {
                 if (!selectedPayment?.imageUrl.isNullOrEmpty()) {
@@ -543,31 +543,6 @@ fun ConfirmPaymentDialog(
                         )
                         )
                 }
-//                Surface(
-//                    Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 16.dp, vertical = 4.dp),
-//                    color = Color.Transparent,
-//                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
-//                    shape = MaterialTheme.shapes.small
-//                ) {
-//                    TextField(
-//                        value = outstanding.toString(),
-//                        onValueChange = { outstanding = it},
-//                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
-//                        colors = TextFieldDefaults.colors(
-//                            focusedContainerColor = MaterialTheme.colorScheme.background,
-//                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-//                            focusedIndicatorColor = Color.Transparent,
-//                            unfocusedIndicatorColor = Color.Transparent,
-//                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
-//                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-//                        ),
-//                        keyboardOptions = KeyboardOptions(
-//                            keyboardType = KeyboardType.Number
-//                        )
-//                    )
-//                }
 
                 Row(
                     Modifier

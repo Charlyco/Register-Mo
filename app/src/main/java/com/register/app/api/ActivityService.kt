@@ -73,4 +73,8 @@ interface ActivityService {
     fun paySpecialLevy(@Body payment: Payment): Call<GenericResponse>
     @POST("event-service/api/v1/event/specialLevy/payment/confirm")
     fun confirmSpecialLevyPayment(@Body payment: ConfirmPaymentModel): Call<GenericResponse>
+    @GET("event-service/api/v1/event/specialLevy/{groupId}")
+    fun getAllSpecialLeviesForGroup(@Path("groupId") groupId: Int): Call<List<SpecialLevy>>
+    @PUT("event-service/api/v1/event/specialLevy/payment/reject")
+    fun rejectSpecialLevyPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
 }

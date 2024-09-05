@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +48,11 @@ fun OtpTextField(
     val coroutineScope = rememberCoroutineScope()
     var isError by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
+//    LaunchedEffect(otpLength == 6) {
+//        val response = authViewModel?.verifyOtp(otp.toInt(), email)
+//        isError = response?.status!!
+//        isDone = true
+//    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -56,7 +62,7 @@ fun OtpTextField(
                 isError = null
                 if (it.length <= otpCount) {
                     otp = it
-                    otpLength++
+                    otpLength = it.length
                 }
                 if (otpLength == otpCount) {
                     coroutineScope.launch {

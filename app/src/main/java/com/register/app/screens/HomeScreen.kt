@@ -2,6 +2,7 @@ package com.register.app.screens
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -180,7 +181,7 @@ fun HomeScreenContent(
             item { WelcomeNote() }
             item{ SearchSection(groupViewModel, navController) }
             item {DiscoverSection(groupViewModel, authViewModel, homeViewModel, navController) }
-            item {TopGroups(questionnaireViewModel, groupViewModel, navController) }
+            item {TopGroups(questionnaireViewModel, groupViewModel, navController, activityViewModel) }
             if (!specialLevies.isNullOrEmpty()) {
                 item {SpecialLevySection(specialLevies, navController, activityViewModel, groupViewModel) }
             }
@@ -196,6 +197,7 @@ fun SpecialLevySection(
     activityViewModel: ActivityViewModel,
     groupViewModel: GroupViewModel
 ) {
+    val outstandingLevies = specialLevies.filter { it.confirmedPayments?.isEmpty() == true }
     Column(
         Modifier
             .padding(vertical = 16.dp)
@@ -212,7 +214,7 @@ fun SpecialLevySection(
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        specialLevies.forEach { levy ->
+        outstandingLevies.forEach { levy ->
             SpecialLevyItem(levy, navController, activityViewModel, groupViewModel)
         }
     }
@@ -240,6 +242,7 @@ fun SpecialLevyItem(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
     ) {
         ConstraintLayout(
             modifier = Modifier
@@ -504,7 +507,12 @@ fun DiscoverSection(
 }
 
 @Composable
-fun TopGroups(questionnaireViewModel: QuestionnaireViewModel, groupViewModel: GroupViewModel, navController: NavController) {
+fun TopGroups(
+    questionnaireViewModel: QuestionnaireViewModel,
+    groupViewModel: GroupViewModel,
+    navController: NavController,
+    activityViewModel: ActivityViewModel
+) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
     val itemWidth = LocalConfiguration.current.screenWidthDp - 16
     ConstraintLayout(
@@ -536,7 +544,7 @@ fun TopGroups(questionnaireViewModel: QuestionnaireViewModel, groupViewModel: Gr
                     LaunchedEffect(groupList) {
                         admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                     }
-                    GroupItem(group, admins, groupViewModel, questionnaireViewModel, navController, itemWidth)
+                    GroupItem(group, admins, groupViewModel, questionnaireViewModel, activityViewModel, navController, itemWidth)
                 }
             }
         }

@@ -22,10 +22,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.RadioButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Menu
@@ -54,6 +55,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -83,6 +85,8 @@ import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.JoinChatPayload
+import com.register.app.dto.SpecialLevy
+import com.register.app.enums.Designation
 import com.register.app.enums.FormStatus
 import com.register.app.model.Group
 import com.register.app.model.Member
@@ -91,6 +95,8 @@ import com.register.app.util.EventItem
 import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
+import com.register.app.util.PAY_SPECIAL_LEVY
+import com.register.app.util.SPECIAL_LEVY_DETAIL
 import com.register.app.util.UNPAID
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
@@ -422,12 +428,17 @@ fun GroupDetailScreen(
 ) {
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
     var showActivities by rememberSaveable { mutableStateOf(false) }
+    var showSpecialLevies by rememberSaveable { mutableStateOf(false) }
     val loadingState = groupViewModel.loadingState.observeAsState().value
     val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
+    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     val refreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
-        onRefresh = { coroutineScope.launch { groupViewModel.reloadGroup(group?.groupId) } })
+        onRefresh = { coroutineScope.launch {
+            groupViewModel.reloadGroup(group?.groupId)
+            activityViewModel.getAllSpecialLeviesForGroup(group?.groupId!!)
+        } })
     Surface(
         Modifier
             .fillMaxSize(),
@@ -456,11 +467,12 @@ fun GroupDetailScreen(
                 item{ GroupProfile(group, groupViewModel) }
             }
             item{ HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
-//            item{ GroupAdminHeader(group, groupViewModel, showAdminList) {showAdminList = it} }
-//
-//            if (showAdminList) {
-//                item{ GroupAdminList(group, groupViewModel, navController) }
-//            }
+            if (isAdmin == true) {
+                item{ SpecialLeviesHeader(group, groupViewModel, showSpecialLevies) {showSpecialLevies = it} }
+                if (showSpecialLevies) {
+                    item{ SpecialLevies(group, groupViewModel, activityViewModel, navController) }
+                }
+            }
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
         }
     }
@@ -1041,52 +1053,196 @@ fun GroupProfile(group: Group?, groupViewModel: GroupViewModel) {
     }
 }
 
-//@Composable
-//fun GroupAdminHeader(group: Group?, groupViewModel: GroupViewModel, showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
-//    val coroutineScope = rememberCoroutineScope()
-//    Row(
-//        Modifier
-//            .fillMaxWidth()
-//            .padding(horizontal = 16.dp, vertical = 16.dp)
-//            .clickable {
-//                coroutineScope.launch {
-//                    group?.memberList?.let { groupViewModel.filterAdmins(it) }
-//                }
-//                shouldShow(!showAdminList)
-//            },
-//        horizontalArrangement = Arrangement.SpaceBetween,
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Text(
-//            text = stringResource(id = R.string.group_admin),
-//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-//            fontWeight = FontWeight.SemiBold
-//        )
-//        if (showAdminList) {
-//            Icon(
-//                painter = painterResource(id = R.drawable.up_arrow_solid),
-//                contentDescription = "",
-//                Modifier
-//                    .size(16.dp)
-//                    .clickable { shouldShow(false) }
-//            )
-//        }else {
-//            Icon(
-//                painter = painterResource(id = R.drawable.forward_arrow_solid),
-//                contentDescription = "",
-//                Modifier
-//                    .size(16.dp)
-//                    .clickable {
-//                        coroutineScope.launch {
-//                            group?.memberList?.let { groupViewModel.filterAdmins(it) }
-//                        }
-//                        shouldShow(true)
-//                    }
-//            )
-//        }
-//    }
-//}
-//
+@Composable
+fun SpecialLeviesHeader(
+    group: Group?,
+    groupViewModel: GroupViewModel,
+    showAdminList: Boolean, shouldShow: (Boolean) -> Unit) {
+    val coroutineScope = rememberCoroutineScope()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clickable {
+                shouldShow(!showAdminList)
+            },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(id = R.string.special_levy),
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
+        )
+        if (showAdminList) {
+            Icon(
+                painter = painterResource(id = R.drawable.up_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { shouldShow(false) }
+            )
+        }else {
+            Icon(
+                painter = painterResource(id = R.drawable.forward_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable {
+                        coroutineScope.launch {
+                            group?.memberList?.let { groupViewModel.filterAdmins(it) }
+                        }
+                        shouldShow(true)
+                    }
+            )
+        }
+    }
+}
+
+@Composable
+fun SpecialLevies(
+    group: Group?,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController
+) {
+    val levies = activityViewModel.allGroupSpecialLevies.observeAsState().value
+    var filteredLevies by remember { mutableStateOf(listOf<SpecialLevy>()) }
+    var selected by rememberSaveable { mutableStateOf("NOT COMPLIED") }
+    LaunchedEffect(selected) {
+        if (levies?.isNotEmpty() == true) {
+            when (selected) {
+                "COMPLIED" -> filteredLevies = levies.filter { it.confirmedPayments?.isNotEmpty() == true }
+                "NOT COMPLIED" -> filteredLevies = levies.filter { it.confirmedPayments?.isEmpty() == true }
+                else -> {}
+            }
+        }
+
+    }
+
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                RadioButton(
+                    selected = selected == "COMPLIED",
+                    onClick = { selected = "COMPLIED" }
+                )
+                Text(
+                    text = stringResource(id = R.string.complied),
+                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selected == "NOT COMPLIED",
+                    onClick = {
+                        selected = "NOT COMPLIED"
+                    }
+                )
+                Text(
+                    text = stringResource(id = R.string.not_complied),
+                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                )
+            }
+        }
+
+        if (filteredLevies.isNotEmpty()) {
+            Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                filteredLevies.forEach { levy ->
+                    SpecialLevyItemGroup(levy, group, groupViewModel, activityViewModel, navController)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SpecialLevyItemGroup(
+    levy: SpecialLevy,
+    group: Group?,
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController
+) {
+    Surface(
+        modifier = Modifier
+            .clickable {
+                activityViewModel.setSelectedSpecialLevy(levy)
+                navController.navigate(SPECIAL_LEVY_DETAIL) {
+                    launchSingleTop = true
+                }
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val (eventTitle, groupName, levyAmount, icon) = createRefs()
+
+            Text(
+                text = levy.levyTitle!!,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.constrainAs(eventTitle) {
+                    top.linkTo(parent.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = levy.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(groupName) {
+                    top.linkTo(eventTitle.bottom, margin = 4.dp)
+                    bottom.linkTo(levyAmount.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                }
+            )
+
+            Text(
+                text = "Levy: ${levy.levyAmount.toString()}",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(levyAmount) {
+                    bottom.linkTo(parent.bottom, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "",
+                modifier = Modifier.constrainAs(icon) {
+                    centerVerticallyTo(parent)
+                    end.linkTo(parent.end, margin = 10.dp)
+                }
+            )
+        }
+    }
+}
+
 //@Composable
 //fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
 //    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
@@ -1370,7 +1526,7 @@ fun MemberItem(
             ConstraintLayout(
                 Modifier.fillMaxWidth(),
             ) {
-                val (profile, name, icon) = createRefs()
+                val (profile, name, icon, admin_text) = createRefs()
 
                 Surface(
                     Modifier
@@ -1404,31 +1560,40 @@ fun MemberItem(
                         }
                 )
 
-                //if (designation == Designation.ADMIN.name) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.message_circle_lines),
-                        contentDescription = "",
-                        Modifier
-                            .size(24.dp)
-                            .clickable {
-                                coroutineScope.launch {
-                                    val recipientId =
-                                        group?.memberList?.find { it.emailAddress == member.emailAddress }!!.membershipId
-                                    val senderId = groupViewModel.membershipId.value
-                                    forumViewModel.fetUserChats(recipientId, senderId!!)
-                                    forumViewModel.subScribeToDirectChat(member.emailAddress, group)
-                                }
-                                navController.navigate("admin_chat/${member.emailAddress}") {
-                                    launchSingleTop = true
-                                }
-                            }
-                            .constrainAs(icon) {
-                                end.linkTo(parent.end, margin = 8.dp)
-                                centerVerticallyTo(parent)
-                            },
-                        tint = Color(context.getColor(R.color.purple_700))
+                if (designation == Designation.ADMIN.name) {
+                    Text(
+                        text = stringResource(id = R.string.admin),
+                        fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                        color = Color(context.getColor(R.color.teal_200)),
+                        modifier = Modifier.constrainAs(admin_text) {
+                            end.linkTo(icon.start, margin = 4.dp)
+                            centerVerticallyTo(parent)
+                        }
                     )
-                //}
+                }
+                Icon(
+                    painter = painterResource(id = R.drawable.message_circle_lines),
+                    contentDescription = "",
+                    Modifier
+                        .size(24.dp)
+                        .clickable {
+                            coroutineScope.launch {
+                                val recipientId =
+                                    group?.memberList?.find { it.emailAddress == member.emailAddress }!!.membershipId
+                                val senderId = groupViewModel.membershipId.value
+                                forumViewModel.fetUserChats(recipientId, senderId!!)
+                                forumViewModel.subScribeToDirectChat(member.emailAddress, group)
+                            }
+                            navController.navigate("admin_chat/${member.emailAddress}") {
+                                launchSingleTop = true
+                            }
+                        }
+                        .constrainAs(icon) {
+                            end.linkTo(parent.end, margin = 8.dp)
+                            centerVerticallyTo(parent)
+                        },
+                        tint = Color(context.getColor(R.color.purple_700))
+                )
             }
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
         }

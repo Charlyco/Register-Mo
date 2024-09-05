@@ -45,6 +45,7 @@ import com.register.app.screens.QuestionnaireResponses
 import com.register.app.screens.ResetPassword
 import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
+import com.register.app.screens.SpecialLevyDetail
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.SubmitQuestionnaireResponse
 import com.register.app.screens.SuggestedGroups
@@ -59,6 +60,7 @@ import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.HOME
 import com.register.app.util.NOTIFICATIONS
 import com.register.app.util.PAY_SPECIAL_LEVY
+import com.register.app.util.SPECIAL_LEVY_DETAIL
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.ForumViewModel
@@ -122,7 +124,8 @@ fun RegisterAppNavHost(
                 navController = navController,
                 dataStoreManager = dataStoreManager,
                 groupViewModel = groupViewModel,
-                questionnaireViewModel = questionnaireViewModel)
+                questionnaireViewModel = questionnaireViewModel,
+                activityViewModel = activityViewModel)
         }
         composable("payment") {
             EvidenceOfPayment(
@@ -304,6 +307,14 @@ fun RegisterAppNavHost(
                 groupViewModel = groupViewModel,
                 navController = navController,
                 cameraActivityResult = takePicture
+            )
+        }
+        composable(SPECIAL_LEVY_DETAIL) {
+            SpecialLevyDetail(
+                activityViewModel = activityViewModel,
+                groupViewModel = groupViewModel,
+                authViewModel = authViewModel,
+                navController = navController
             )
         }
     }

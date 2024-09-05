@@ -589,4 +589,105 @@ class ActivityRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun getAllSpecialLeviesForGroup(groupId: Int): List<SpecialLevy> {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getAllSpecialLeviesForGroup(groupId)
+            call.enqueue(object : Callback<List<SpecialLevy>> {
+                override fun onResponse(
+                    call: Call<List<SpecialLevy>>,
+                    response: Response<List<SpecialLevy>>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(listOf())
+                            }
+
+                            500 -> continuation.resume(listOf())
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<List<SpecialLevy>>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun confirmSpecialLevyPayment(payment: ConfirmPaymentModel): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = activityService.confirmSpecialLevyPayment(payment)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    GenericResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                GenericResponse(
+                                    "Please check Internet connection and try again",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun rejectSpecialLevyPayment(rejectedPayment: RejectedPayment): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call  = activityService.rejectSpecialLevyPayment(rejectedPayment)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }
