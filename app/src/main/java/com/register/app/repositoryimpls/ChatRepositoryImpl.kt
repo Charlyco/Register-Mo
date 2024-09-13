@@ -143,11 +143,14 @@ class ChatRepositoryImpl @Inject constructor(
             Log.d("MESSAGE", response.toString())
             callback(
                 SupportMessageDto(
+                    response.id,
                     response.email,
                     response.fullName,
                     response.message,
                     response.messageType,
-                    response.dateTime
+                    response.dateTime,
+                    response.sender,
+                    response.recipient
                 )
             )
         }

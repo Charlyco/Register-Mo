@@ -647,4 +647,18 @@ class ActivityViewModel @Inject constructor(
         _loadingState.value = false
         return response
     }
+
+    suspend fun uploadBatchPaymentRecord(
+        inputStream: InputStream?,
+        mimeType: String?,
+        fileName: String?,
+        groupId: Int
+    ): GenericResponse? {
+        _loadingState.value = true
+        val eventId = selectedEvent.value?.eventId
+        val requestBody = inputStream?.readBytes()?.toRequestBody(mimeType?.toMediaTypeOrNull())
+        val response: GenericResponse? = activityRepository.uploadBatchPaymentRecord(requestBody, fileName, eventId!!, groupId)
+        _loadingState.value = false
+        return response
+    }
 }

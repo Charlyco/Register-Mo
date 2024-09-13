@@ -15,3 +15,4 @@ const val NOTIFICATION_REQUEST_CODE: Int = 902
 const val ELECTION_NOTIFICATION_REQUEST_CODE: Int = 903
 const val NOTIFICATION_TITLE = "notification_title"
 const val AN_ERROR_OCCURRED = "An error occurred, please try again"
+const val SUPPORT = "support"

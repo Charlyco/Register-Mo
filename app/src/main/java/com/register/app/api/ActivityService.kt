@@ -77,4 +77,7 @@ interface ActivityService {
     fun getAllSpecialLeviesForGroup(@Path("groupId") groupId: Int): Call<List<SpecialLevy>>
     @PUT("event-service/api/v1/event/specialLevy/payment/reject")
     fun rejectSpecialLevyPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
+    @Multipart
+    @POST("event-service/api/v1/event/batch/{eventId}")
+    fun uploadBatchPaymentRecord(@Path("eventId") eventId: Long, @Query("groupId") groupId: Int, @Part file: MultipartBody.Part): Call<GenericResponse>
 }

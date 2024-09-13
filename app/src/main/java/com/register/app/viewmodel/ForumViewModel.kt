@@ -18,6 +18,7 @@ import com.register.app.model.MembershipDto
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
+import com.register.app.util.SUPPORT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -237,11 +238,16 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
     }
 
     suspend fun sendSupportMessage(userData: Member?, message: String) {
+        val user = dataStoreManager.readUserData()
         val messagePayload = SupportMessageDto(
+            null,
             userData?.emailAddress!!,
             userData.fullName,
             message,
-            MessageType.MESSAGE.name, LocalDateTime.now().toString())
+            MessageType.MESSAGE.name,
+            LocalDateTime.now().toString(),
+            user?.emailAddress!!,
+            SUPPORT)
         chatRepository.sendSupportMessage(messagePayload){
             val messageList = _supportMessages.value
             val newMessageList = mutableListOf<SupportMessageDto>()
@@ -251,8 +257,19 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         }
     }
 
-    suspend fun subscribeToSupport(supportMessageDto: SupportMessageDto) {
-        chatRepository.subscribeToSupport(supportMessageDto) {
+    suspend fun subscribeToSupport() {
+        val user = dataStoreManager.readUserData();
+        val message = SupportMessageDto(
+            null,
+            user?.emailAddress!!,
+            user.fullName,
+            "",
+            MessageType.JOIN.name,
+            LocalDateTime.now().toString(),
+            user.emailAddress,
+            SUPPORT
+        )
+        chatRepository.subscribeToSupport(message) {
             val messageList = _supportMessages.value
             val newMessageList = mutableListOf<SupportMessageDto>()
             newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())

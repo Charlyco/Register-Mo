@@ -690,4 +690,39 @@ class ActivityRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun uploadBatchPaymentRecord(
+        requestBody: RequestBody?,
+        fileName: String?,
+        eventId: Long,
+        groupId: Int
+    ): GenericResponse? {
+        return suspendCoroutine { continuation ->
+            val file = MultipartBody.Part.createFormData("file", fileName, requestBody!!)
+            val call = activityService.uploadBatchPaymentRecord(eventId, groupId, file)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(GenericResponse("An error has occurred, please try again", false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }

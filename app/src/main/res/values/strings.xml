@@ -41,7 +41,7 @@
     <string name="group_type">Select type of group</string>
     <string name="closed">Closed Group</string>
     <string name="open">Open group</string>
-    <string name="upload">Upload Group Logo</string>
+    <string name="upload_group_logo">Upload Group Logo</string>
     <string name="search_group">Enter a group name to search</string>
     <string name="create_group_btn">Create group</string>
     <string name="browse">Browse</string>
@@ -224,4 +224,12 @@
     <string name="complied">Member complied</string>
     <string name="respond">Respond</string>
     <string name="not_complied">Member not complied</string>
+    <string name="batch_upload">Batch Upload</string>
+    <string name="batch_upload_desc">"Click the button below to select the Ms Excel file to upload! "</string>
+    <string name="go_to_batch">"To upload payment records in batches, click "</string>
+    <string name="here">here</string>
+    <string name="upload">Upload</string>
+    <string name="batch_upload_intro">"Ensure that the excel sheet complies with the tempalrte provided. "</string>
+    <string name="should_request_login">Require login each time the app start?</string>
+    <string name="auth_mode">"Authentication "</string>
 </resources>

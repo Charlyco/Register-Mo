@@ -128,16 +128,7 @@ fun SupportScreenContent(
                     .fillMaxWidth()
                     .clickable {
                         coroutineScope.launch {
-                            forumViewModel.subscribeToSupport(
-                                SupportMessageDto(
-                                    userData?.emailAddress!!, userData.fullName,
-                                    "",
-                                    MessageType.JOIN.name,
-                                    LocalDateTime
-                                        .now()
-                                        .toString()
-                                )
-                            )
+                            forumViewModel.subscribeToSupport()
                         }
                         navController.navigate("live_support") {
                             launchSingleTop = true

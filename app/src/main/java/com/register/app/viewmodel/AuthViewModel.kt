@@ -58,6 +58,12 @@ class AuthViewModel @Inject constructor(
     private val _userEmail: MutableLiveData<String> = MutableLiveData()
     val userEmail: LiveData<String> = _userEmail
 
+//    init {
+//        viewModelScope.launch {
+//            _userLiveData.value = dataStoreManager.readUserData()
+//        }
+//    }
+
     suspend fun signUp(
         username: String,
         password: String,

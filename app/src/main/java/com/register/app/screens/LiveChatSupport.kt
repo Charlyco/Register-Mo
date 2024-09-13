@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +76,13 @@ fun LiveChatSupportScreen(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val conversations = forumViewModel.supportMessages.observeAsState().value
     val userData = authViewModel.userLideData.observeAsState().value
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(conversations) {
+        if (!conversations.isNullOrEmpty()) {
+            listState.scrollToItem(conversations.size - 1)
+        }
+    }
     ConstraintLayout(
         modifier = Modifier
             .padding(top = 64.dp)
@@ -94,7 +102,7 @@ fun LiveChatSupportScreen(
             color = MaterialTheme.colorScheme.background
         ) { if (conversations != null) {
             LazyColumn(
-                state = rememberLazyListState()
+                state = listState
             ) {
                 items(conversations) { item ->
                     if (item.email == userData?.emailAddress) {

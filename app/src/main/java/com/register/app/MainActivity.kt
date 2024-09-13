@@ -180,5 +180,10 @@ class MainActivity : ComponentActivity() {
         startService(intent)
     }
 
+    override fun onStop() {
+        super.onStop()
+        finishAffinity()
+    }
+
 }
 

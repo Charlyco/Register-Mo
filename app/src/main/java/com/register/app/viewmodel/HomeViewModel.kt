@@ -25,6 +25,8 @@ class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val notificationRepository: NotificationRepository
 ): ViewModel() {
+    private val _authModeLiveData: MutableLiveData<Boolean?> = MutableLiveData()
+    val authModeLiveData: LiveData<Boolean?> = _authModeLiveData
     private val _notificationList: MutableLiveData<MutableList<NotificationModel>?> = MutableLiveData()
     val notificationList: LiveData<MutableList<NotificationModel>?> = _notificationList
     private val _faqListLiveData: MutableLiveData<List<Faq>?> = MutableLiveData()
@@ -36,6 +38,11 @@ class HomeViewModel @Inject constructor(
     private val _homeDestination: MutableLiveData<String> = MutableLiveData("splash")
     val homeDestination: LiveData<String> = _homeDestination
 
+    init {
+        viewModelScope.launch {
+           _authModeLiveData.value = dataStoreManager.readLoginType()
+        }
+    }
 
     private fun getSuggestedGroups() {
         val groups = listOf<Group>()
@@ -76,6 +83,11 @@ class HomeViewModel @Inject constructor(
             val notifications = notificationRepository.getAllNotifications()
             Log.d("notifications", notifications.toString())
             _notificationList.postValue(notifications)
+    }
+
+    suspend fun setAuthMode(mode: Boolean) {
+        dataStoreManager.writeLoginType(mode)
+        _authModeLiveData.value = mode
     }
 }
 

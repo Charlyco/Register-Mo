@@ -88,6 +88,7 @@ import androidx.compose.ui.window.Dialog
 import com.register.app.dto.Payment
 import com.register.app.enums.AdminActions
 import com.register.app.enums.EventType
+import com.register.app.util.BATCH_UPLOAD_INTRO
 import com.register.app.util.CircularIndicator
 import com.register.app.util.Utils
 import com.register.app.viewmodel.ActivityViewModel
@@ -1042,7 +1043,7 @@ fun AdminActions(
                     bottomStart = 32.dp
                 )
             ),
-        color = MaterialTheme.colorScheme.surface
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             Modifier
@@ -1143,6 +1144,29 @@ fun AdminActions(
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
                         color = MaterialTheme.colorScheme.onBackground)
                 }
+            }
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(id = R.string.go_to_batch),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground
+                    )
+                Text(
+                    text = stringResource(id = R.string.here),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = Color(context.getColor(R.color.purple_700)),
+                    modifier = Modifier.clickable {
+                        navController.navigate(BATCH_UPLOAD_INTRO) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
         }
     }

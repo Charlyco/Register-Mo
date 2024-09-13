@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,11 +11,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -23,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -31,6 +38,8 @@ import com.register.app.R
 import com.register.app.enums.NotificationType
 import com.register.app.model.NotificationModel
 import com.register.app.util.GenericTopBar
+import com.register.app.util.HOME
+import com.register.app.util.NOTIFICATIONS
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
@@ -44,12 +53,42 @@ fun NotificationScreen(
     activityViewModel: ActivityViewModel,
     navController: NavController) {
     Scaffold(
-        topBar = { GenericTopBar(
+        topBar = { NotificationTopBar(
             title = stringResource(id = R.string.notifications),
             navController = navController
         ) }
     ) {
         NotificationList(Modifier.padding(it), homeViewModel, activityViewModel, groupViewModel, authViewModel, navController)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationTopBar(title: String, navController: NavController) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        TopAppBar(
+            title = { Text(
+                text = title,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            ) },
+            modifier = Modifier.fillMaxWidth(),
+            navigationIcon = { Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "",
+                Modifier.clickable { navController.navigate(HOME) {
+                    launchSingleTop = true
+                    popUpTo(NOTIFICATIONS) {inclusive = true}
+                } },
+                tint = MaterialTheme.colorScheme.onBackground
+            )},
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent)
+        )
     }
 }
 

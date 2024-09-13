@@ -46,6 +46,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.BottomNavBar
 import com.register.app.util.ImageLoader
+import com.register.app.util.SETTINGS
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
@@ -223,7 +224,9 @@ fun ProfileScreenUi(
                         .padding(top = 20.dp)
                         .height(48.dp)
                         .fillMaxWidth()
-                        .clickable { }
+                        .clickable {
+                            navController.navigate(SETTINGS)
+                        }
                 ) {
                     val (icon, label, arrow) = createRefs()
 

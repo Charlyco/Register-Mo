@@ -33,22 +33,28 @@ fun SplashScreen(
         LaunchedEffect(key1 = SPLASH_SCREEN_KEY) {
             delay(3000)
             if (dataStoreManager.readUserData()?.userId != null) {
-                Log.d("USER:", dataStoreManager.readUserData().toString())
-                if (authViewModel.shouldLogin()) {
+                if (dataStoreManager.readLoginType() == true) {
                     navController.navigate("signin") {
                         popUpTo("splash") {inclusive = true}
                     }
-                }else {
-                    if(authViewModel.shouldRefreshToken()) {
-                        authViewModel.refreshToken()
-                        authViewModel.getUserDetails()
-                        navController.navigate("home") {
-                            popUpTo("splash") { inclusive = true }
+                } else {
+                    Log.d("USER:", dataStoreManager.readUserData().toString())
+                    if (authViewModel.shouldLogin()) {
+                        navController.navigate("signin") {
+                            popUpTo("splash") {inclusive = true}
                         }
-                    } else {
-                        authViewModel.getUserDetails()
-                        navController.navigate("home") {
-                            popUpTo("splash") { inclusive = true }
+                    }else {
+                        if(authViewModel.shouldRefreshToken()) {
+                            authViewModel.getUserDetails()
+                            authViewModel.refreshToken()
+                            navController.navigate("home") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                        } else {
+                            authViewModel.getUserDetails()
+                            navController.navigate("home") {
+                                popUpTo("splash") { inclusive = true }
+                            }
                         }
                     }
                 }

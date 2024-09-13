@@ -15,6 +15,8 @@ import com.register.app.screens.AllGroups
 import com.register.app.screens.AllUserActivities
 import com.register.app.screens.AssignSpecialLevi
 import com.register.app.screens.AuthScreen
+import com.register.app.screens.BatchUploadIntroScreen
+import com.register.app.screens.BatchUploadScreen
 import com.register.app.screens.BulkPayment
 import com.register.app.screens.CreateElectionScreen
 import com.register.app.screens.CreateEvent
@@ -43,6 +45,7 @@ import com.register.app.screens.PaySpecialLevy
 import com.register.app.screens.ProfileScreen
 import com.register.app.screens.QuestionnaireResponses
 import com.register.app.screens.ResetPassword
+import com.register.app.screens.SettingScreen
 import com.register.app.screens.SignUpCont
 import com.register.app.screens.Signup
 import com.register.app.screens.SpecialLevyDetail
@@ -54,12 +57,16 @@ import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.ADMIN_CHAT
 import com.register.app.util.ALL_USER_ACTIVITIES
 import com.register.app.util.ASSIGN_LEVY
+import com.register.app.util.BATCH_UPLOAD
+import com.register.app.util.BATCH_UPLOAD_INTRO
 import com.register.app.util.DIRECT_CHAT
 import com.register.app.util.DataStoreManager
+import com.register.app.util.EVENT_DETAIL
 import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.HOME
 import com.register.app.util.NOTIFICATIONS
 import com.register.app.util.PAY_SPECIAL_LEVY
+import com.register.app.util.SETTINGS
 import com.register.app.util.SPECIAL_LEVY_DETAIL
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
@@ -116,7 +123,7 @@ fun RegisterAppNavHost(
         composable("events/{title}") { backStackEntry ->
             Events(navController = navController, activityViewModel = activityViewModel, groupViewModel = groupViewModel, authViewModel = authViewModel, title = backStackEntry.arguments?.getString("title"))
         }
-        composable("event_detail") {
+        composable(EVENT_DETAIL) {
             EventDetails(dataStoreManager = dataStoreManager, navController = navController, activityViewModel = activityViewModel, groupViewModel = groupViewModel, authViewModel = authViewModel)
         }
         composable("groups") {
@@ -316,6 +323,19 @@ fun RegisterAppNavHost(
                 authViewModel = authViewModel,
                 navController = navController
             )
+        }
+        composable(BATCH_UPLOAD_INTRO) {
+            BatchUploadIntroScreen(navController = navController)
+        }
+        composable(BATCH_UPLOAD) {
+            BatchUploadScreen(
+                activityViewModel = activityViewModel,
+                groupViewModel = groupViewModel,
+                navController = navController
+            )
+        }
+        composable(SETTINGS) {
+            SettingScreen(homeViewModel = homeViewModel, navController = navController)
         }
     }
 }

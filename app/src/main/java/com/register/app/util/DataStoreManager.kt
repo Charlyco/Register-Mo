@@ -3,6 +3,7 @@ package com.register.app.util
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -24,7 +25,7 @@ class DataStoreManager(private val applicationContext: Context) {
         val firebaseToken = stringPreferencesKey("firebase")
         val contactPermission = stringPreferencesKey("contactPermission")
         val deviceId = stringPreferencesKey("deviceId")
-        val userEmail = stringPreferencesKey("email")
+        val shouldRequestLogin = booleanPreferencesKey("loginType")
     }
 
     // Singleton pattern for DataStoreManager
@@ -36,7 +37,7 @@ class DataStoreManager(private val applicationContext: Context) {
         private val Context.firebaseDataStore: DataStore<Preferences> by preferencesDataStore(name = "firebase_datastore")
         private val Context.contactPermission: DataStore<Preferences> by preferencesDataStore(name = "contact_perm_datastore")
         private val Context.deviceIdDataStore: DataStore<Preferences> by preferencesDataStore(name= "device_id_datastore")
-        private val Context.userEmailDataStore: DataStore<Preferences> by preferencesDataStore(name = "email_datastore")
+        private val Context.loginTypeDataStore: DataStore<Preferences> by preferencesDataStore(name = "login_type_datastore")
 
         @Volatile
         private var instance: DataStoreManager? = null
@@ -120,5 +121,15 @@ class DataStoreManager(private val applicationContext: Context) {
             preferences[PreferencesKeys.refreshTokenKey]?.let {
             json.decodeFromString(RefreshToken.serializer(), it)
         } }.firstOrNull()
+    }
+
+    suspend fun readLoginType(): Boolean? {
+        return applicationContext.loginTypeDataStore.data.map { it[PreferencesKeys.shouldRequestLogin] }.firstOrNull()
+    }
+
+    suspend fun writeLoginType(shouldRequestLogin: Boolean) {
+        applicationContext.loginTypeDataStore.edit { preferences ->
+            preferences[PreferencesKeys.shouldRequestLogin] = shouldRequestLogin
+        }
     }
 }
