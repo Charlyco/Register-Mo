@@ -16,6 +16,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.DataStoreManager
+import com.register.app.util.ONBOARDING
 import com.register.app.util.SPLASH_SCREEN_KEY
 import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
@@ -59,7 +60,7 @@ fun SplashScreen(
                     }
                 }
             } else {
-                navController.navigate("onboard") {
+                navController.navigate(ONBOARDING) {
                     popUpTo("splash") {inclusive = true}
                 }
             }

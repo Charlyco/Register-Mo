@@ -2,6 +2,7 @@ package com.register.app.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,10 +34,15 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.DataStoreManager
+import com.register.app.util.ONBOARDING
+import com.register.app.util.PRIVACY
+import com.register.app.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager) {
+fun AuthScreen(navController: NavController, homeViewModel: HomeViewModel) {
     val buttonWidth = (LocalConfiguration.current.screenWidthDp/2) - 32
+    val coroutineScope = rememberCoroutineScope()
     Surface(
         Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -43,7 +50,7 @@ fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager)
        ConstraintLayout(
            Modifier.fillMaxSize()
        ) {
-           val (bg, signIn, signUp, motto, bottomShade) = createRefs()
+           val (bg, signIn, signUp, motto, privacy) = createRefs()
            Image(
                painter = painterResource(id = R.drawable.auth_bg),
                contentDescription = "",
@@ -74,7 +81,7 @@ fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager)
            Button(
                onClick = {
                    navController.navigate("signin") {
-                       popUpTo("onboard") {
+                       popUpTo(ONBOARDING) {
                            inclusive = true }
                    }
                          },
@@ -110,7 +117,7 @@ fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager)
                    .fillMaxWidth()
                    .padding(horizontal = 16.dp)
                    .constrainAs(signUp) {
-                       bottom.linkTo(parent.bottom, margin = 24.dp)
+                       bottom.linkTo(privacy.top, margin = 24.dp)
                    },
                colors = ButtonDefaults.buttonColors(
                    containerColor = MaterialTheme.colorScheme.primary,
@@ -126,6 +133,20 @@ fun AuthScreen(navController: NavController, dataStoreManager: DataStoreManager)
                Text(text = stringResource(id = R.string.signup))
            }
 
+           Text(
+               text = stringResource(id = R.string.privacy),
+               modifier = Modifier
+                   .clickable {
+                       coroutineScope.launch { homeViewModel.getPrivacyStatement() }
+                       navController.navigate(PRIVACY)
+                   }
+                   .constrainAs(privacy) {
+                       bottom.linkTo(parent.bottom, margin = 16.dp)
+                       centerHorizontallyTo(parent)
+                   },
+               color = MaterialTheme.colorScheme.tertiary,
+               fontSize = TextUnit(12.0f, TextUnitType.Sp)
+           )
        }
     }
 }

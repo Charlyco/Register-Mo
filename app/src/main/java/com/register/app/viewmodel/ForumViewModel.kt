@@ -216,7 +216,7 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             groupName!!,
             groupId!!,
             LocalDateTime.now().toString(),
-            messageToReply?.id!!)
+            messageToReply?.id)
         chatRepository.sendMessage(groupId, chatMessage) {
         }
     }
@@ -239,6 +239,7 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
 
     suspend fun sendSupportMessage(userData: Member?, message: String) {
         val user = dataStoreManager.readUserData()
+        val token = dataStoreManager.readTokenData()
         val messagePayload = SupportMessageDto(
             null,
             userData?.emailAddress!!,
@@ -247,7 +248,8 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             MessageType.MESSAGE.name,
             LocalDateTime.now().toString(),
             user?.emailAddress!!,
-            SUPPORT)
+            SUPPORT,
+            token!!)
         chatRepository.sendSupportMessage(messagePayload){
             val messageList = _supportMessages.value
             val newMessageList = mutableListOf<SupportMessageDto>()
@@ -258,7 +260,8 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
     }
 
     suspend fun subscribeToSupport() {
-        val user = dataStoreManager.readUserData();
+        val user = dataStoreManager.readUserData()
+        val token = dataStoreManager.readTokenData()
         val message = SupportMessageDto(
             null,
             user?.emailAddress!!,
@@ -267,7 +270,8 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
             MessageType.JOIN.name,
             LocalDateTime.now().toString(),
             user.emailAddress,
-            SUPPORT
+            SUPPORT,
+            token!!
         )
         chatRepository.subscribeToSupport(message) {
             val messageList = _supportMessages.value

@@ -150,7 +150,8 @@ class ChatRepositoryImpl @Inject constructor(
                     response.messageType,
                     response.dateTime,
                     response.sender,
-                    response.recipient
+                    response.recipient,
+                    response.token
                 )
             )
         }

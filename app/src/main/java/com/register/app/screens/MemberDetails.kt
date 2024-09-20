@@ -358,7 +358,7 @@ fun AdminMemberActions(
                     if (isUnblockEnabled) {
                         Icon(
                             painter = painterResource(id = R.drawable.expel),
-                            contentDescription = "suspend user",
+                            contentDescription = "expel user",
                             modifier = Modifier.size(48.dp),
                             tint = Color.Gray)
                     }else {

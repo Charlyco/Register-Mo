@@ -4,9 +4,9 @@ data class MessagePayload(
     val message: String,
     val membershipId: String,
     val senderName: String,
-    val imageUrl: String,
+    val imageUrl: String?,
     val groupName: String,
     val groupId: Int,
     val sendTime: String,
-    val originalMessageId: Long
+    val originalMessageId: Long?
 )

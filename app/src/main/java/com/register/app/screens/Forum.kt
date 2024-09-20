@@ -449,9 +449,9 @@ fun MyMessageItem(
                     }
                 }
             ) {
-                if (item.originalMessageId != null) {
+                if (originalMessage != null) {
                     Text(
-                        text = originalMessage?.message!!,
+                        text = originalMessage?.message?: "",
                         color = Color.Gray,
                         fontSize = TextUnit(12.0f, TextUnitType.Sp),
                         modifier = Modifier

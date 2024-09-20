@@ -187,9 +187,11 @@ class AuthViewModel @Inject constructor(
     private suspend fun updateFirebaseToken(deviceId: String?, firebaseToken: String?) {
         Log.d("FCM", "Token: $firebaseToken")
         Log.d("FCM", "deviceId: $deviceId")
-        val shouldUpdate = chatRepository.checkTokenWithDeviceId(deviceId!!, firebaseToken!!).data
-        if (shouldUpdate == true) {
-            chatRepository.updateFcmToken(FirebaseTokenModel(deviceId, firebaseToken))
+        if (deviceId != null && firebaseToken != null) {
+            val shouldUpdate = chatRepository.checkTokenWithDeviceId(deviceId, firebaseToken).data
+            if (shouldUpdate == true) {
+                chatRepository.updateFcmToken(FirebaseTokenModel(deviceId, firebaseToken))
+            }
         }
     }
 

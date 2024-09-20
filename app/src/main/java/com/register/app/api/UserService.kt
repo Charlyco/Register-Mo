@@ -10,6 +10,7 @@ import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
 import com.register.app.model.Faq
 import com.register.app.model.Member
+import com.register.app.model.PrivacyPolicyResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -57,6 +58,6 @@ interface UserService {
     @PUT("auth-service/api/v1/auth/resetPassword")
     fun resetPassword(@Query("email") email: String?,
                       @Query("password") password: String): Call<GenericResponse>
-
-
+    @GET("company-service/api/v1/privacy")
+    fun getPrivacyStatement(): Call<PrivacyPolicyResponse>
 }

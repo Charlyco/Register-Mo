@@ -55,7 +55,7 @@ import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SuggestedGroups(
+fun GroupSearch(
     groupViewModel: GroupViewModel,
     navController: NavHostController,
     homeViewModel: HomeViewModel,

@@ -51,7 +51,8 @@ import com.register.app.screens.Signup
 import com.register.app.screens.SpecialLevyDetail
 import com.register.app.screens.SplashScreen
 import com.register.app.screens.SubmitQuestionnaireResponse
-import com.register.app.screens.SuggestedGroups
+import com.register.app.screens.GroupSearch
+import com.register.app.screens.PrivacyStatementScreen
 import com.register.app.screens.SupportScreen
 import com.register.app.screens.VerifyOtpScreen
 import com.register.app.util.ADMIN_CHAT
@@ -65,7 +66,9 @@ import com.register.app.util.EVENT_DETAIL
 import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.HOME
 import com.register.app.util.NOTIFICATIONS
+import com.register.app.util.ONBOARDING
 import com.register.app.util.PAY_SPECIAL_LEVY
+import com.register.app.util.PRIVACY
 import com.register.app.util.SETTINGS
 import com.register.app.util.SPECIAL_LEVY_DETAIL
 import com.register.app.viewmodel.ActivityViewModel
@@ -157,8 +160,8 @@ fun RegisterAppNavHost(
         composable("forum") {
             Forum(forumViewModel = forumViewModel, groupViewModel = groupViewModel, navController = navController)
         }
-        composable("onboard") {
-            AuthScreen(navController = navController, dataStoreManager = dataStoreManager)
+        composable(ONBOARDING) {
+            AuthScreen(navController = navController, homeViewModel = homeViewModel)
         }
         composable("update_group") {
             GroupUpdateScreen(navController = navController, groupViewModel = groupViewModel)
@@ -179,7 +182,7 @@ fun RegisterAppNavHost(
             ModifyAdmin(authViewModel = authViewModel, groupViewModel = groupViewModel, navController = navController)
         }
         composable("suggested_groups") {
-            SuggestedGroups(
+            GroupSearch(
                 groupViewModel = groupViewModel,
                 navController = navController,
                 homeViewModel = homeViewModel,
@@ -336,6 +339,9 @@ fun RegisterAppNavHost(
         }
         composable(SETTINGS) {
             SettingScreen(homeViewModel = homeViewModel, navController = navController)
+        }
+        composable(PRIVACY) {
+            PrivacyStatementScreen(homeViewModel = homeViewModel, navController = navController)
         }
     }
 }

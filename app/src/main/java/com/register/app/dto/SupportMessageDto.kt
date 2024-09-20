@@ -8,5 +8,6 @@ data class SupportMessageDto(
     val messageType: String,
     val dateTime: String,
     val sender: String,
-    val recipient: String
+    val recipient: String,
+    val token: String
 )

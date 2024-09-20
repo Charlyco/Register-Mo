@@ -14,6 +14,8 @@ import com.register.app.dto.UpdateUserResponse
 import com.register.app.dto.VerifyOtpModel
 import com.register.app.model.Faq
 import com.register.app.model.Member
+import com.register.app.model.PrivacyPolicy
+import com.register.app.model.PrivacyPolicyResponse
 import okhttp3.RequestBody
 
 interface AuthRepository {
@@ -30,4 +32,5 @@ interface AuthRepository {
     suspend fun getFaqList(): FaqWrapper
     suspend fun checkEmailAndPhone(email: String, phone: String): GenericResponse
     suspend fun resetPassword(email: String?, password: String): GenericResponse
+    suspend fun getPrivacyStatement(): PrivacyPolicyResponse?
 }

@@ -62,6 +62,7 @@ import androidx.navigation.compose.rememberNavController
 import com.register.app.R
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
+import com.register.app.util.ONBOARDING
 import com.register.app.util.PasswordTextBox
 import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -133,7 +134,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .size(18.dp)
                         .clickable {
-                            navController.navigate("auth") {
+                            navController.navigate(ONBOARDING) {
                                 popUpTo("splash") { inclusive = true }
                             }
                         },

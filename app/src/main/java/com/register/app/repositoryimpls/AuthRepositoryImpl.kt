@@ -16,6 +16,7 @@ import com.register.app.dto.UpdateUserResponse
 import com.register.app.dto.VerifyOtpModel
 import com.register.app.model.Faq
 import com.register.app.model.Member
+import com.register.app.model.PrivacyPolicyResponse
 import com.register.app.repository.AuthRepository
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -392,6 +393,48 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                 }
 
                 override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getPrivacyStatement(): PrivacyPolicyResponse? {
+        return suspendCoroutine { continuation ->
+            val call = userService.getPrivacyStatement()
+            call.enqueue(object: Callback<PrivacyPolicyResponse> {
+                override fun onResponse(
+                    call: Call<PrivacyPolicyResponse>,
+                    response: Response<PrivacyPolicyResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    } else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    PrivacyPolicyResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                PrivacyPolicyResponse(
+                                    "An error occurred",
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<PrivacyPolicyResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

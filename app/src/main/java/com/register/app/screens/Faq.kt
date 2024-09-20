@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.model.Faq
 import com.register.app.util.GenericTopBar
 import com.register.app.viewmodel.HomeViewModel
 
@@ -47,7 +48,6 @@ fun Faq(homeViewModel: HomeViewModel, navController: NavController) {
 @Composable
 fun FaqScreen(modifier: Modifier, homeViewModel: HomeViewModel, navController: NavController) {
     val faqList = homeViewModel.faqListLiveData.observeAsState().value
-    var showAnswer by rememberSaveable { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -61,37 +61,26 @@ fun FaqScreen(modifier: Modifier, homeViewModel: HomeViewModel, navController: N
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             faqList?.forEach { faq ->
-                FaqItemHeader(faq.question, showAnswer) { showAnswer = it }
-                if (showAnswer) {
-                    Text(
-                        text = faq.answer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Start
-                    )
-                }
+                FaqItemHeader(faq)
             }
         }
     }
-
 }
 
 @Composable
-fun FaqItemHeader(question: String, showAnswer: Boolean, callback: (Boolean) -> Unit) {
+fun FaqItemHeader(faq: Faq) {
     val context = LocalContext.current
+    var showAnswer by rememberSaveable { mutableStateOf(false) }
     Row(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp)
-            .clickable { callback(!showAnswer) },
+            .clickable { showAnswer != showAnswer },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = question,
+            text = faq.question,
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             color = Color(context.getColor(R.color.purple_500))
         )
@@ -101,8 +90,17 @@ fun FaqItemHeader(question: String, showAnswer: Boolean, callback: (Boolean) -> 
                 contentDescription = "",
                 Modifier
                     .size(16.dp)
-                    .clickable { callback(false) },
+                    .clickable { showAnswer = false },
                 tint = Color(context.getColor(R.color.purple_500))
+            )
+            Text(
+                text = faq.answer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start
             )
         }else {
             Icon(
@@ -110,7 +108,7 @@ fun FaqItemHeader(question: String, showAnswer: Boolean, callback: (Boolean) -> 
                 contentDescription = "",
                 Modifier
                     .size(16.dp)
-                    .clickable { callback(true) },
+                    .clickable { showAnswer = true },
                 tint = Color(context.getColor(R.color.purple_500))
             )
         }

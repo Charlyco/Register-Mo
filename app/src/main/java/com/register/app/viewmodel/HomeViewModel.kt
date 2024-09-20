@@ -10,6 +10,7 @@ import com.register.app.model.Event
 import com.register.app.model.Faq
 import com.register.app.model.Group
 import com.register.app.model.NotificationModel
+import com.register.app.model.PrivacyPolicy
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.GroupRepository
 import com.register.app.repository.NotificationRepository
@@ -25,6 +26,8 @@ class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val notificationRepository: NotificationRepository
 ): ViewModel() {
+    private val _privacyStatement: MutableLiveData<PrivacyPolicy?> = MutableLiveData()
+    val privacyStatement: LiveData<PrivacyPolicy?> = _privacyStatement
     private val _authModeLiveData: MutableLiveData<Boolean?> = MutableLiveData()
     val authModeLiveData: LiveData<Boolean?> = _authModeLiveData
     private val _notificationList: MutableLiveData<MutableList<NotificationModel>?> = MutableLiveData()
@@ -88,6 +91,10 @@ class HomeViewModel @Inject constructor(
     suspend fun setAuthMode(mode: Boolean) {
         dataStoreManager.writeLoginType(mode)
         _authModeLiveData.value = mode
+    }
+
+    suspend fun getPrivacyStatement() {
+        _privacyStatement.value = authRepository.getPrivacyStatement()?.data
     }
 }
 

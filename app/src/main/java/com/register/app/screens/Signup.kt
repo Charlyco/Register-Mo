@@ -51,6 +51,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.CircularIndicator
 import com.register.app.util.DataStoreManager
+import com.register.app.util.ONBOARDING
 import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -89,7 +90,7 @@ fun Signup(
                 modifier = Modifier
                     .size(40.dp)
                     .clickable {
-                        navController.navigate("onboard") {
+                        navController.navigate(ONBOARDING) {
                             popUpTo("signup") { inclusive = true }
                         }
                     }

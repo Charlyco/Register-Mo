@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material.icons.Icons
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -126,6 +128,9 @@ fun CreateEventScreen(
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     var showCalender by rememberSaveable { mutableStateOf(false) }
     val imageList = activityViewModel.activityImageList.observeAsState().value
+    var showAmountError by rememberSaveable { mutableStateOf(false) }
+    var showTitleError by rememberSaveable { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
     val dateTime = LocalDateTime.now()
     val context = LocalContext.current
@@ -166,7 +171,7 @@ Surface(
         Surface(
             Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 2.dp)
                 .height(55.dp),
             border = BorderStroke(1.dp, Color.Gray),
             shape = MaterialTheme.shapes.medium,
@@ -183,6 +188,15 @@ Surface(
                 )
             )
         }
+        if (showTitleError) {
+            Text(
+                text = stringResource(id = R.string.blank_activity_title),
+                color = MaterialTheme.colorScheme.onError,
+                fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
 
         Text(
             text = stringResource(id = R.string.activity_description),
@@ -219,7 +233,7 @@ Surface(
         Surface(
             Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 2.dp)
                 .height(55.dp),
             border = BorderStroke(1.dp, Color.Gray),
             shape = MaterialTheme.shapes.medium,
@@ -233,7 +247,16 @@ Surface(
                     focusedContainerColor = MaterialTheme.colorScheme.background,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
-                )
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
+        if (showAmountError) {
+            Text(
+                text = stringResource(id = R.string.blank_amount),
+                color = MaterialTheme.colorScheme.onError,
+                fontSize = TextUnit(10.0f, TextUnitType.Sp),
+                modifier = Modifier.padding(bottom = 16.dp)
             )
         }
 
@@ -360,17 +383,23 @@ Surface(
         ) {
             Button(
                 onClick = { coroutineScope.launch {
-                    val response = activityViewModel.createNewActivity(activityTitle,
-                        activityDescription, levyAmount.toDouble(),eventDate,
-                        group?.groupName!!, group.groupId,
-                        eventType)
-                    if (response.status) {
-                        groupViewModel.reloadGroup(group.groupId) // Refresh group details
-                        Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
-                        navController.navigateUp()
-                    }
-                    else {
-                        Toast.makeText(context, "Failed to create activity", Toast.LENGTH_SHORT).show()
+                    if (levyAmount.isEmpty()) {
+                        showAmountError = true
+                    }else if (activityTitle.isBlank()) {
+                        showTitleError = true
+                    } else {
+                        val response = activityViewModel.createNewActivity(activityTitle,
+                            activityDescription, levyAmount.toDouble(),eventDate,
+                            group?.groupName!!, group.groupId,
+                            eventType)
+                        if (response.status) {
+                            groupViewModel.reloadGroup(group.groupId) // Refresh group details
+                            Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
+                            navController.navigateUp()
+                        }
+                        else {
+                            Toast.makeText(context, "Failed to create activity", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
                           },
