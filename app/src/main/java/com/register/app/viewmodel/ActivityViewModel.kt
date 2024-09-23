@@ -82,8 +82,12 @@ class ActivityViewModel @Inject constructor(
     val paidMembersList: LiveData<List<Member>?> = _paidMembersList
     private val _eventFeeds: MutableLiveData<List<Event>?> = MutableLiveData()
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
-    private val _specialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
-    val specialLevyList: LiveData<List<SpecialLevy>?> = _specialLevyList
+    private val _mySpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val mySpecialLevyList: LiveData<List<SpecialLevy>?> = _mySpecialLevyList
+    private val _unpaidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val unpaidSpecialLevyList: LiveData<List<SpecialLevy>?> = _unpaidSpecialLevyList
+    private val _paidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val paidSpecialLevyList: LiveData<List<SpecialLevy>?> = _paidSpecialLevyList
     private val _errorLiveData: MutableLiveData<String?> = MutableLiveData()
     val errorLiveData: LiveData<String?> = _errorLiveData
     private val _paidActivities: MutableLiveData<List<Event>?> = MutableLiveData()
@@ -179,7 +183,7 @@ class ActivityViewModel @Inject constructor(
         val unpaid = specialLevyResponse?.filter { levy ->
             levy.confirmedPayments?.none { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true
         }
-        _specialLevyList.value = unpaid
+        _mySpecialLevyList.value = unpaid
         _loadingState.value = false
         if (events.isNotEmpty()) {
             _eventFeeds.value = events
@@ -597,13 +601,20 @@ class ActivityViewModel @Inject constructor(
         }else _errorLiveData.value = AN_ERROR_OCCURRED
     }
 
-    suspend fun getAllSpecialLeviesForGroup(groupId: Int) {
+    suspend fun getAllSpecialLeviesForGroup(groupId: Int, emailAddress: String) {
+        // get special levies if any
         _loadingState.value = true
-        val response  = activityRepository.getAllSpecialLeviesForGroup(groupId)
-        _loadingState.value = false
-        if (response.isNotEmpty()) {
-            _allGroupSpecialLevies.value = response
+        val specialLevyResponse =
+            activityRepository.getAllSpecialLeviesForGroup(groupId, emailAddress).data
+        val paid = specialLevyResponse?.filter { levy ->
+            levy.confirmedPayments?.any { it.memberEmail == emailAddress } == true
         }
+        val unpaid = specialLevyResponse?.filter { levy ->
+            levy.confirmedPayments?.none { it.memberEmail == emailAddress } == true
+        }
+        _unpaidSpecialLevyList.value = unpaid
+        _paidSpecialLevyList.value = paid
+        _loadingState.value = false
     }
 
     suspend fun confirmSpecialLevyPayment(
@@ -660,5 +671,21 @@ class ActivityViewModel @Inject constructor(
         val response: GenericResponse? = activityRepository.uploadBatchPaymentRecord(requestBody, fileName, eventId!!, groupId)
         _loadingState.value = false
         return response
+    }
+
+    suspend fun getSpecialLeviesForUser(emailAddress: String?) {
+        // get special levies if any
+        _loadingState.value = true
+        val specialLevyResponse =
+            activityRepository.getSpecialLevies(emailAddress).data
+        val paid = specialLevyResponse?.filter { levy ->
+            levy.confirmedPayments?.any { it.memberEmail == emailAddress } == true
+        }
+        val unpaid = specialLevyResponse?.filter { levy ->
+            levy.confirmedPayments?.none { it.memberEmail == emailAddress } == true
+        }
+        _unpaidSpecialLevyList.value = unpaid
+        _paidSpecialLevyList.value = paid
+        _loadingState.value = false
     }
 }

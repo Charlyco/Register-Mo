@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -326,7 +327,11 @@ fun EditProfileUi(
                     bottom.linkTo(parent.bottom, margin = 24.dp)
                     centerHorizontallyTo(parent)
                 },
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color(context.getColor(R.color.background_color))
+            )
             ) {
             Text(text = stringResource(id = R.string.submit))
         }

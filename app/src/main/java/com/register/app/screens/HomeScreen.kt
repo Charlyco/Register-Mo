@@ -146,7 +146,7 @@ fun HomeScreenContent(
 ) {
     val homeLoadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
     val groupLoadingState = authViewModel.progressLiveData.observeAsState().value
-    val specialLevies = activityViewModel.specialLevyList.observeAsState().value
+    val specialLevies = activityViewModel.mySpecialLevyList.observeAsState().value
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val isRefreshing by rememberSaveable { mutableStateOf(false)}
     val coroutineScope = rememberCoroutineScope()
@@ -181,7 +181,7 @@ fun HomeScreenContent(
             item { WelcomeNote() }
             item{ SearchSection(groupViewModel, navController) }
             item {DiscoverSection(groupViewModel, authViewModel, homeViewModel, navController) }
-            item {TopGroups(questionnaireViewModel, groupViewModel, navController, activityViewModel) }
+            item {TopGroups(questionnaireViewModel, groupViewModel, navController, authViewModel, activityViewModel) }
             if (!specialLevies.isNullOrEmpty()) {
                 item {SpecialLevySection(specialLevies, navController, activityViewModel, groupViewModel) }
             }
@@ -343,7 +343,7 @@ fun SearchSection(groupViewModel: GroupViewModel, navController: NavController) 
                         }
                     }
                     .padding(16.dp),
-                tint = MaterialTheme.colorScheme.onPrimary
+                tint = Color(context.getColor(R.color.background_color))
                 )
         }
     }
@@ -456,31 +456,7 @@ fun DiscoverSection(
                 fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 textAlign = TextAlign.Center)
         }
-//        Column(
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            Surface(
-//                Modifier
-//                    .size(64.dp)
-//                    .clickable {
-//                        navController.navigate("colleagues") {
-//                            launchSingleTop = true
-//                        }
-//                    },
-//                color = MaterialTheme.colorScheme.onTertiary,
-//                shape = MaterialTheme.shapes.small
-//            ) {
-//                Image(
-//                    painter = painterResource(id = R.drawable.forum),
-//                    contentDescription = "discover",
-//                    modifier = Modifier
-//                        .padding(10.dp)
-//                        .size(32.dp))
-//            }
-//            Text(text = stringResource(id = R.string.explore),
-//                fontSize = TextUnit(12.0f, TextUnitType.Sp),
-//                textAlign = TextAlign.Center)
-//        }
+
         Column(
             Modifier.clickable { groupViewModel.showCreateGroupSheet.postValue(true)},
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -511,6 +487,7 @@ fun TopGroups(
     questionnaireViewModel: QuestionnaireViewModel,
     groupViewModel: GroupViewModel,
     navController: NavController,
+    authViewModel: AuthViewModel,
     activityViewModel: ActivityViewModel
 ) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
@@ -544,7 +521,7 @@ fun TopGroups(
                     LaunchedEffect(groupList) {
                         admins = group.memberList?.let { groupViewModel.filterAdmins(it) }
                     }
-                    GroupItem(group, admins, groupViewModel, questionnaireViewModel, activityViewModel, navController, itemWidth)
+                    GroupItem(group, admins, groupViewModel, questionnaireViewModel, activityViewModel, navController, itemWidth, authViewModel)
                 }
             }
         }

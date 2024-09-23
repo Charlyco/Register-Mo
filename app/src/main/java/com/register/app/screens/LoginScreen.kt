@@ -110,7 +110,7 @@ fun LoginScreen(
                 text = stringResource(id = R.string.welcome_back),
                 fontWeight = FontWeight.Bold,
                 fontSize = TextUnit(48.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.background,
+                color = Color(context.getColor(R.color.background_color)),
                 modifier = Modifier.constrainAs(header) {
                     top.linkTo(backBtn.bottom, margin = 40.dp)
                     start.linkTo(parent.start, margin = 16.dp)
@@ -126,7 +126,7 @@ fun LoginScreen(
                     },
                 shape = MaterialTheme.shapes.extraLarge,
                 shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-                color = MaterialTheme.colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.background
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBackIosNew,
@@ -231,7 +231,7 @@ fun LoginScreen(
                     },
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                 colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.background,
+                    contentColor = Color(context.getColor(R.color.background_color)),
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {

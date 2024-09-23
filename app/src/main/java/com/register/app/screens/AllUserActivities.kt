@@ -78,7 +78,7 @@ fun AllActivitiesContent(
         modifier = Modifier
             .padding(bottom = 72.dp)
             .fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             Modifier
@@ -90,7 +90,7 @@ fun AllActivitiesContent(
 
             Surface(
                 Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth(),
                 color = MaterialTheme.colorScheme.onPrimary,
                 shadowElevation = dimensionResource(id = R.dimen.low_elevation),

@@ -41,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -74,6 +75,7 @@ import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.viewmodel.ActivityViewModel
+import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.QuestionnaireViewModel
 import kotlinx.coroutines.launch
@@ -392,11 +394,12 @@ fun GroupItem(
     questionnaireViewModel: QuestionnaireViewModel,
     activityViewModel: ActivityViewModel,
     navController: NavController,
-    width: Int
+    width: Int,
+    authViewModel: AuthViewModel
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
+    val user = authViewModel.userLideData.observeAsState().value
     Surface(
         Modifier
             .width(width.dp)
@@ -406,7 +409,7 @@ fun GroupItem(
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
                     questionnaireViewModel.getQuestionnaires(group.groupId)
-                    activityViewModel.getAllSpecialLeviesForGroup(group.groupId)
+                    activityViewModel.getAllSpecialLeviesForGroup(group.groupId, user?.emailAddress!!)
                     navController.navigate("group_detail") { launchSingleTop = true }
                 }
             },

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.LiveHelp
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -335,6 +336,10 @@ fun SendEmailDialog(
                     val chooserIntent = Intent.createChooser(intent, "Choose an app")
                     startActivity(context, chooserIntent, null)
                 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color(context.getColor(R.color.background_color))
+                ),
                 modifier = Modifier
                     .width(200.dp)
                     .padding(top = 16.dp)) {

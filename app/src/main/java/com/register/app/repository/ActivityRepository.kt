@@ -41,7 +41,7 @@ interface ActivityRepository {
     suspend fun assignSpecialLevy(levy: SpecialLevy): GenericResponse
     suspend fun getSpecialLevies(emailAddress: String?): SpecialLeviesWrapper
     suspend fun submitSpecialLevyPayment(payment: Payment): GenericResponse
-    suspend fun getAllSpecialLeviesForGroup(groupId: Int): List<SpecialLevy>
+    suspend fun getAllSpecialLeviesForGroup(groupId: Int, emailAddress: String): SpecialLeviesWrapper
     suspend fun confirmSpecialLevyPayment(payment: ConfirmPaymentModel): GenericResponse
     suspend fun rejectSpecialLevyPayment(rejectedPayment: RejectedPayment): GenericResponse
     suspend fun uploadBatchPaymentRecord(

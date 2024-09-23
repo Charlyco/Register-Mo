@@ -437,7 +437,7 @@ fun GroupDetailScreen(
         refreshing = isRefreshing,
         onRefresh = { coroutineScope.launch {
             groupViewModel.reloadGroup(group?.groupId)
-            activityViewModel.getAllSpecialLeviesForGroup(group?.groupId!!)
+            //activityViewModel.getAllSpecialLeviesForGroup(group?.groupId!!)
         } })
     Surface(
         Modifier
@@ -467,13 +467,13 @@ fun GroupDetailScreen(
                 item{ GroupProfile(group, groupViewModel) }
             }
             item{ HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
-            if (isAdmin == true) {
-                item{ SpecialLeviesHeader(group, groupViewModel, showSpecialLevies) {showSpecialLevies = it} }
-                if (showSpecialLevies) {
-                    item{ SpecialLevies(group, groupViewModel, activityViewModel, navController) }
-                }
-            }
-            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
+//            if (isAdmin == true) {
+//                item{ SpecialLeviesHeader(group, groupViewModel, showSpecialLevies) {showSpecialLevies = it} }
+//                if (showSpecialLevies) {
+//                    item{ SpecialLevies(group, groupViewModel, activityViewModel, navController) }
+//                }
+//            }
+//            item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
         }
     }
 }
@@ -665,13 +665,14 @@ fun PaidEvents(
     val membershipId = groupViewModel.membershipId.observeAsState().value
     val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
+    val paidSpecialLevies = activityViewModel.paidSpecialLevyList.observeAsState().value
     ConstraintLayout (
         Modifier
             .fillMaxWidth(),
     ) {
         val (header, list, shoeAll) = createRefs()
 
-        if (eventList?.isNotEmpty() == true) {
+        if (eventList?.isNotEmpty() == true || paidSpecialLevies?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -680,10 +681,22 @@ fun PaidEvents(
                         start.linkTo(parent.start)
                     }
                 ) {
-                   eventList.forEach { event ->
-                       EventItem(event, group!!, groupViewModel, activityViewModel, navController)
-                   }
+                if( eventList?.isNotEmpty() == true ) {  // show regular events
+                    eventList.forEach { event ->
+                        EventItem(event, group!!, groupViewModel, activityViewModel, navController)
+                    }
                 }
+                if (paidSpecialLevies?.isNotEmpty() == true) { // show special levies
+                    paidSpecialLevies.forEach { levy ->
+                        SpecialLevyItem(
+                            levy = levy,
+                            navController = navController,
+                            activityViewModel = activityViewModel,
+                            groupViewModel = groupViewModel
+                        )
+                    }
+                }
+            }
             Text(
                 text = stringResource(id = R.string.show_more),
                 Modifier
@@ -742,13 +755,14 @@ fun UnpaidEvents(
     val membershipId = groupViewModel.membershipId.observeAsState().value
     val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
+    val unpaidSpecialLevies = activityViewModel.unpaidSpecialLevyList.observeAsState().value
     ConstraintLayout (
         Modifier
             .fillMaxWidth(),
     ) {
         val (list, shoeAll) = createRefs()
 
-        if (eventList?.isNotEmpty() == true) {
+        if (eventList?.isNotEmpty() == true || unpaidSpecialLevies?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -757,8 +771,20 @@ fun UnpaidEvents(
                         start.linkTo(parent.start)
                     }
             ) {
-                eventList.forEach { event ->
-                    EventItem(event, group!!, groupViewModel, activityViewModel, navController)
+                if( eventList?.isNotEmpty() == true ) {  // show regular events
+                    eventList.forEach { event ->
+                        EventItem(event, group!!, groupViewModel, activityViewModel, navController)
+                    }
+                }
+                if (unpaidSpecialLevies?.isNotEmpty() == true) {  // show special levies
+                    unpaidSpecialLevies.forEach { levy ->
+                        SpecialLevyItem(
+                            levy = levy,
+                            navController = navController,
+                            activityViewModel = activityViewModel,
+                            groupViewModel = groupViewModel
+                        )
+                    }
                 }
             }
             Text(
@@ -1243,155 +1269,6 @@ fun SpecialLevyItemGroup(
     }
 }
 
-//@Composable
-//fun GroupAdminList(group: Group?, groupViewModel: GroupViewModel, navController: NavController) {
-//    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
-//    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
-//    if (group?.memberList?.isNotEmpty() == true) {
-//        val loadingState = groupViewModel.loadingState.observeAsState().value
-//        val adminList: List<Member>? = groupViewModel.groupAdminList.observeAsState().value
-//        Column(
-//            Modifier
-//                .fillMaxWidth()
-//        ) {
-//            if (loadingState == true) {
-//                LinearProgressIndicator(
-//                    Modifier
-//                        .height(4.dp)
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 8.dp),
-//                    color = MaterialTheme.colorScheme.surface,
-//                    trackColor = MaterialTheme.colorScheme.secondary,
-//                )
-//            }
-//            if (adminList?.isNotEmpty() == true) {
-//                LazyRow(
-//                    Modifier
-//                        .padding(start = 8.dp, end = 8.dp)
-//                        .height(204.dp),
-//                    state = rememberLazyListState(),
-//                    contentPadding = PaddingValues(vertical = 2.dp)
-//                ) {
-//                    items(adminList) { admin ->
-//                        val membershipDto = group.memberList.find { membershipDto -> membershipDto.emailAddress == admin.emailAddress }
-//                        if (membershipDto != null) {
-//                            AdminItem(admin, membershipDto)
-//                        }
-//                    }
-//                    if (isAdmin == true) {
-//                        item{
-//                            Surface(
-//                                Modifier
-//                                    .height(200.dp)
-//                                    .width(itemWidth.dp)
-//                                    .padding(horizontal = 8.dp)
-//                                    .clickable {
-//                                        navController.navigate("modify_admin") {
-//                                            launchSingleTop = true
-//                                        }
-//                                    },
-//                                shape = MaterialTheme.shapes.small,
-//                                shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-//                                color = MaterialTheme.colorScheme.background
-//                            ) {
-//                                ConstraintLayout(
-//                                    Modifier.fillMaxSize()
-//                                ) {
-//                                    val (icon, text) = createRefs()
-//                                    Icon(
-//                                        imageVector = Icons.Default.Edit,
-//                                        contentDescription = "edit",
-//                                        Modifier.constrainAs(icon) {
-//                                            centerHorizontallyTo(parent)
-//                                            centerVerticallyTo(parent)
-//                                        })
-//                                    Text(
-//                                        text = stringResource(id = R.string.change_admin),
-//                                        Modifier.constrainAs(text) {
-//                                            top.linkTo(icon.bottom, margin = 8.dp)
-//                                            centerHorizontallyTo(parent)
-//                                        }
-//                                    )
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Composable
-//fun AdminItem(admin: Member, membershipDto: MembershipDto) {
-//    val itemWidth = (LocalConfiguration.current.screenWidthDp / 2) - 36
-//    val context = LocalContext.current
-//    Surface(
-//        Modifier
-//            .width(itemWidth.dp)
-//            .height(200.dp)
-//            .padding(horizontal = 4.dp, vertical = 2.dp),
-//        shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-//        shape = MaterialTheme.shapes.small,
-//        color = MaterialTheme.colorScheme.background
-//    ) {
-//        ConstraintLayout(
-//            Modifier.fillMaxWidth()
-//        ) {
-//            val (profilePic, name, office, phone, email) = createRefs()
-//
-//            Text(
-//                text = membershipDto.memberOffice,
-//                Modifier.constrainAs(office) {
-//                    centerHorizontallyTo(parent)
-//                    top.linkTo(parent.top, margin = 8.dp) },
-//                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-//                fontWeight = FontWeight.SemiBold,
-//                color = MaterialTheme.colorScheme.onBackground
-//            )
-//
-//            Surface(
-//                Modifier
-//                    .size(48.dp)
-//                    .clip(CircleShape)
-//                    .constrainAs(profilePic) {
-//                        centerHorizontallyTo(parent)
-//                        top.linkTo(office.bottom, margin = 16.dp)
-//                    },
-//                ) {
-//                ImageLoader(
-//                    imageUrl = admin.imageUrl ?: "",
-//                    context = context,
-//                    height = 44,
-//                    width = 44,
-//                    placeHolder = R.drawable.placeholder
-//                )
-//            }
-//
-//            Text(
-//                text = admin.fullName,
-//                Modifier
-//                    .padding(horizontal = 2.dp)
-//                    .constrainAs(name) {
-//                        centerHorizontallyTo(parent)
-//                        top.linkTo(profilePic.bottom, margin = 8.dp)
-//                    },
-//                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-//                color = MaterialTheme.colorScheme.onBackground
-//            )
-//
-//            Text(
-//                text = admin.phoneNumber,
-//                Modifier.constrainAs(phone) {
-//                    centerHorizontallyTo(parent)
-//                    top.linkTo(name.bottom, margin = 8.dp) },
-//                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-//                color = MaterialTheme.colorScheme.onBackground
-//            )
-//        }
-//    }
-//}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllMembersList(
@@ -1504,13 +1381,6 @@ fun MemberItem(
             .clickable {
                 coroutineScope.launch {
                     groupViewModel.setSelectedMember(member)
-                    /*
-                    * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
-                    * I need to match each detail with the corresponding membershipDto*/
-                    val membershipDto =
-                        group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
-                    groupViewModel.setSelectedMembership(membershipDto!!)
-                    Log.d("MEMBERSHIP", membershipDto.toString())
                     navController.navigate("member_detail") {
                         launchSingleTop = true
                     }

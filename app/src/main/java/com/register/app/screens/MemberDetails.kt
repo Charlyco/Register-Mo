@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
@@ -28,15 +30,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -49,9 +53,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -65,35 +71,45 @@ import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
 import com.register.app.dto.ChangeMemberStatusDto
+import com.register.app.dto.Payment
 import com.register.app.dto.RemoveMemberModel
+import com.register.app.dto.SpecialLevy
 import com.register.app.enums.Designation
 import com.register.app.enums.MemberStatus
+import com.register.app.enums.PaymentMethod
 import com.register.app.model.Event
-import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
-import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.ASSIGN_LEVY
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
 import com.register.app.util.MemberActivitySwitch
-import com.register.app.util.PAID
-import com.register.app.util.UNPAID
+import com.register.app.util.PAY_SPECIAL_LEVY
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
-import com.register.app.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun MemberDetails(groupViewModel: GroupViewModel, authViewModel: AuthViewModel,activityViewModel: ActivityViewModel, navController: NavController) {
+fun MemberDetails(
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel,
+    activityViewModel: ActivityViewModel,
+    navController: NavController
+) {
     val member = groupViewModel.selectedMember.observeAsState().value
     val memberDetail = groupViewModel.groupMemberLiveData.observeAsState().value
     var showPaymentRecord by rememberSaveable { mutableStateOf(false) }
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    LaunchedEffect(member) {
+        activityViewModel.getAllSpecialLeviesForGroup(group?.groupId!!, member?.emailAddress!!)
+    }
     Scaffold{
         MemberDetailsUi(Modifier.padding(it), groupViewModel, authViewModel, navController, member, memberDetail) { showPaymentRecord = it }
         if (showPaymentRecord) {
-            PaymentRecord(groupViewModel, activityViewModel, member, navController) {showPaymentRecord = it}
+            PaymentRecord(groupViewModel, activityViewModel, member, navController) {showRecord ->
+                showPaymentRecord = showRecord
+            }
         }
     }
 }
@@ -244,20 +260,18 @@ fun MemberInfo(
                 Color.Red
             }
         )
-
-        Surface(
-            Modifier
-                .fillMaxWidth()
-                .constrainAs(activityRate) {
-                    top.linkTo(status.bottom, margin = 16.dp)
-                    centerHorizontallyTo(parent)
-                },
-            color = Color.Transparent
-        ) {
-            MemberActivityRate(groupViewModel = groupViewModel)
-        }
-
         if (isAdmin == true) {
+            Surface(
+                Modifier
+                    .fillMaxWidth()
+                    .constrainAs(activityRate) {
+                        top.linkTo(status.bottom, margin = 16.dp)
+                        centerHorizontallyTo(parent)
+                    },
+                color = Color.Transparent
+            ) {
+                MemberActivityRate(groupViewModel = groupViewModel)
+            }
             Surface(
                 Modifier
                     .fillMaxWidth()
@@ -449,8 +463,8 @@ fun AdminMemberActions(
         }
         Row(
             Modifier
-               .fillMaxWidth()
-               .padding(vertical = 16.dp),
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -461,8 +475,8 @@ fun AdminMemberActions(
                     .padding(horizontal = 8.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary),
-                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color(context.getColor(R.color.background_color))),
             ) {
                 Text(text = stringResource(id = R.string.payment_record))
             }
@@ -478,8 +492,8 @@ fun AdminMemberActions(
                     .padding(horizontal = 8.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary),
-                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color(context.getColor(R.color.background_color))),
             ) {
                 Text(text = stringResource(id = R.string.assign_levy))
             }
@@ -616,7 +630,7 @@ fun PaymentRecord(
 fun MemberActivities(
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
-    navController: NavController,
+    navController: NavController
 ) {
     var showPaid by rememberSaveable { mutableStateOf(false) }
     Column(
@@ -641,23 +655,14 @@ fun UnpaidActivities(
     navController: NavController
 ) {
     val eventList = groupViewModel.memberUnpaidActivities.observeAsState().value
+    val unpaidSpecialLevies = activityViewModel.unpaidSpecialLevyList.observeAsState().value
     ConstraintLayout (
         Modifier
             .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
-        val (header, list, shoeAll) = createRefs()
-//        Text(
-//            text = stringResource(id = R.string.unpaid_activities),
-//            Modifier.constrainAs(header) {
-//                start.linkTo(parent.start)
-//                top.linkTo(parent.top)
-//            },
-//            fontWeight = FontWeight.SemiBold,
-//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-//            color = MaterialTheme.colorScheme.onBackground
-//        )
-        if (eventList?.isNotEmpty() == true) {
+        val (header, list) = createRefs()
+        if (eventList?.isNotEmpty() == true || unpaidSpecialLevies?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -666,11 +671,18 @@ fun UnpaidActivities(
                         start.linkTo(parent.start)
                     }
             ) {
-                eventList.forEach { event ->
-                    ActivityItem(event, groupViewModel, activityViewModel, navController)
+                if( eventList?.isNotEmpty() == true ) {  // show regular events
+                    eventList.forEach { event ->
+                        ActivityItem(event, groupViewModel, activityViewModel, navController, false)
+                    }
+                }
+                if (unpaidSpecialLevies?.isNotEmpty() == true) {  // show special levies
+                    unpaidSpecialLevies.forEach { levy ->
+                        LevyItem(levy, navController, activityViewModel, groupViewModel, false)
+                    }
                 }
             }
-        }else{
+        } else{
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -689,44 +701,371 @@ fun UnpaidActivities(
 }
 
 @Composable
+fun LevyItem(
+    levy: SpecialLevy,
+    navController: NavController,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel,
+    isPaid: Boolean
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var showMarkAsPaidDialog by rememberSaveable { mutableStateOf(false) }
+    val selectedMember = groupViewModel.selectedMember.observeAsState().value
+    Surface(
+        modifier = Modifier
+            .clickable {
+                showMarkAsPaidDialog = true
+            }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val (eventTitle, groupName, levyAmount, icon) = createRefs()
+
+            Text(
+                text = levy.levyTitle!!,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.constrainAs(eventTitle) {
+                    top.linkTo(parent.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = levy.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(groupName) {
+                    top.linkTo(eventTitle.bottom, margin = 4.dp)
+                    bottom.linkTo(levyAmount.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                }
+            )
+
+            Text(
+                text = "Levy: ${levy.levyAmount.toString()}",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(levyAmount) {
+                    bottom.linkTo(parent.bottom, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "",
+                modifier = Modifier.constrainAs(icon) {
+                    centerVerticallyTo(parent)
+                    end.linkTo(parent.end, margin = 10.dp)
+                }
+            )
+        }
+        if (showMarkAsPaidDialog) {
+            MarkLevyAsPaidDialog(levy, activityViewModel,groupViewModel, selectedMember, isPaid) { showMarkAsPaidDialog = it}
+        }
+    }
+}
+
+@Composable
+fun MarkLevyAsPaidDialog(
+    levy: SpecialLevy,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel,
+    selectedMember: MembershipDto?,
+    isPaid: Boolean,
+    callback: (Boolean) -> Unit
+) {
+    var amountPaid by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val member = groupViewModel.groupMemberLiveData.observeAsState().value
+    Dialog(
+        onDismissRequest = { callback(false) }
+    ) {
+        Surface(
+            Modifier
+                .height(120.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.background
+        ) {
+            if (isPaid) {
+                Text(
+                    text = stringResource(id = R.string.alread_paid),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                    )
+            }else {
+                Column(
+                    Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.mark_paid),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+                    ) {
+                        TextField(
+                            value = amountPaid,
+                            onValueChange = { amountPaid = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(dimensionResource(id = R.dimen.text_field_height)),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.background,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            placeholder = { Text(text = stringResource(id = R.string.amount_paid)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            )
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            val payment = Payment(
+                                "",
+                                selectedMember?.membershipId!!,
+                                selectedMember.emailAddress,
+                                member?.fullName!!,
+                                levy.levyTitle!!,
+                                levy.id,
+                                PaymentMethod.CARD_PAYMENT.name,
+                                group?.groupName!!,
+                                group.groupId,
+                                amountPaid.toDouble()
+                            )
+                            coroutineScope.launch {
+                                val response = activityViewModel.confirmSpecialLevyPayment(
+                                    payment,
+                                    amountPaid.toDouble(),
+                                    0.0,
+                                    group.groupId
+                                )
+                                callback(false)
+                                Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color(context.getColor(R.color.background_color))
+                        ),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(text = stringResource(id = R.string.confirm))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ActivityItem(
     event: Event,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
-    navController: NavController
+    navController: NavController,
+    isPaid: Boolean
 ) {
     val coroutineScope = rememberCoroutineScope()
-    Row(
+    val selectedMember = groupViewModel.selectedMember.observeAsState().value
+    var showMarkAsPaid by rememberSaveable { mutableStateOf(false) }
+
+    Surface(
         Modifier
             .clickable {
-                navController.navigate("event_detail") {
-                    launchSingleTop = true
-                    coroutineScope.launch { activityViewModel.setSelectedEvent(event) }
-                }
+                showMarkAsPaid = true
             }
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val (eventTitle, groupName, levyAmount, icon) = createRefs()
+
+            Text(
+                text = event.eventTitle,
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.constrainAs(eventTitle) {
+                    top.linkTo(parent.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = event.groupName!!,
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(groupName) {
+                    top.linkTo(eventTitle.bottom, margin = 4.dp)
+                    bottom.linkTo(levyAmount.top, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                }
+            )
+
+            Text(
+                text = "Levy: ${event.levyAmount.toString()}",
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                modifier = Modifier.constrainAs(levyAmount) {
+                    bottom.linkTo(parent.bottom, margin = 4.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = "",
+                modifier = Modifier.constrainAs(icon) {
+                    centerVerticallyTo(parent)
+                    end.linkTo(parent.end, margin = 10.dp)
+                }
+            )
+        }
+    }
+    if (showMarkAsPaid) {
+        MarActivityAsPaidDialog(event, activityViewModel, groupViewModel, selectedMember, isPaid) { showMarkAsPaid = it }
+    }
+}
+
+@Composable
+fun MarActivityAsPaidDialog(
+    event: Event,
+    activityViewModel: ActivityViewModel,
+    groupViewModel: GroupViewModel,
+    selectedMember: MembershipDto?,
+    isPaid: Boolean,
+    callback: (Boolean) -> Unit
+) {
+    var amountPaid by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val member = groupViewModel.groupMemberLiveData.observeAsState().value
+    Dialog(
+        onDismissRequest = { callback(false) }
     ) {
         Surface(
             Modifier
-                .padding(end = 16.dp)
-                .size(36.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = MaterialTheme.shapes.extraSmall,
+                .height(120.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.background
         ) {
-            Icon(
-                imageVector = Icons.Default.EventAvailable,
-                contentDescription = "",
-                Modifier
-                    .size(20.dp)
-                    .padding(8.dp),
-                tint = MaterialTheme.colorScheme.secondary)
-        }
+            if (isPaid) {
+                Text(
+                    text = stringResource(id = R.string.alread_paid),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp)
+                )
+            }else {
+                Column(
+                    Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.mark_paid),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
 
-        Text(
-            text = event.eventTitle,
-            fontSize = TextUnit(16.0f, TextUnitType.Sp)
-        )
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+                    ) {
+                        TextField(
+                            value = amountPaid,
+                            onValueChange = { amountPaid = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(dimensionResource(id = R.dimen.text_field_height)),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.background,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            placeholder = { Text(text = stringResource(id = R.string.amount_paid)) },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            )
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            val payment = Payment(
+                                "",
+                                selectedMember?.membershipId!!,
+                                selectedMember.emailAddress,
+                                member?.fullName!!,
+                                event.eventTitle,
+                                event.eventId,
+                                PaymentMethod.CARD_PAYMENT.name,
+                                group?.groupName!!,
+                                group.groupId,
+                                amountPaid.toDouble()
+                            )
+                            coroutineScope.launch {
+                                val response = activityViewModel.confirmPayment(
+                                    payment,
+                                    amountPaid.toDouble(),
+                                    0.0,
+                                    group.groupId
+                                )
+                                callback(false)
+                                Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color(context.getColor(R.color.background_color))
+                        ),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(text = stringResource(id = R.string.confirm))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -737,23 +1076,14 @@ fun PaidActivities(
     navController: NavController
 ) {
     val eventList = groupViewModel.memberPaidActivities.observeAsState().value
+    val paidSpecialLevies = activityViewModel.paidSpecialLevyList.observeAsState().value
     ConstraintLayout (
         Modifier
             .padding(horizontal = 16.dp, vertical = 16.dp)
             .fillMaxWidth(),
     ) {
         val (header, list, shoeAll) = createRefs()
-//        Text(
-//            text = stringResource(id = R.string.paid_activities),
-//            Modifier.constrainAs(header) {
-//                start.linkTo(parent.start)
-//                top.linkTo(parent.top)
-//            },
-//            fontWeight = FontWeight.SemiBold,
-//            fontSize = TextUnit(18.0f, TextUnitType.Sp),
-//            color = MaterialTheme.colorScheme.onBackground
-//        )
-        if (eventList?.isNotEmpty() == true) {
+        if (eventList?.isNotEmpty() == true || paidSpecialLevies?.isNotEmpty() == true) {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -762,8 +1092,21 @@ fun PaidActivities(
                         start.linkTo(parent.start)
                     }
             ) {
-                eventList.forEach { event ->
-                    ActivityItem(event, groupViewModel, activityViewModel, navController)
+                if( eventList?.isNotEmpty() == true ) {  // show regular events
+                    eventList.forEach { event ->
+                        ActivityItem(
+                            event,
+                            groupViewModel,
+                            activityViewModel,
+                            navController,
+                            true
+                        )
+                    }
+                }
+                if (paidSpecialLevies?.isNotEmpty() == true) { // show special levies
+                    paidSpecialLevies.forEach { levy ->
+                        LevyItem(levy, navController, activityViewModel, groupViewModel, true)
+                    }
                 }
             }
         }else{

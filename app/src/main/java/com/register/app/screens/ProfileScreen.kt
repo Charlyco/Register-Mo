@@ -122,7 +122,7 @@ fun ProfileScreenUi(
 
         Text(
             text = user?.fullName!!,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = TextUnit(20.0f, TextUnitType.Sp),
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.constrainAs(name) {
@@ -133,7 +133,7 @@ fun ProfileScreenUi(
 
         Text(
             text = user.phoneNumber,
-            color = Color.DarkGray,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             modifier = Modifier.constrainAs(phone) {
                 top.linkTo(name.bottom, margin = 4.dp)
@@ -144,7 +144,7 @@ fun ProfileScreenUi(
         user.address?.let {
             Text(
                 text = it,
-                color = Color.DarkGray,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 modifier = Modifier
                     .padding(horizontal = 14.dp)

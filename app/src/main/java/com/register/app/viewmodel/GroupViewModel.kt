@@ -237,7 +237,14 @@ class GroupViewModel @Inject constructor(
 
     suspend fun setSelectedMember(member: Member) {
         _groupMemberLiveData.value = member
+        /*
+         * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
+         * I need to match each detail with the corresponding membershipDto
+         */
         val group = groupDetailLiveData.value
+        val membershipDto =
+            group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
+        setSelectedMembership(membershipDto!!)
         val groupEvents = groupRepository.getAllActivitiesForGroup(group?.groupId!!)
         val paidActivities = groupEvents?.filter { event ->
             event.contributions?.any { it.memberEmail == member.emailAddress } == true

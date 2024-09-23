@@ -135,7 +135,8 @@ fun RegisterAppNavHost(
                 dataStoreManager = dataStoreManager,
                 groupViewModel = groupViewModel,
                 questionnaireViewModel = questionnaireViewModel,
-                activityViewModel = activityViewModel)
+                activityViewModel = activityViewModel,
+                authViewModel = authViewModel)
         }
         composable("payment") {
             EvidenceOfPayment(

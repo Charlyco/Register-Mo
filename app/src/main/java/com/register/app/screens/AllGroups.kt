@@ -47,6 +47,7 @@ import com.register.app.util.DataStoreManager
 import com.register.app.util.GenericTopBar
 import com.register.app.util.GroupItem
 import com.register.app.viewmodel.ActivityViewModel
+import com.register.app.viewmodel.AuthViewModel
 import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.QuestionnaireViewModel
 
@@ -56,7 +57,8 @@ fun AllGroups(
     dataStoreManager: DataStoreManager,
     groupViewModel: GroupViewModel,
     questionnaireViewModel: QuestionnaireViewModel,
-    activityViewModel: ActivityViewModel
+    activityViewModel: ActivityViewModel,
+    authViewModel: AuthViewModel
 ) {
     BackHandler {
         navController.navigate("home") {
@@ -70,7 +72,7 @@ fun AllGroups(
         floatingActionButton = { NewGroupFab(navController, dataStoreManager, groupViewModel) },
         floatingActionButtonPosition = FabPosition.End
     ) {
-        GroupsScreenContent(Modifier.padding(it), navController, questionnaireViewModel, activityViewModel, groupViewModel, )
+        GroupsScreenContent(Modifier.padding(it), navController, questionnaireViewModel, activityViewModel, groupViewModel, authViewModel)
         CreateGroupScreen(groupViewModel = groupViewModel, navController) { show->
             groupViewModel.showCreateGroupSheet.postValue(show)
         }
@@ -105,7 +107,8 @@ fun GroupsScreenContent(
     navController: NavController,
     questionnaireViewModel: QuestionnaireViewModel,
     activityViewModel: ActivityViewModel,
-    groupViewModel: GroupViewModel
+    groupViewModel: GroupViewModel,
+    authViewModel: AuthViewModel
 ) {
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
     val loadingState = groupViewModel.loadingState.observeAsState().value
@@ -182,7 +185,8 @@ fun GroupsScreenContent(
                             questionnaireViewModel,
                             activityViewModel,
                             navController,
-                            screenWidth - 8
+                            screenWidth - 8,
+                            authViewModel
                         )
                     }
                 }

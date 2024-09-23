@@ -62,7 +62,9 @@ fun Signup(
     dataStoreManager: DataStoreManager
 ) {
     val scrollState = rememberScrollState(initial = 0)
-    Surface(color = Color.Transparent,
+    val context = LocalContext.current
+    Surface(
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxSize()
     ) {
@@ -114,7 +116,7 @@ fun Signup(
                 text = stringResource(id = R.string.get_started),
                 fontWeight = FontWeight.Bold,
                 fontSize = TextUnit(48.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.background,
+                color = Color(context.getColor(R.color.background_color)),
                 modifier = Modifier.constrainAs(header) {
                     top.linkTo(backBtn.bottom, margin = 40.dp)
                     start.linkTo(parent.start, margin = 16.dp)
@@ -151,7 +153,7 @@ fun AlternateAction(navController: NavController) {
             modifier = Modifier
                 .padding(end = 8.dp)
                 .clickable { navController.navigate("signin") },
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.secondary
         )
     }
 }
@@ -326,7 +328,7 @@ fun TextInputSection(authViewModel: AuthViewModel, navController: NavController)
                       },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.background
+                contentColor = Color(context.getColor(R.color.background_color))
             ),
             border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
             shape = MaterialTheme.shapes.medium,

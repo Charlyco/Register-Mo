@@ -64,8 +64,11 @@ import com.register.app.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SignUpCont(authViewModel: AuthViewModel,
-               navController: NavController) {
+fun SignUpCont(
+    authViewModel: AuthViewModel,
+               navController: NavController
+) {
+    val context = LocalContext.current
     Surface(color = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
@@ -122,7 +125,7 @@ fun SignUpCont(authViewModel: AuthViewModel,
                     text = stringResource(id = R.string.complete_info),
                     fontWeight = FontWeight.Bold,
                     fontSize = TextUnit(48.0f, TextUnitType.Sp),
-                    color = MaterialTheme.colorScheme.background,
+                    color = Color(context.getColor(R.color.background_color)),
                     modifier = Modifier.constrainAs(header) {
                         top.linkTo(backBtn.bottom, margin = 40.dp)
                         start.linkTo(parent.start, margin = 16.dp)
@@ -130,7 +133,7 @@ fun SignUpCont(authViewModel: AuthViewModel,
                 )
 
                 Surface(
-                    color = Color.Transparent,
+                    color = MaterialTheme.colorScheme.background,
                     modifier = Modifier.constrainAs(inputSection) {
                         centerHorizontallyTo(parent)
                         bottom.linkTo(parent.bottom)
@@ -274,7 +277,7 @@ fun InputSection(authViewModel: AuthViewModel, navController: NavController) {
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.background
+                contentColor = Color(context.getColor(R.color.background_color))
             ),
             border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
             shape = MaterialTheme.shapes.medium,

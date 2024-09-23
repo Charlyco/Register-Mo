@@ -590,13 +590,13 @@ class ActivityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllSpecialLeviesForGroup(groupId: Int): List<SpecialLevy> {
+    override suspend fun getAllSpecialLeviesForGroup(groupId: Int, emailAddress: String): SpecialLeviesWrapper {
         return suspendCoroutine { continuation ->
-            val call = activityService.getAllSpecialLeviesForGroup(groupId)
-            call.enqueue(object : Callback<List<SpecialLevy>> {
+            val call = activityService.getAllSpecialLeviesForGroup(groupId, emailAddress)
+            call.enqueue(object : Callback<SpecialLeviesWrapper> {
                 override fun onResponse(
-                    call: Call<List<SpecialLevy>>,
-                    response: Response<List<SpecialLevy>>
+                    call: Call<SpecialLeviesWrapper>,
+                    response: Response<SpecialLeviesWrapper>
                 ) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
@@ -604,15 +604,15 @@ class ActivityRepositoryImpl @Inject constructor(
                         val responseCode = response.code()
                         when (responseCode) {
                             401 -> {
-                                continuation.resume(listOf())
+                                continuation.resume(SpecialLeviesWrapper("Invalid Credentials", false, null))
                             }
 
-                            500 -> continuation.resume(listOf())
+                            500 -> continuation.resume(SpecialLeviesWrapper("An error occurred", false, null))
                         }
                     }
                 }
 
-                override fun onFailure(call: Call<List<SpecialLevy>>, t: Throwable) {
+                override fun onFailure(call: Call<SpecialLeviesWrapper>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

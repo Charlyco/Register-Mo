@@ -25,6 +25,7 @@ private val DarkColorScheme = darkColorScheme(
     secondary = Secondary,
     onError = Color.Red,
     onBackground = Color.White,
+    onTertiary = Translucent,
     onPrimary = OnPrimaryDark,
     onSecondary = Color.White,
     onSecondaryContainer = BlackTranslucent

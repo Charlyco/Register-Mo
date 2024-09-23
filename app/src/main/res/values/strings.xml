@@ -212,7 +212,7 @@
     <string name="group_notification">Group notification</string>
     <string name="suspended">You are currently suspended. Please contact group admin</string>
     <string name="removeAdmin">This member is currently an admin</string>
-    <string name="assign_levy">Assign special levy</string>
+    <string name="assign_levy">Assign levy</string>
     <string name="levy_title">Levy title</string>
     <string name="assign_levy_header">To assign a special levy, due or fine to the this member, fill the required info and submit</string>
     <string name="levy_description">Levy description</string>
@@ -234,4 +234,6 @@
     <string name="auth_mode">"Authentication "</string>
     <string name="blank_activity_title">Activity title cannot be blank</string>
     <string name="blank_amount">Amount cannot be blank</string>
+    <string name="alread_paid">This Levy has already been paid and confirmed</string>
+    <string name="mark_paid">Confirm member\'s payment for this levy.</string>
 </resources>

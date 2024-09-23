@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 fun AuthScreen(navController: NavController, homeViewModel: HomeViewModel) {
     val buttonWidth = (LocalConfiguration.current.screenWidthDp/2) - 32
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     Surface(
         Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -72,7 +74,7 @@ fun AuthScreen(navController: NavController, homeViewModel: HomeViewModel) {
                        //bottom.linkTo(signUp.top, margin = 32.dp)
                    },
                fontSize = TextUnit(32.0f, TextUnitType.Sp),
-               color = MaterialTheme.colorScheme.primary,
+               color = MaterialTheme.colorScheme.onBackground,
                textAlign = TextAlign.Start,
                fontWeight = FontWeight.SemiBold,
                lineHeight = TextUnit(36.0f, TextUnitType.Sp)
@@ -94,7 +96,7 @@ fun AuthScreen(navController: NavController, homeViewModel: HomeViewModel) {
                    },
                colors = ButtonDefaults.buttonColors(
                    containerColor = MaterialTheme.colorScheme.onTertiary,
-                   contentColor = MaterialTheme.colorScheme.onBackground),
+                   contentColor = MaterialTheme.colorScheme.primary),
                shape = MaterialTheme.shapes.medium,
                elevation = ButtonDefaults.buttonElevation(
                    defaultElevation = dimensionResource(id = R.dimen.default_elevation),
@@ -121,7 +123,7 @@ fun AuthScreen(navController: NavController, homeViewModel: HomeViewModel) {
                    },
                colors = ButtonDefaults.buttonColors(
                    containerColor = MaterialTheme.colorScheme.primary,
-                   contentColor = MaterialTheme.colorScheme.background
+                   contentColor = Color(context.getColor(R.color.background_color))
                ),
                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                shape = MaterialTheme.shapes.medium,

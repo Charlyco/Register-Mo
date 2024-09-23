@@ -73,6 +73,7 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
@@ -798,6 +799,7 @@ fun ViewEventDetails(
     navController: NavController
 ) {
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
+    val context = LocalContext.current
     ConstraintLayout(
         Modifier.fillMaxSize()
     ) {
@@ -816,6 +818,7 @@ fun ViewEventDetails(
                 text = "Levy: #${event?.levyAmount}",
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 modifier = Modifier.padding(horizontal = 4.dp),
+                color = Color(context.getColor(R.color.background_color))
             )
         }
 
@@ -892,6 +895,7 @@ fun Compliance(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val sliderWidth = LocalConfiguration.current.screenWidthDp - 140
+    val context = LocalContext.current
     val percent = (event?.contributions?.size?.times(100))?.div(group?.memberList?.size!!)
 
     Column(
@@ -979,7 +983,11 @@ fun Compliance(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
                         launchSingleTop = true
                     }
                 },
-                Modifier
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color(context.getColor(R.color.background_color))
+                ),
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 64.dp, end = 64.dp, top = 32.dp)
             ) {
