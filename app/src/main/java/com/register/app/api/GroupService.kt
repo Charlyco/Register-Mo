@@ -3,6 +3,8 @@ package com.register.app.api
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.AdminUpdateResponse
+import com.register.app.dto.BankDetail
+import com.register.app.dto.BankDetailWrapper
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
@@ -89,4 +91,10 @@ interface GroupService {
     fun removeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
     @GET("messaging-service/api/notifications/{groupId}")
     fun getGroupNotifications(@Path("groupId") groupId: Int?): Call<GroupNotificationWrapper>
+    @GET("group-service/api/v1/group/bankDetails/{groupId}")
+    fun getBankDetails(@Path("groupId") groupId: Int): Call<BankDetailWrapper>
+    @PUT("group-service/api/v1/group/bankDetails/{groupId}")
+    fun updateBankDetail(@Body bankDetail: BankDetail, @Path("groupId") groupId: Int): Call<GenericResponse>
+    @PUT("group-service/api/v1/group/membershipRequest/reject")
+    fun rejectMembershipRequest(selectedRequest: MembershipRequest): Call<GenericResponse>
 }

@@ -5,6 +5,8 @@ import com.register.app.api.GroupService
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.AdminUpdateResponse
+import com.register.app.dto.BankDetail
+import com.register.app.dto.BankDetailWrapper
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
@@ -109,7 +111,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 GroupDetailWrapper("Invalid Credentials", false, null)
                             }
-                            500 -> GroupDetailWrapper("Please check Internet connection and try again", false, null)
+                            500 -> GroupDetailWrapper(response.message(), false, null)
                         }
                     }
                 }
@@ -138,7 +140,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(ActivityRate("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(ActivityRate("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(ActivityRate(response.message(), false, null))
                         }
                     }
                 }
@@ -166,7 +168,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -195,7 +197,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -228,7 +230,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(ImageUploadResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(ImageUploadResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(ImageUploadResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -260,7 +262,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(MembershipDtoWrapper("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(MembershipDtoWrapper("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(MembershipDtoWrapper(response.message(), false, null))
                         }
                     }
                 }
@@ -288,7 +290,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -316,7 +318,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GroupDetailWrapper("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GroupDetailWrapper("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GroupDetailWrapper(response.message(), false, null))
                         }
                     }
                 }
@@ -345,7 +347,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GroupsWrapper("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GroupsWrapper("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GroupsWrapper(response.message(), false, null))
                         }
                     }
                 }
@@ -377,7 +379,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -406,7 +408,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -434,7 +436,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -492,7 +494,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -521,7 +523,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -579,7 +581,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(AddContestantResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(AddContestantResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(AddContestantResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -608,7 +610,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -636,7 +638,7 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(GenericResponse(response.message(), false, null))
                         }
                     }
                 }
@@ -664,7 +666,12 @@ class GroupRepositoryImpl @Inject constructor(
                             401 -> {
                                 continuation.resume(GenericResponse("Invalid Credentials", false, null))
                             }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
+                            500 -> continuation.resume(
+                                GenericResponse(
+                                    response.message(),
+                                    false,
+                                    null)
+                            )
                         }
                     }
                 }
@@ -701,7 +708,7 @@ class GroupRepositoryImpl @Inject constructor(
 
                             500 -> continuation.resume(
                                 AdminUpdateResponse(
-                                    "Please check Internet connection and try again",
+                                    response.message(),
                                     false,
                                     null
                                 )
@@ -742,7 +749,7 @@ class GroupRepositoryImpl @Inject constructor(
 
                             500 -> continuation.resume(
                                 AdminUpdateResponse(
-                                    "Please check Internet connection and try again",
+                                    response.message(),
                                     false,
                                     null
                                 )
@@ -784,7 +791,7 @@ class GroupRepositoryImpl @Inject constructor(
 
                             500 -> continuation.resume(
                                 GroupNotificationWrapper(
-                                    "Please check Internet connection and try again",
+                                    response.message(),
                                     false,
                                     null
                                 )
@@ -794,6 +801,135 @@ class GroupRepositoryImpl @Inject constructor(
                 }
 
                 override fun onFailure(call: Call<GroupNotificationWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getBankDetails(groupId: Int): BankDetailWrapper {
+        return suspendCoroutine { continuation ->
+            val call = groupService.getBankDetails(groupId)
+            call.enqueue(object : Callback<BankDetailWrapper> {
+                override fun onResponse(
+                    call: Call<BankDetailWrapper>,
+                    response: Response<BankDetailWrapper>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    BankDetailWrapper(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                BankDetailWrapper(
+                                    response.message(),
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<BankDetailWrapper>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun updateBankDetails(
+        bankDetail: BankDetail,
+        groupId: Int
+    ): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.updateBankDetail(bankDetail, groupId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    GenericResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                GenericResponse(
+                                    response.message(),
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun rejectMembershipRequest(selectedRequest: MembershipRequest): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.rejectMembershipRequest(selectedRequest)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(
+                                    GenericResponse(
+                                        "Invalid Credentials",
+                                        false,
+                                        null
+                                    )
+                                )
+                            }
+
+                            500 -> continuation.resume(
+                                GenericResponse(
+                                    response.message(),
+                                    false,
+                                    null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

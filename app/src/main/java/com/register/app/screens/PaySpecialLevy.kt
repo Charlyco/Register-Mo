@@ -229,62 +229,59 @@ fun PaySpecialLevyUi(
             }
         }
 
-        if (modeOfPayment == PaymentMethod.CASH.name) {
-            Surface(
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+        ) {
+            TextField(
+                value = amountPaid,
+                onValueChange = { amountPaid = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
-            ) {
-                TextField(
-                    value = amountPaid,
-                    onValueChange = { amountPaid = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(dimensionResource(id = R.dimen.text_field_height)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    placeholder = { Text(text = stringResource(id = R.string.amount_paid)) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
-                    )
+                    .height(dimensionResource(id = R.dimen.text_field_height)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                placeholder = { Text(text = stringResource(id = R.string.amount_paid)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+        }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp, end = 8.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            if (imageUrl != null) {
+                ImageLoader(
+                    imageUrl = imageUrl?: "",
+                    context = context,
+                    height = 120,
+                    width = 120,
+                    placeHolder = R.drawable.placeholder
                 )
             }
-        }else {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                if (imageUrl != null) {
-                    ImageLoader(
-                        imageUrl = imageUrl?: "",
-                        context = context,
-                        height = 120,
-                        width = 120,
-                        placeHolder = R.drawable.placeholder
-                    )
-                }
-                Button(
-                    onClick = {
-                        showImageSourceChooserDialog = true
-                         },
+            Button(
+                onClick = {
+                    showImageSourceChooserDialog = true },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.onBackground
                     )
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.browse),
-                        Modifier.padding(2.dp)
-                    )
-                }
+            ) {
+                Text(
+                    text = stringResource(id = R.string.browse),
+                    Modifier.padding(2.dp)
+                )
             }
         }
 

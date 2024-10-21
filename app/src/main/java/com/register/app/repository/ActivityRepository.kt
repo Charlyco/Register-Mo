@@ -50,4 +50,6 @@ interface ActivityRepository {
         eventId: Long,
         groupId: Int
     ): GenericResponse?
+
+    suspend fun downloadExcelTemplate(): ResponseBody?
 }

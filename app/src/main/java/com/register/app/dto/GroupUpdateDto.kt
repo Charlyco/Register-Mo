@@ -7,6 +7,5 @@ data class GroupUpdateDto(
     val logoUrl: String,
     val groupEmail: String,
     val phoneNumber: String,
-    val address: String,
-    val bankDetails: BankDetail
+    val address: String
 )

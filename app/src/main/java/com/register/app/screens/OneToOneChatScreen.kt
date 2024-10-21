@@ -87,7 +87,7 @@ fun ChatList(
     groupViewModel: GroupViewModel,
     navController: NavController
 ) {
-    val conversations = forumViewModel.directChatMessages.observeAsState().value?.sortedByDescending { it.sendTime }
+    val conversations = forumViewModel.directChatMessages.observeAsState().value
     val userFullName = forumViewModel.currentUser.observeAsState().value
 
     // Create and remember the LazyListState

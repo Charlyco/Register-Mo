@@ -24,7 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.RadioButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Message
@@ -129,7 +129,8 @@ fun GroupDetail(
 
     LaunchedEffect(questionnaires) {
         if (questionnaires != null) {
-            showQuestionnaireDialog = questionnaires.any { it.status ==  FormStatus.ACTIVE.name && !it.responders.contains(membershipId)}
+            showQuestionnaireDialog = questionnaires.any {
+                it.status ==  FormStatus.ACTIVE.name && !it.responders.contains(membershipId?:"")}
         }
     }
 
@@ -151,9 +152,21 @@ fun GroupDetail(
             activityViewModel
             ){showAllMembers = it} },
     ) {
-        GroupDetailScreen(Modifier.padding(it), navController, groupViewModel, authViewModel, homeViewModel, activityViewModel, group)
+        GroupDetailScreen(
+            Modifier.padding(it),
+            navController,
+            groupViewModel,
+            authViewModel,
+            homeViewModel,
+            activityViewModel,
+            group)
         if (showAllMembers) {
-            AllMembersList(group, groupViewModel, forumViewModel, navController, isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
+            AllMembersList(
+                group,
+                groupViewModel,
+                forumViewModel,
+                navController,
+                isUserAdmin) {shouldShow -> showAllMembers = shouldShow}
         }
             if(showQuestionnaireDialog) {
                 QuestionnaireDialog(navController) { showQuestionnaireDialog = it}

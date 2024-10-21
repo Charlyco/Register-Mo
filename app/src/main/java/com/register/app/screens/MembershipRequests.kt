@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -43,6 +46,7 @@ import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.model.Group
 import com.register.app.model.MembershipRequest
+import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils
@@ -56,6 +60,7 @@ fun MembershipRequests(
     groupViewModel: GroupViewModel,
     authViewModel: AuthViewModel
 ) {
+    val isLoading = groupViewModel.loadingState.observeAsState().value
     Scaffold(
         topBar = { GenericTopBar(
             title = stringResource(id = R.string.membership_requests),
@@ -65,6 +70,9 @@ fun MembershipRequests(
     ) {
         val group = groupViewModel.groupDetailLiveData.observeAsState().value
         MembershipRequestList(Modifier.padding(it) ,group, groupViewModel)
+        if (isLoading == true) {
+            CircularIndicator()
+        }
     }
 
 }
@@ -75,7 +83,8 @@ fun MembershipRequestList(modifier: Modifier, group: Group?, groupViewModel: Gro
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp, top = 64.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 64.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (group?.pendingMemberRequests?.isNotEmpty() == true) {
@@ -179,8 +188,8 @@ fun MembershipRequestItem(
                     onClick = {
                         coroutineScope.launch {
                             val response = groupViewModel.approveMembershipRequest(request)
-                            if (response.status) {
-                                Toast.makeText(context, "Request approved", Toast.LENGTH_SHORT).show() }
+                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            groupViewModel.reloadGroup(request.groupId)
                         }
                     },
                     Modifier
@@ -273,9 +282,30 @@ fun MembershipRequestDetail(
                 Button(
                     onClick = {
                         coroutineScope.launch {
+                            val response = groupViewModel.rejectMembershipRequest(selectedRequest!!)
+                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            showDialog(false)
+                            groupViewModel.reloadGroup(selectedRequest.groupId)
+                        }
+                    },
+                    Modifier
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.reject),
+                        Modifier.padding(end = 4.dp)
+                    )
+                    Icon(imageVector = Icons.Default.Clear, contentDescription = "")
+                }
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
                             val response = groupViewModel.approveMembershipRequest(selectedRequest!!)
                             if (response.status) {
                                 Toast.makeText(context, "Request approved", Toast.LENGTH_SHORT).show()
+                                showDialog(false)
+                                groupViewModel.reloadGroup(selectedRequest.groupId)
                             }
                         }
                     },

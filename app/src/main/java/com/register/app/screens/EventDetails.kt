@@ -1391,10 +1391,12 @@ fun CommentBox(groupViewModel: GroupViewModel, activityViewModel: ActivityViewMo
             modifier = Modifier.width(screenWidth.dp)
 
         )
-        IconButton(onClick = { coroutineScope.launch {
-            activityViewModel.postComment(commentText, event?.eventId) }
-            commentText = ""
+        IconButton(onClick = {
+            coroutineScope.launch {
+                activityViewModel.postComment(commentText, event?.eventId)
+                commentText = ""
             }
+        }
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Send,
@@ -1483,7 +1485,8 @@ fun CommentItem(
             Text(
                 text = "${comment.username}: ",
                 fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.constrainAs(userName) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start, margin = 4.dp)
@@ -1523,7 +1526,7 @@ fun CommentItem(
 
             Text(
                 text = stringResource(id = R.string.reply),
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                fontSize = TextUnit(12.0f, TextUnitType.Sp),
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
                     .clickable { showCommentReplyBox = true }

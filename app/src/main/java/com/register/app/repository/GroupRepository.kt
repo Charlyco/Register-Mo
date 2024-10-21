@@ -3,6 +3,8 @@ package com.register.app.repository
 import com.register.app.dto.ActivityRate
 import com.register.app.dto.AddContestantResponse
 import com.register.app.dto.AdminUpdateResponse
+import com.register.app.dto.BankDetail
+import com.register.app.dto.BankDetailWrapper
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.Contestant
 import com.register.app.dto.CreateGroupModel
@@ -50,4 +52,7 @@ interface GroupRepository {
     suspend fun makeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
     suspend fun removeAdmin(updateAdminDto: UpdateAdminDto): AdminUpdateResponse
     suspend fun getGroupNotifications(groupId: Int?): GroupNotificationWrapper
+    suspend fun getBankDetails(groupId: Int): BankDetailWrapper
+    suspend fun updateBankDetails(bankDetail: BankDetail, groupId: Int): GenericResponse
+    suspend fun rejectMembershipRequest(selectedRequest: MembershipRequest): GenericResponse
 }

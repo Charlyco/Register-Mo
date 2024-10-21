@@ -408,9 +408,9 @@ fun GroupItem(
             .clickable {
                 coroutineScope.launch {
                     groupViewModel.setSelectedGroupDetail(group)
+                    navController.navigate("group_detail") { launchSingleTop = true }
                     questionnaireViewModel.getQuestionnaires(group.groupId)
                     activityViewModel.getAllSpecialLeviesForGroup(group.groupId, user?.emailAddress!!)
-                    navController.navigate("group_detail") { launchSingleTop = true }
                 }
             },
         color = MaterialTheme.colorScheme.background,

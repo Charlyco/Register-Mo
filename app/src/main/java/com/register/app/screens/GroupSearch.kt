@@ -47,6 +47,7 @@ import com.register.app.enums.GroupType
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.GenericTopBar
+import com.register.app.util.HOME
 import com.register.app.util.ImageLoader
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.AuthViewModel
@@ -323,12 +324,20 @@ fun JoinGroupDialog(
                             coroutineScope.launch {
                                 val response = groupViewModel.requestToJoinGroup(selectedGroup)
                                 if (response.status) {
-                                    Toast.makeText(context,
-                                        "You have successfully joined ${selectedGroup.groupName}",
-                                        Toast.LENGTH_LONG).show()
-                                    function(false)
-                                    navController.navigate("group_detail")
-                                    groupViewModel.reloadGroup(selectedGroup.groupId)
+                                    if (selectedGroup.groupType == GroupType.OPEN.name) {
+                                        Toast.makeText(context,
+                                            "You have successfully joined ${selectedGroup.groupName}",
+                                            Toast.LENGTH_LONG).show()
+                                        function(false)
+                                        navController.navigate("group_detail")
+                                        groupViewModel.reloadGroup(selectedGroup.groupId)
+                                    }else if(selectedGroup.groupType == GroupType.CLOSED.name) {
+                                        Toast.makeText(context,
+                                            "Request sent successfully",
+                                            Toast.LENGTH_LONG).show()
+                                        function(false)
+                                        navController.navigate(HOME)
+                                    }
                                 }else {
                                     Toast.makeText(context, "You are a member of this group already", Toast.LENGTH_LONG).show()
                                 }

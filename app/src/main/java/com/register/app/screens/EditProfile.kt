@@ -78,7 +78,6 @@ fun EditProfileUi(
     val context = LocalContext.current
     var fullName by rememberSaveable { mutableStateOf(user?.fullName) }
     var username by rememberSaveable { mutableStateOf(user?.userName) }
-    var email by rememberSaveable { mutableStateOf(user?.emailAddress) }
     var address by rememberSaveable { mutableStateOf(user?.address) }
     var phone by rememberSaveable { mutableStateOf(user?.phoneNumber) }
     var imageUrl by rememberSaveable { mutableStateOf(user?.imageUrl) }
@@ -219,33 +218,6 @@ fun EditProfileUi(
             }
 
             Text(
-                text = stringResource(id = R.string.email),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .height(55.dp),
-                border = BorderStroke(1.dp, Color.Gray),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.background
-            ) {
-                TextField(
-                    value = email?: "",
-                    onValueChange = { email = it },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    )
-                )
-            }
-
-            Text(
                 text = stringResource(id = R.string.address),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = TextUnit(16.0f, TextUnitType.Sp),
@@ -305,7 +277,6 @@ fun EditProfileUi(
                 coroutineScope.launch {
                     user?.fullName = fullName!!
                     user?.userName = username
-                    user?.emailAddress = email!!
                     user?.address = address
                     user?.phoneNumber = phone!!
                     val response = authViewModel.updateUserData(user)

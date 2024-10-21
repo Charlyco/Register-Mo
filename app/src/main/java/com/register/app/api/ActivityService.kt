@@ -79,5 +79,8 @@ interface ActivityService {
     fun rejectSpecialLevyPayment(@Body rejectedPayment: RejectedPayment): Call<GenericResponse>
     @Multipart
     @POST("event-service/api/v1/event/batch/{eventId}")
-    fun uploadBatchPaymentRecord(@Path("eventId") eventId: Long, @Query("groupId") groupId: Int, @Part file: MultipartBody.Part): Call<GenericResponse>
+    fun uploadBatchPaymentRecord(@Path("eventId") eventId: Long, @Query("groupId") groupId: Int,
+                                 @Part file: MultipartBody.Part): Call<GenericResponse>
+    @GET("event-service/api/v1/event/template")
+    fun downloadExcelTemplate(): Call<ResponseBody?>
 }

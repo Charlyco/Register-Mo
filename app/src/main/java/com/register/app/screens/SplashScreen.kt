@@ -32,7 +32,7 @@ fun SplashScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         LaunchedEffect(key1 = SPLASH_SCREEN_KEY) {
-            delay(3000)
+            delay(2000)
             if (dataStoreManager.readUserData()?.userId != null) {
                 if (dataStoreManager.readLoginType() == true) {
                     navController.navigate("signin") {

@@ -3,6 +3,7 @@ package com.register.app.screens
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.util.CircularIndicator
+import com.register.app.util.ImageLoader
+import com.register.app.util.Utils.ImageSourceChooserDialog
 import com.register.app.util.Utils.getFileNameFromUri
 import com.register.app.viewmodel.ActivityViewModel
 import com.register.app.viewmodel.GroupViewModel
@@ -55,13 +58,16 @@ fun BulkPayment(
     navController: NavController,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
-    totalAmount: Double
+    totalAmount: Double,
+    cameraActivityResult: ActivityResultLauncher<Void?>
 ) {
     val fileName = activityViewModel.fileName.observeAsState().value
+    val imageUrl = activityViewModel.paymentEvidence.observeAsState().value
     val loadingState = activityViewModel.loadingState.observeAsState().value
     var showBankDetails by rememberSaveable { mutableStateOf(false) }
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     val membershipId = groupViewModel.membershipId.observeAsState().value
+    var showImageSourceChooserDialog by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val filePicker = rememberLauncherForActivityResult(
@@ -127,16 +133,22 @@ fun BulkPayment(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp),
+                    .padding(start = 16.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (fileName != null) {
-                    Text(text = fileName)
+                if (imageUrl != null) {
+                    ImageLoader(
+                        imageUrl = imageUrl?: "",
+                        context = context,
+                        height = 120,
+                        width = 120,
+                        placeHolder = R.drawable.placeholder
+                    )
                 }
+
                 Button(
                     onClick = {
-                        filePicker.launch("image/*") },
+                        showImageSourceChooserDialog = true},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.onBackground
@@ -155,6 +167,7 @@ fun BulkPayment(
                         val response = activityViewModel.submitBulkPaymentEvidence(group?.groupName!!, group.groupId, membershipId!!, totalAmount)
                         if (response.status) {
                             Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                            navController.navigateUp()
                         } else {
                             Toast.makeText(context, "Error submitting payment", Toast.LENGTH_SHORT).show()
                         }
@@ -182,6 +195,9 @@ fun BulkPayment(
                 )
             }
 
+            if (showImageSourceChooserDialog) {
+                ImageSourceChooserDialog(filePicker, cameraActivityResult) { showImageSourceChooserDialog = it }
+            }
         }
     }
 }

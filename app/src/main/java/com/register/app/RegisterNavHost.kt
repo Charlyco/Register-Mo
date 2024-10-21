@@ -203,7 +203,8 @@ fun RegisterAppNavHost(
                 navController = navController,
                 groupViewModel = groupViewModel,
                 activityViewModel = activityViewModel,
-                totalAmount = backStackEntry.arguments?.getString("totalAmount")?.toDouble() ?: 0.0
+                totalAmount = backStackEntry.arguments?.getString("totalAmount")?.toDouble() ?: 0.0,
+                cameraActivityResult = takePicture
             )
         }
         composable("support") {
@@ -329,7 +330,7 @@ fun RegisterAppNavHost(
             )
         }
         composable(BATCH_UPLOAD_INTRO) {
-            BatchUploadIntroScreen(navController = navController)
+            BatchUploadIntroScreen(navController = navController, activityViewModel)
         }
         composable(BATCH_UPLOAD) {
             BatchUploadScreen(

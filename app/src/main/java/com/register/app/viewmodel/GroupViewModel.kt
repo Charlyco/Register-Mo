@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.BankDetail
+import com.register.app.dto.BankDetailWrapper
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.ComplianceRate
 import com.register.app.dto.Contestant
@@ -88,7 +89,7 @@ class GroupViewModel @Inject constructor(
     val memberPaidActivities: LiveData<List<Event>?> = _memberPaidActivities
     private val _eventCommentLideData: MutableLiveData<List<EventComment>> = MutableLiveData()
     val eventCommentLiveData: LiveData<List<EventComment>> = _eventCommentLideData
-    private val _membershipId: MutableLiveData<String?> = MutableLiveData("")
+    private val _membershipId: MutableLiveData<String?> = MutableLiveData()
     val membershipId: LiveData<String?> = _membershipId
     private val _memberDetails: MutableLiveData<List<Member>?> = MutableLiveData()
     val memberDetailsList: LiveData<List<Member>?> = _memberDetails
@@ -126,15 +127,12 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun setSelectedGroupDetail(group: Group) {
-        //_loadingState.value = true
         _groupDetailLiveData.value = group
         //get membership id
         val member = getMember(group.memberList)
         _membershipId.value = member?.membershipId
         isUserAdmin(group)
         isUserSuspended(group)
-        //getMembershipId(group)
-        //_loadingState.value = false
     }
 
     private fun isUserSuspended(group: Group) {
@@ -183,8 +181,7 @@ class GroupViewModel @Inject constructor(
         address: String?,
         phone: String?,
         email: String?,
-        logoUrl: String?,
-        bankDetail: BankDetail
+        logoUrl: String?
     ): GenericResponse? {
         val group = GroupUpdateDto(
             groupName = groupName,
@@ -193,8 +190,7 @@ class GroupViewModel @Inject constructor(
             phoneNumber = phone ?: "",
             address = address ?: "",
             logoUrl = logoUrl ?: "",
-            groupType = groupDetailLiveData.value?.groupType!!,
-            bankDetails = bankDetail
+            groupType = groupDetailLiveData.value?.groupType!!
         )
         _loadingState.value = true
         val response = groupRepository.updateGroup(groupId, group)
@@ -591,4 +587,26 @@ class GroupViewModel @Inject constructor(
         _groupNotificationList.value = response.data
         _loadingState.value = false
     }
+
+    suspend fun fetchBankDetails(groupId: Int) {
+        _loadingState.value = true
+        val response = groupRepository.getBankDetails(groupId)
+        _bankDetails.value = response.data
+        _loadingState.value = false
+    }
+
+    suspend fun updateBankDetail(bankDetail: BankDetail, groupId: Int): GenericResponse {
+        _loadingState.value = true
+        val response = groupRepository.updateBankDetails(bankDetail, groupId)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun rejectMembershipRequest(selectedRequest: MembershipRequest): GenericResponse {
+        _loadingState.value = true
+        val response = groupRepository.rejectMembershipRequest(selectedRequest)
+        _loadingState.value = false
+        return response
+    }
+
 }

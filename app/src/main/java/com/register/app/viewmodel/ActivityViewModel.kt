@@ -688,4 +688,55 @@ class ActivityViewModel @Inject constructor(
         _paidSpecialLevyList.value = paid
         _loadingState.value = false
     }
+
+    suspend fun downloadExcelTemplate(context: Context) {
+        try {
+            _loadingState.value = true
+            val response = activityRepository.downloadExcelTemplate()
+            if (response != null) {
+                val excelBytes = response.byteStream()
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, "register_template.xlsx")
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
+                }
+                val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+                val outputStream = context.contentResolver.openOutputStream(uri!!)
+                val buffer = ByteArray(4096)
+                var read: Int
+                withContext(Dispatchers.IO) {
+                    while (excelBytes.read(buffer).also { read = it } != -1) {
+                        outputStream!!.write(buffer, 0, read)
+                    }
+                    outputStream!!.flush()
+                    outputStream.close()
+                }
+                _loadingState.value = false
+
+                val dialog = AlertDialog.Builder(context)
+                dialog.setTitle("Template downloaded")
+                dialog.setMessage("The excel template has been downloaded successfully. Do you want to open or share it?")
+                dialog.setPositiveButton("Open") { _, _ ->
+                    // Open file
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.setDataAndType(uri, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    startActivity(context, intent, null)
+                }
+                dialog.setNegativeButton("Share") { _, _ ->
+                    // Share file
+                    val intent = Intent(Intent.ACTION_SEND)
+                    intent.setType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    intent.putExtra(Intent.EXTRA_STREAM, uri)
+                    startActivity(context, Intent.createChooser(intent, "Share file"), null)
+                }
+                dialog.setNeutralButton("Cancel") { _, _ -> }
+                dialog.show()
+            }else {
+                _loadingState.value = false
+                _errorLiveData.value = AN_ERROR_OCCURRED
+            }
+        }catch (e: Exception) {
+            Toast.makeText(context, "Error saving file: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
 }

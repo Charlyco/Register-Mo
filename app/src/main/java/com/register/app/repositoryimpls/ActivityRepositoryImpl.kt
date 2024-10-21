@@ -725,4 +725,33 @@ class ActivityRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun downloadExcelTemplate(): ResponseBody? {
+        return suspendCoroutine { continuation ->
+            val call = activityService.downloadExcelTemplate()
+            call.enqueue(object : Callback<ResponseBody?> {
+                override fun onResponse(
+                    call: Call<ResponseBody?>,
+                    response: Response<ResponseBody?>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume( null)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<ResponseBody?>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }

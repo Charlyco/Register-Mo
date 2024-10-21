@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -37,12 +40,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
@@ -88,9 +94,7 @@ fun GroupUpdateUi(
     var phone by rememberSaveable { mutableStateOf(group.phoneNumber) }
     var email by rememberSaveable { mutableStateOf(group.groupEmail) }
     var logoUrl by rememberSaveable { mutableStateOf(group.logoUrl) }
-    var accountName by rememberSaveable { mutableStateOf(group.bankDetails?.accountName?: "") }
-    var bankName by rememberSaveable { mutableStateOf(group.bankDetails?.bankName?: "") }
-    var accountNumber by rememberSaveable { mutableStateOf(group.bankDetails?.accountNumber?: "") }
+    var showBankUpdateDialog by rememberSaveable { mutableStateOf(false) }
     val imageMimeTypes = listOf("image/jpeg", "image/png")
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -113,6 +117,10 @@ fun GroupUpdateUi(
             }
         }
     )
+
+    if (showBankUpdateDialog) {
+        BandDetailUpdate(group, groupViewModel) {showBankUpdateDialog = it}
+    }
     ConstraintLayout(
         Modifier
             .fillMaxWidth()
@@ -120,7 +128,27 @@ fun GroupUpdateUi(
             .verticalScroll(scrollState)
     ) {
         val (logo, details, saveBtn, bankDetails, progress) = createRefs()
-
+        
+        Surface(
+            Modifier
+                .clickable {
+                    coroutineScope.launch { groupViewModel.fetchBankDetails(group.groupId) }
+                    showBankUpdateDialog = true
+                }
+                .constrainAs(bankDetails) {
+                    top.linkTo(parent.top, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                },
+            shape = MaterialTheme.shapes.small,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+        ) {
+            Text(
+                text = stringResource(id = R.string.update_bank_details),
+                fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(4.dp)
+                )
+        }
         Box(
             Modifier
                 .size(200.dp)
@@ -174,14 +202,14 @@ fun GroupUpdateUi(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.background
             ) {
-            TextField(
-                value = groupName,
-                onValueChange = { groupName = it },
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                TextField(
+                    value = groupName,
+                    onValueChange = { groupName = it },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
             }
@@ -202,7 +230,7 @@ fun GroupUpdateUi(
                 color = MaterialTheme.colorScheme.background
             ) {
                 TextField(
-                    value = description?: "",
+                    value = description ?: "",
                     onValueChange = { description = it },
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.background,
@@ -229,7 +257,7 @@ fun GroupUpdateUi(
                 color = MaterialTheme.colorScheme.background
             ) {
                 TextField(
-                    value = address?: "",
+                    value = address ?: "",
                     onValueChange = { address = it },
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.background,
@@ -256,7 +284,7 @@ fun GroupUpdateUi(
                 color = MaterialTheme.colorScheme.background
             ) {
                 TextField(
-                    value = phone?: "",
+                    value = phone ?: "",
                     onValueChange = { phone = it },
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.background,
@@ -283,7 +311,7 @@ fun GroupUpdateUi(
                 color = MaterialTheme.colorScheme.background
             ) {
                 TextField(
-                    value = email?: "",
+                    value = email ?: "",
                     onValueChange = { email = it },
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.background,
@@ -293,116 +321,42 @@ fun GroupUpdateUi(
                     )
                 )
             }
-        }
 
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .constrainAs(bankDetails) {
-                    top.linkTo(details.bottom, margin = 24.dp)
-                    centerHorizontallyTo(parent)
-                },
-            horizontalAlignment = Alignment.Start
-        ) {
-            HorizontalDivider(Modifier.padding(bottom = 4.dp))
-            Text(
-                text = stringResource(id = R.string.bank_details),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = TextUnit(16.0f, TextUnitType.Sp),
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp)
-                    .height(55.dp),
-                border = BorderStroke(1.dp, Color.Gray),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.background
-            ) {
-                TextField(
-                    value = bankName,
-                    onValueChange = { bankName = it },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    label = { Text(text = stringResource(id = R.string.bank_name)) }
-                )
-            }
-
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp)
-                    .height(55.dp),
-                border = BorderStroke(1.dp, Color.Gray),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.background
-            ) {
-                TextField(
-                    value = accountNumber,
-                    onValueChange = { accountNumber = it },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    label = { Text(text = stringResource(id = R.string.account_number))}
-                )
-            }
-
-            Surface(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp)
-                    .height(55.dp),
-                border = BorderStroke(1.dp, Color.Gray),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.background
-            ) {
-                TextField(
-                    value = accountName,
-                    onValueChange = { accountName = it },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    label = { Text(text = stringResource(id = R.string.account_holder))}
-                )
-            }
-
-        }
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    val bankDetail = BankDetail(accountName, accountNumber, bankName)
-                    val response = groupViewModel.saveGroupUpdate(group.groupId, groupName, description, address, phone, email, logoUrl, bankDetail)
-                    if (response?.status == true) {
-                        Toast.makeText(context, "Group updated successfully", Toast.LENGTH_SHORT).show()
-                    }else{
-                        Toast.makeText(context, "Failed to update group", Toast.LENGTH_SHORT).show()
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val response = groupViewModel.saveGroupUpdate(
+                            group.groupId,
+                            groupName,
+                            description,
+                            address,
+                            phone,
+                            email,
+                            logoUrl
+                        )
+                        if (response?.status == true) {
+                            Toast.makeText(
+                                context,
+                                "Group updated successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(context, "Failed to update group", Toast.LENGTH_SHORT)
+                                .show()
+                        }
                     }
-                }
                 },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .constrainAs(saveBtn) {
-                    top.linkTo(bankDetails.bottom, margin = 24.dp)
-                    centerHorizontallyTo(parent)
-                }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color(context.getColor(R.color.background_color))
+                )
             ) {
-            Text(text = stringResource(id = R.string.save))
+                Text(text = stringResource(id = R.string.save))
+            }
         }
 
         if (loadingState == true) {
@@ -414,6 +368,142 @@ fun GroupUpdateUi(
                 color = Color.Transparent
             ) {
                 CircularIndicator()
+            }
+        }
+    }
+}
+
+@Composable
+fun BandDetailUpdate(
+    group: Group,
+    groupViewModel: GroupViewModel,
+    onDismiss: (Boolean) -> Unit
+) {
+    val bankDetails = groupViewModel.bankDetails.observeAsState().value
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    var accountName by rememberSaveable { mutableStateOf(bankDetails?.accountName?: "") }
+    var bankName by rememberSaveable { mutableStateOf(bankDetails?.bankName?: "") }
+    var accountNumber by rememberSaveable { mutableStateOf(bankDetails?.accountNumber?: "") }
+
+    Dialog(
+        onDismissRequest = { onDismiss(false) }) {
+        Surface(
+            Modifier
+                .width(screenWidth.dp)
+                .padding(horizontal = 16.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = stringResource(id = R.string.bank_details),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = TextUnit(16.0f, TextUnitType.Sp),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                )
+
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
+                        .height(55.dp),
+                    border = BorderStroke(1.dp, Color.Gray),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    TextField(
+                        value = bankName,
+                        onValueChange = { bankName = it },
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        label = { Text(text = stringResource(id = R.string.bank_name)) }
+                    )
+                }
+
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
+                        .height(55.dp),
+                    border = BorderStroke(1.dp, Color.Gray),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    TextField(
+                        value = accountNumber,
+                        onValueChange = { accountNumber = it },
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        label = { Text(text = stringResource(id = R.string.account_number))},
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+
+                Surface(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
+                        .height(55.dp),
+                    border = BorderStroke(1.dp, Color.Gray),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    TextField(
+                        value = accountName,
+                        onValueChange = { accountName = it },
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        label = { Text(text = stringResource(id = R.string.account_holder))}
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        if (accountNumber.isEmpty()) {
+                            Toast.makeText(context, "Account number cannot be blank", Toast.LENGTH_SHORT).show()
+                        }else if (accountName.isEmpty()) {
+                            Toast.makeText(context, "Account name cannot be blank", Toast.LENGTH_SHORT).show()
+                        }else if (bankName.isEmpty()) {
+                            Toast.makeText(context, "Bank name cannot be blank", Toast.LENGTH_SHORT).show()
+                        }else {
+                            coroutineScope.launch {
+                                val bankDetail = BankDetail(accountName, accountNumber, bankName)
+                                val response = groupViewModel.updateBankDetail(bankDetail, group.groupId)
+                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                if  (response.status) { onDismiss(false) }
+                            }
+                        }
+                    },
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 32.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color(context.getColor(R.color.background_color))
+                    )
+                ) {
+                    Text(text = stringResource(id = R.string.save))
+                }
             }
         }
     }

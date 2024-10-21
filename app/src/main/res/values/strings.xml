@@ -229,11 +229,14 @@
     <string name="go_to_batch">"To upload payment records in batches, click "</string>
     <string name="here">here</string>
     <string name="upload">Upload</string>
-    <string name="batch_upload_intro">"Ensure that the excel sheet complies with the tempalrte provided. "</string>
+    <string name="batch_upload_intro">"Ensure that the excel sheet complies with the template provided. "</string>
     <string name="should_request_login">Require login each time the app start?</string>
     <string name="auth_mode">"Authentication "</string>
     <string name="blank_activity_title">Activity title cannot be blank</string>
     <string name="blank_amount">Amount cannot be blank</string>
     <string name="alread_paid">This Levy has already been paid and confirmed</string>
     <string name="mark_paid">Confirm member\'s payment for this levy.</string>
+    <string name="update_bank_details">Update bank details</string>
+    <string name="download_desc">"To download the Ms Excel template, click the button below"</string>
+    <string name="reject">Reject</string>
 </resources>
