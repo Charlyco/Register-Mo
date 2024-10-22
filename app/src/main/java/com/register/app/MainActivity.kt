@@ -65,14 +65,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        lifecycleScope.launch {
-//        if (dataStoreManager.readUserData() != null) {
-//                authViewModel.getUserDetails()
-//            }
-//        }
-//    }
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+        if (authViewModel.userLideData.value != null) {
+                authViewModel.getUserDetails()
+            }
+        }
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

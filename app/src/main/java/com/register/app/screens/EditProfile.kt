@@ -1,10 +1,16 @@
 package com.register.app.screens
 
+import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -38,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +55,9 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
 import com.register.app.R
 import com.register.app.model.Member
 import com.register.app.util.CircularIndicator
@@ -75,50 +87,66 @@ fun EditProfileUi(
     navController: NavController
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
+    //val context = LocalContext.current
     var fullName by rememberSaveable { mutableStateOf(user?.fullName) }
     var username by rememberSaveable { mutableStateOf(user?.userName) }
     var address by rememberSaveable { mutableStateOf(user?.address) }
     var phone by rememberSaveable { mutableStateOf(user?.phoneNumber) }
     var imageUrl by rememberSaveable { mutableStateOf(user?.imageUrl) }
     val isLoading by authViewModel.progressLiveData.observeAsState(false)
-    val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri: Uri? ->
-            if (uri != null) {
-                coroutineScope.launch {
-                    try {
-                        val inputStream = context.contentResolver.openInputStream(uri)
-                        if (inputStream != null) {
-                            val mimeType = context.contentResolver.getType(uri)
-                            val response = authViewModel.uploadProfilePic(inputStream, mimeType,
-                                Utils.getFileNameFromUri(context.contentResolver, uri))
-                            if (response.status) {
-                                imageUrl = response.data?.secureUrl
-                                user?.imageUrl = imageUrl
-                                val updateResponse = authViewModel.updateUserProfilePic(user)
-                                imageUrl = updateResponse.data?.imageUrl
+    var bitmap: Bitmap? by remember { mutableStateOf(null) }
+    val context = LocalContext.current as Activity
+    val imageCropLauncher =
+        rememberLauncherForActivityResult(contract = CropImageContract()) { result ->
+            if (result.isSuccessful) {
+                result.uriContent?.let {
+                    //getBitmap method is deprecated in Android SDK 29 or above so we need to do this check here
+                    bitmap = if (Build.VERSION.SDK_INT < 28) {
+                        MediaStore.Images
+                            .Media.getBitmap(context.contentResolver, it)
+                    } else {
+                        val source = ImageDecoder
+                            .createSource(context.contentResolver, it)
+                        ImageDecoder.decodeBitmap(source)
+                    }
+
+                    coroutineScope.launch {
+                        try {
+                            if (bitmap != null) {
+                                val mimeType = "image/jpeg"
+                                val response = authViewModel.uploadCroppedProfilePic(
+                                    bitmap!!, mimeType, "profile_pic")
+                                if (response.status) {
+                                    imageUrl = response.data?.secureUrl
+                                    user?.imageUrl = imageUrl
+                                    val updateResponse = authViewModel.updateUserProfilePic(user)
+                                    imageUrl = updateResponse.data?.imageUrl
+                                } else {
+                                    // Handle error
+                                }
                             } else {
                                 // Handle error
                             }
-                        } else {
+                        } catch (e: IOException) {
+                            e.printStackTrace()
                             // Handle error
                         }
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                        // Handle error
                     }
                 }
+
+            } else {
+                //If something went wrong you can handle the error here
+                println("ImageCropping error: ${result.error}")
             }
         }
-    )
+
     ConstraintLayout(
         Modifier
             .fillMaxSize()
             .padding(top = 64.dp)
             .verticalScroll(rememberScrollState(initial = 0))
     ) {
-        val (profilePic, details, updateBtn, progress) = createRefs()
+        val (profilePic, details, updateBtn, progress, uploadBtn) = createRefs()
 
         Box(
             Modifier
@@ -130,18 +158,33 @@ fun EditProfileUi(
                 },
             contentAlignment = Alignment.BottomEnd
         ) {
-            ImageLoader(
-                imageUrl = imageUrl?: "",
-                context = LocalContext.current,
-                height = 158,
-                width = 158,
-                placeHolder = R.drawable.placeholder)
+            if (imageUrl == null) {
+                bitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }else {
+                ImageLoader(
+                    imageUrl = imageUrl?: "",
+                    context = LocalContext.current,
+                    height = 158,
+                    width = 158,
+                    placeHolder = R.drawable.placeholder)
+                }
 
             Surface(
                 modifier = Modifier
                     .padding(end = 16.dp, bottom = 8.dp)
                     .clickable {
-                        filePicker.launch("image/*")
+                        //filePicker.launch("image/*")
+                        val cropOptions = CropImageContractOptions(
+                            null,
+                            CropImageOptions(imageSourceIncludeCamera = false)
+                        )
+                        imageCropLauncher.launch(cropOptions)
                     }
                     .size(40.dp),
                 color = MaterialTheme.colorScheme.tertiary,

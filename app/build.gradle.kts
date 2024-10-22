@@ -15,9 +15,9 @@ android {
     defaultConfig {
         applicationId = "com.register.app"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 16
-        versionName = "alpha-1.6.4"
+        targetSdk = 35
+        versionCode = 17
+        versionName = "alpha-1.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -56,25 +56,25 @@ android {
 dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
-    implementation("androidx.activity:activity-compose:1.9.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.activity:activity-compose:1.9.3")
     //livedata
-    implementation ("androidx.compose.runtime:runtime:1.6.8")
-    implementation ("androidx.compose.runtime:runtime-livedata:1.6.8")
-    implementation ("androidx.compose.runtime:runtime-rxjava2:1.6.8")
+    implementation ("androidx.compose.runtime:runtime:1.7.4")
+    implementation ("androidx.compose.runtime:runtime-livedata:1.7.4")
+    implementation ("androidx.compose.runtime:runtime-rxjava2:1.7.4")
     //constraintLayout
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
     //datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
     //navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.3")
     //coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     //Dependency Injection
     // hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
-    implementation("com.google.android.libraries.places:places:3.5.0")
+    implementation("com.google.android.libraries.places:places:4.0.0")
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
     // network
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
@@ -83,11 +83,12 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     // image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
     //websocket client
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
     implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
     //Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation(platform("com.google.firebase:firebase-bom:33.5.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-storage")
@@ -105,17 +106,17 @@ dependencies {
     implementation ("androidx.camera:camera-lifecycle:1.3.4")
     implementation ("androidx.camera:camera-view:1.3.4")
 
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material:1.6.8")
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+    implementation("androidx.compose.material:material:1.7.4")
+    implementation("androidx.compose.material:material-icons-extended:1.7.4")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

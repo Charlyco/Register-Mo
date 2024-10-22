@@ -367,7 +367,7 @@ fun RemoteMessageItem(
                 if (item.originalMessageId != null) {
                     Text(
                         text = originalMessage?.message?:"",
-                        color = MaterialTheme.colorScheme.onTertiary,
+                        color = Color.Gray,
                         fontSize = TextUnit(12.0f, TextUnitType.Sp),
                         modifier = Modifier.padding(start = 8.dp)
                     )

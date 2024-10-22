@@ -1,5 +1,6 @@
 package com.register.app.viewmodel
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -22,6 +23,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -233,6 +235,19 @@ class AuthViewModel @Inject constructor(
         _progressLiveData.value = true
         _userProfileImage.value = response.data?.secureUrl
         _progressLiveData.value = false
+        return response
+    }
+
+    suspend fun uploadCroppedProfilePic(bitmap: Bitmap, mimeType: String?, fileNameFromUri: String?): ImageUploadResponse {
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        val requestBody = byteArray.toRequestBody(mimeType?.toMediaTypeOrNull())
+        val response = authRepository.uploadImage(requestBody, fileNameFromUri!!)
+        _progressLiveData.value = true
+        _userProfileImage.value = response.data?.secureUrl
+        _progressLiveData.value = false
+
         return response
     }
 
