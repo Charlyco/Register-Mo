@@ -102,12 +102,6 @@ fun MemberSearchBar(authViewModel: AuthViewModel) {
                     unfocusedIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent
                 ),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "",
-                        tint = Color.Gray)
-                }
             )
             Surface(
                 Modifier
@@ -118,7 +112,7 @@ fun MemberSearchBar(authViewModel: AuthViewModel) {
                 color = MaterialTheme.colorScheme.secondary
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.filter),
+                    painter = painterResource(id = R.drawable.search),
                     contentDescription = "",
                     Modifier
                         .size(32.dp)

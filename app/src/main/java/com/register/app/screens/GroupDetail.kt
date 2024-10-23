@@ -146,7 +146,7 @@ fun GroupDetail(
             groupViewModel,
             forumViewModel,
             authViewModel,
-            homeViewModel,
+            questionnaireViewModel,
             activityViewModel
             ){showAllMembers = it} },
     ) {
@@ -220,7 +220,7 @@ fun GroupDetailTopBar(
     groupViewModel: GroupViewModel,
     forumViewModel: ForumViewModel,
     authViewModel: AuthViewModel,
-    homeViewModel: HomeViewModel,
+    questionnaireViewModel: QuestionnaireViewModel,
     activityViewModel: ActivityViewModel,
     viewAllMembers: (show: Boolean) -> Unit
 ) {
@@ -375,8 +375,11 @@ fun GroupDetailTopBar(
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.goto_questionnaire)) },
                         onClick = {
-                            navController.navigate("quest_response") {
-                                launchSingleTop = true
+                            coroutineScope.launch {
+                                questionnaireViewModel.getQuestionnaires(group?.groupId!!)
+                                navController.navigate("quest_response") {
+                                    launchSingleTop = true
+                                }
                             }
                             isExpanded = false
                         }

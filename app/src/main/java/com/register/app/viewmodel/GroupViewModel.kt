@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.BankDetail
-import com.register.app.dto.BankDetailWrapper
 import com.register.app.dto.ChangeMemberStatusDto
 import com.register.app.dto.ComplianceRate
 import com.register.app.dto.Contestant
@@ -39,8 +38,6 @@ import com.register.app.model.MembershipRequest
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.GroupRepository
 import com.register.app.util.DataStoreManager
-import com.register.app.util.PAID
-import com.register.app.util.UNPAID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -154,7 +151,7 @@ class GroupViewModel @Inject constructor(
     }
 
     suspend fun getIndividualMembershipRequest(emailAddress: String) {
-        _pendingMembershipDetail.value = authRepository.getMemberDetails(emailAddress)
+        _pendingMembershipDetail.value = authRepository.getMemberDetailsByEmail(emailAddress)
     }
 
     suspend fun approveMembershipRequest(membershipRequest: MembershipRequest): GenericResponse {

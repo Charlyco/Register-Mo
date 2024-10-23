@@ -155,7 +155,7 @@ class ActivityRepositoryImpl @Inject constructor(
 
     override suspend fun getMemberDetails(memberEmail: String?): Member? {
         return suspendCoroutine { continuation ->
-            val call = userService.getMemberDetails(memberEmail!!)
+            val call = userService.getMemberDetailsByEmail(memberEmail!!)
             call.enqueue(object : Callback<Member?> {
                 override fun onResponse(call: Call<Member?>, response: Response<Member?>) {
                     if (response.isSuccessful) {

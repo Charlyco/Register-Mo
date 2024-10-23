@@ -116,7 +116,7 @@
     <string name="bank_name">Bank name</string>
     <string name="account_number">Account number</string>
     <string name="account_holder">Account name</string>
-    <string name="search_by_email">Enter the user\'s email address</string>
+    <string name="search_by_email">Enter the user\'s email or phone number</string>
     <string name="add_to_group">Add to group</string>
     <string name="payment">Pending payments</string>
     <string name="confirm">Confirm</string>

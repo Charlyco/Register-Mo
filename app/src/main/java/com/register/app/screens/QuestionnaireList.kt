@@ -329,10 +329,13 @@ fun QuestionnaireItemContextMenu(
                             TextButton(
                                 onClick = {
                                     coroutineScope.launch {
+                                        val groupId = questionnaire.groupId // Create an instance of the groupId before deletion
                                         val response = questionnaireViewModel.deleteQuestionnaire(questionnaire)
                                         Toast.makeText(context, response.message, Toast.LENGTH_LONG).show()
+                                        questionnaireViewModel.getQuestionnaires(groupId!!)
+                                        //showDeleteDialog = false
+                                        navController.navigateUp()
                                     }
-                                    showDeleteDialog = false
                                 }
                             ) {
                                 Text(
@@ -360,8 +363,9 @@ fun QuestionnaireItemContextMenu(
                                 onClick = {
                                     coroutineScope.launch {
                                         questionnaireViewModel.endQuestionnaire(questionnaire)
+                                        questionnaireViewModel.getQuestionnaires(questionnaire.groupId!!)
+                                        showCompleteDialog = false
                                     }
-                                    showCompleteDialog = false
                                 }
                             ) {
                                 Text(

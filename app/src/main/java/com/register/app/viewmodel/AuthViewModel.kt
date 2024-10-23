@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FirebaseTokenModel
 import com.register.app.dto.GenericResponse
@@ -14,13 +13,11 @@ import com.register.app.dto.LoginUserModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
 import com.register.app.model.Member
-import com.register.app.model.MembershipDto
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.ChatRepository
 import com.register.app.util.DataStoreManager
 import com.register.app.util.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
@@ -209,17 +206,25 @@ class AuthViewModel @Inject constructor(
     }
 
     suspend fun fetchMemberDetailsByEmail(memberEmail: String?): Member? {
-        val member = authRepository.getMemberDetails(memberEmail!!)
+        val member = authRepository.getMemberDetailsByEmail(memberEmail!!)
         return member
     }
 
-    suspend fun getMemberDetails(email: String): Member? {
+    suspend fun getMemberDetails(searchTag: String): Member? {
         _progressLiveData.value = true
-        Log.d("Member", "fetching member details")
-        val member = authRepository.getMemberDetails(Utils.normaliseString(email))
+        val member = if (isEmail(searchTag)) {
+            authRepository.getMemberDetailsByEmail(Utils.normaliseString(searchTag))
+        }else {
+            authRepository.getMemberDetailsByPhone(Utils.normaliseString(searchTag))
+        }
         _intendingMemberLiveData.value = member
         _progressLiveData.value = false
         return member
+    }
+
+    private fun isEmail(searchTag: String): Boolean {
+        val emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        return searchTag.matches(emailPattern.toRegex())
     }
 
     suspend fun resendOtp(email: String) {

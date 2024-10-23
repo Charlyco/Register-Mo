@@ -1,6 +1,5 @@
 package com.register.app.api
 
-import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FaqWrapper
 import com.register.app.dto.GenericResponse
@@ -8,7 +7,6 @@ import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.MemberDetailWrapper
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
-import com.register.app.model.Faq
 import com.register.app.model.Member
 import com.register.app.model.PrivacyPolicyResponse
 import okhttp3.MultipartBody
@@ -34,7 +32,7 @@ interface UserService {
     fun getAllMembersForGroup(@Body memberEmail: List<String>): Call<MemberDetailWrapper?>
 
     @GET("auth-service/api/v1/user/member/email")
-    fun getMemberDetails(@Query("emailAddress") emailAddress: String): Call<Member?>
+    fun getMemberDetailsByEmail(@Query("emailAddress") emailAddress: String): Call<Member?>
 
     @POST("messaging-service/api/otp/email")
     fun sendOtp(@Query("emailAddress") emailAddress: String): Call<GenericResponse>
@@ -60,4 +58,6 @@ interface UserService {
                       @Query("password") password: String): Call<GenericResponse>
     @GET("company-service/api/v1/privacy")
     fun getPrivacyStatement(): Call<PrivacyPolicyResponse>
+    @GET("auth-service/api/v1/user/member/phone")
+    fun getMemberDetailsByPhone(@Query("phoneNumber") phoneNumber: String): Call<Member>
 }

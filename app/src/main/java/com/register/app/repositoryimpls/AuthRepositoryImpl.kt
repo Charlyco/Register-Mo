@@ -1,23 +1,18 @@
 package com.register.app.repositoryimpls
 
-import android.util.Log
-import androidx.core.content.contentValuesOf
 import com.register.app.api.UserService
-import com.register.app.dto.AuthResponse
 import com.register.app.dto.AuthResponseWrapper
 import com.register.app.dto.FaqWrapper
 import com.register.app.dto.GenericResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.LoginUserModel
 import com.register.app.dto.MemberDetailWrapper
-import com.register.app.dto.SendOtpModel
 import com.register.app.dto.SignUpModel
 import com.register.app.dto.UpdateUserResponse
-import com.register.app.dto.VerifyOtpModel
-import com.register.app.model.Faq
 import com.register.app.model.Member
 import com.register.app.model.PrivacyPolicyResponse
 import com.register.app.repository.AuthRepository
+import com.register.app.util.ExceptionHandler
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
@@ -40,13 +35,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(AuthResponseWrapper("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(AuthResponseWrapper(response.message(), false, null))
                     }
                 }
 
@@ -68,13 +57,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(AuthResponseWrapper("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(AuthResponseWrapper(response.message(), false, null))
                     }
                 }
 
@@ -97,13 +80,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(GenericResponse(response.message(), false, null))
                     }
                 }
 
@@ -126,13 +103,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(GenericResponse(response.message(), false, null))
                     }
                 }
 
@@ -155,13 +126,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(MemberDetailWrapper("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(MemberDetailWrapper("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(MemberDetailWrapper(response.message(), false, null))
                     }
                 }
 
@@ -172,21 +137,15 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
         }
     }
 
-    override suspend fun getMemberDetails(emailAddress: String): Member? {
+    override suspend fun getMemberDetailsByEmail(emailAddress: String): Member? {
         return suspendCoroutine { continuation ->
-            val call = userService.getMemberDetails(emailAddress)
+            val call = userService.getMemberDetailsByEmail(emailAddress)
             call.enqueue(object : Callback<Member?> {
                 override fun onResponse(call: Call<Member?>, response: Response<Member?>) {
                     if (response.isSuccessful) {
                         continuation.resume(response.body())
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(null)
-                            }
-                            500 -> continuation.resume(null)
-                        }
+                        continuation.resume(null)
                     }
                 }
 
@@ -212,13 +171,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(ImageUploadResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(ImageUploadResponse("Please check Internet connection and try again", false, null))
-                        }
+                       continuation.resume(ImageUploadResponse(response.message(), false, null))
                     }
                 }
 
@@ -241,13 +194,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(UpdateUserResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(UpdateUserResponse("Please check Internet connection and try again", false, null))
-                        }
+                         continuation.resume(UpdateUserResponse(response.message(), false, null))
                     }
                 }
 
@@ -269,13 +216,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(AuthResponseWrapper("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(AuthResponseWrapper("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(AuthResponseWrapper(response.message(), false, null))
                     }
                 }
 
@@ -295,13 +236,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume( null)
-                            }
-                            500 -> continuation.resume(  null)
-                        }
+                        continuation.resume(  null)
                     }
                 }
 
@@ -321,13 +256,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(FaqWrapper("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(FaqWrapper("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(FaqWrapper(response.message(), false, null))
                     }
                 }
 
@@ -350,13 +279,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(GenericResponse(response.message(), false, null))
                     }
                 }
 
@@ -382,13 +305,7 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else {
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(GenericResponse("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(GenericResponse("Please check Internet connection and try again", false, null))
-                        }
+                        continuation.resume(GenericResponse(response.message(), false, null))
                     }
                 }
 
@@ -411,30 +328,31 @@ class AuthRepositoryImpl @Inject constructor(private val userService: UserServic
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     } else {
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(
-                                    PrivacyPolicyResponse(
-                                        "Invalid Credentials",
-                                        false,
-                                        null
-                                    )
-                                )
-                            }
-
-                            500 -> continuation.resume(
-                                PrivacyPolicyResponse(
-                                    "An error occurred",
-                                    false,
-                                    null
-                                )
-                            )
-                        }
+                        continuation.resume(PrivacyPolicyResponse(response.message(), false, null))
                     }
                 }
 
                 override fun onFailure(call: Call<PrivacyPolicyResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
+
+    override suspend fun getMemberDetailsByPhone(phoneNumber: String): Member? {
+        return suspendCoroutine { continuation ->
+            val call = userService.getMemberDetailsByPhone(phoneNumber)
+            call.enqueue(object : Callback<Member> {
+                override fun onResponse(call: Call<Member>, response: Response<Member>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else {
+                        continuation.resume(null)
+                    }
+                }
+
+                override fun onFailure(call: Call<Member>, t: Throwable) {
                     continuation.resumeWithException(t)
                 }
 

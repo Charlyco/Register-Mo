@@ -77,6 +77,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        lifecycleScope.launch {
+            if (authViewModel.userLideData.value != null) {
+                authViewModel.getUserDetails()
+            }
+        }
         handleDeepLink(intent)
     }
 
