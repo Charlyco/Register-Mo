@@ -33,6 +33,7 @@ import com.register.app.viewmodel.GroupViewModel
 import com.register.app.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -119,7 +120,7 @@ class MainActivity : ComponentActivity() {
                     val type = intent.getStringExtra(NOTIFICATION_TYPE)
                     val title = intent.getStringExtra(NOTIFICATION_TITLE)
                     val content = intent.getStringExtra(NOTIFICATION_CONTENT)
-                    val notification = NotificationModel(null, title, content, type)
+                    val notification = NotificationModel(null, title, content, type, LocalDateTime.now().toString())
                     lifecycleScope.launch {
                         homeViewModel.setHomeDestination(NOTIFICATIONS)
                         homeViewModel.addNotification(notification)
@@ -135,7 +136,7 @@ class MainActivity : ComponentActivity() {
                             null,
                             election.electionEvent,
                             "${election.electionTitle} is now ${election.electionEvent}",
-                            type
+                            type, LocalDateTime.now().toString()
                         )
                         lifecycleScope.launch {
                             homeViewModel.setHomeDestination("notifications")
@@ -149,7 +150,7 @@ class MainActivity : ComponentActivity() {
                     val type = intent.getStringExtra(NOTIFICATION_TYPE)
                     val title = intent.getStringExtra(NOTIFICATION_TITLE)
                     val content = intent.getStringExtra(NOTIFICATION_CONTENT)
-                    val notification = NotificationModel(null, title, content, type)
+                    val notification = NotificationModel(null, title, content, type, LocalDateTime.now().toString())
                     lifecycleScope.launch {
                         homeViewModel.setHomeDestination("notifications")
                         homeViewModel.addNotification(notification)

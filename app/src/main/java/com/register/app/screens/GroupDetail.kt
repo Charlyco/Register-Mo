@@ -1,6 +1,5 @@
 package com.register.app.screens
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -95,7 +94,6 @@ import com.register.app.util.EventItem
 import com.register.app.util.GROUP_NOTIFICATIONS
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
-import com.register.app.util.PAY_SPECIAL_LEVY
 import com.register.app.util.SPECIAL_LEVY_DETAIL
 import com.register.app.util.UNPAID
 import com.register.app.viewmodel.ActivityViewModel
@@ -161,7 +159,7 @@ fun GroupDetail(
             activityViewModel,
             group)
         if (showAllMembers) {
-            AllMembersList(
+            MembersListBottomSheet(
                 group,
                 groupViewModel,
                 forumViewModel,
@@ -182,8 +180,9 @@ fun QuestionnaireDialog(navController: NavController, onDismiss: (Boolean) -> Un
         Surface(
             Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .padding(horizontal = 24.dp)
+                .height(160.dp)
+                .padding(horizontal = 24.dp),
+            shape = MaterialTheme.shapes.small
 
         ) {
             Column(
@@ -195,7 +194,7 @@ fun QuestionnaireDialog(navController: NavController, onDismiss: (Boolean) -> Un
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 16.dp)
                 )
 
                 Button(
@@ -205,9 +204,6 @@ fun QuestionnaireDialog(navController: NavController, onDismiss: (Boolean) -> Un
                             launchSingleTop = true
                         }
                     },
-                    modifier = Modifier
-                        .height(dimensionResource(id = R.dimen.button_height))
-                        .padding(top = 16.dp, bottom = 8.dp)
                     ) {
                     Text(text = stringResource(id = R.string.take_action))
                 }
@@ -1284,7 +1280,7 @@ fun SpecialLevyItemGroup(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AllMembersList(
+fun MembersListBottomSheet(
     group: Group?,
     groupViewModel: GroupViewModel,
     forumViewModel: ForumViewModel,

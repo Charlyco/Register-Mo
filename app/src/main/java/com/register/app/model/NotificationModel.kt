@@ -2,6 +2,7 @@ package com.register.app.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalDateTime
 
 @Entity(tableName = "notifications")
 data class NotificationModel(
@@ -9,5 +10,6 @@ data class NotificationModel(
     val id: Int?,
     val title: String?,
     val content: String?,
-    val type: String?
+    val type: String?,
+    val time: String
 )

@@ -1048,7 +1048,6 @@ fun MarActivityAsPaidDialog(
                                 val response = activityViewModel.confirmPayment(
                                     payment,
                                     amountPaid.toDouble(),
-                                    0.0,
                                     group.groupId
                                 )
                                 callback(false)

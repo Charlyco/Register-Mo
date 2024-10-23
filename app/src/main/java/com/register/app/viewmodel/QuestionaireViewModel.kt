@@ -35,7 +35,7 @@ class QuestionnaireViewModel @Inject constructor(
     val loadingState: LiveData<Boolean> = _loadingState
     private val _groupQuestionnaires: MutableLiveData<List<QuestionnaireData>?> = MutableLiveData()
     val groupQuestionnaires: LiveData<List<QuestionnaireData>?> = _groupQuestionnaires
-    private val _downloadProgress: MutableLiveData<Int> = MutableLiveData()
+    private val _downloadProgress: MutableLiveData<Int> = MutableLiveData(0)
     val downloadProgress: LiveData<Int> = _downloadProgress
     private val _questionnaireResponseList: MutableLiveData<MutableList<FormUserResponseDto>?> = MutableLiveData()
     val questionnaireResponseList: LiveData<MutableList<FormUserResponseDto>?> = _questionnaireResponseList

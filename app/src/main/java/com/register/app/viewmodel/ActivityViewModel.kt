@@ -325,7 +325,6 @@ class ActivityViewModel @Inject constructor(
 
     suspend fun confirmPayment(
         selectedPayment: Payment?,
-        amountPaid: Double,
         outstanding: Double,
         groupId: Int,
     ): GenericResponse {
@@ -338,7 +337,7 @@ class ActivityViewModel @Inject constructor(
             selectedPayment.eventId!!,
             groupId,
             selectedPayment.groupName,
-            selectedPayment.amountPaid?: amountPaid,
+            selectedPayment.amountPaid!!,
             outstanding,
             selectedPayment.modeOfPayment,
             dataStoreManager.readUserData()?.fullName!!

@@ -82,7 +82,7 @@
     <string name="find_friends_desc">You can as well search for your colleagues with their phone number, and then join common groups they already belong.</string>
     <string name="suggested">Suggested groups</string>
     <string name="phone_number">Enter phone number</string>
-    <string name="your_groups">Groups</string>
+    <string name="your_groups">My Groups</string>
     <string name="link_up">Colleagues</string>
     <string name="new_group">New group</string>
     <string name="social">Social groups</string>
@@ -239,4 +239,6 @@
     <string name="update_bank_details">Update bank details</string>
     <string name="download_desc">"To download the Ms Excel template, click the button below"</string>
     <string name="reject">Reject</string>
+    <string name="total_amount">Total amount paid</string>
+    <string name="reason">State reason for rejection</string>
 </resources>

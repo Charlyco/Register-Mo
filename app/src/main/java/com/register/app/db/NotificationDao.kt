@@ -11,6 +11,6 @@ interface NotificationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveNotification(notification: NotificationModel)
 
-    @Query("SELECT * FROM notifications")
+    @Query("SELECT * FROM notifications ORDER BY id DESC")
     suspend fun getAllNotifications(): MutableList<NotificationModel>?
 }

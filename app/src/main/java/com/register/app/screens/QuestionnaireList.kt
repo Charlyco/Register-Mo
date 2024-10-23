@@ -20,10 +20,14 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.TextButton
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -51,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.dto.FormUserResponseDto
 import com.register.app.dto.QuestionnaireData
 import com.register.app.dto.QuestionnaireEntry
 import com.register.app.dto.QuestionnaireResponse
@@ -88,6 +93,8 @@ fun ResponseScreenContent(
     val questionnaires = questionnaireViewModel.groupQuestionnaires.observeAsState().value
     val isRefreshing by rememberSaveable { mutableStateOf(false) }
     val isLoading = questionnaireViewModel.loadingState.observeAsState().value
+    val downloadProgress = questionnaireViewModel.downloadProgress.observeAsState().value
+    val responseList = questionnaireViewModel.questionnaireResponseList.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     val refreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
@@ -112,6 +119,48 @@ fun ResponseScreenContent(
         }
         if (isLoading == true) {
             CircularIndicator()
+        }
+
+        if (downloadProgress != null && (downloadProgress > 0 && downloadProgress < responseList?.size!!)) {
+            ShowDownloadProgress(downloadProgress, responseList)
+        }
+    }
+}
+
+@Composable
+fun ShowDownloadProgress(downloadProgress: Int, responseList: MutableList<FormUserResponseDto>) {
+    val progressFraction = if (responseList.isNotEmpty()) {
+        downloadProgress.toFloat() / responseList.size
+    } else 0f
+
+    Dialog(onDismissRequest = { }) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            shadowElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Downloading Files...",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
+
+                Text(
+                    text = "$downloadProgress of ${responseList.size} files downloaded"
+                )
+            }
         }
     }
 }
@@ -210,7 +259,8 @@ fun QuestionnaireItemContextMenu(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.small
         ) {
             Column(
                 Modifier.fillMaxWidth(),
@@ -222,7 +272,7 @@ fun QuestionnaireItemContextMenu(
                     modifier = Modifier
                         .clickable {
                             coroutineScope.launch {
-                               questionnaireViewModel.getUserResponses(questionnaire)
+                                questionnaireViewModel.getUserResponses(questionnaire)
                                 navController.navigate("user_responses/${questionnaire.title}") {
                                     launchSingleTop = true
                                 }
@@ -239,7 +289,7 @@ fun QuestionnaireItemContextMenu(
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
                     modifier = Modifier
                         .clickable {
-                           showDownloadDialog = true
+                            showDownloadDialog = true
                         }
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -398,9 +448,6 @@ fun QuestionnaireDetail(
                 coroutineScope.launch {
                     val response = questionnaireViewModel.submitQuestionnaireResponse(userResponses, questionnaireData, membershipId)
                     if (response?.status == true) {
-                        navController.navigate("group_detail") {
-                            launchSingleTop = true
-                        }
                         questionnaireViewModel.getQuestionnaires(questionnaireData.groupId!!)
                     }else {
                         Toast.makeText(context, response?.message, Toast.LENGTH_LONG).show()

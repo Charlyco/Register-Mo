@@ -1,6 +1,7 @@
 package com.register.app.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,7 @@ import com.register.app.dto.GroupNotification
 import com.register.app.enums.NotificationType
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
+import com.register.app.util.Utils
 import com.register.app.viewmodel.GroupViewModel
 
 @Composable
@@ -78,64 +80,74 @@ fun GroupNotificationItem(
         color = MaterialTheme.colorScheme.background,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End
         ) {
-            Surface(
-                Modifier.size(48.dp),
-                color = when (notificationItem.type) {
-                    NotificationType.ADMIN.name -> Color(color = context.getColor(R.color.light_ox))
-                    NotificationType.EVENT.name -> Color(color = context.getColor(R.color.purple_500))
-                    NotificationType.ELECTION.name -> Color(color = context.getColor(R.color.app_orange))
-                    else -> Color(color = context.getColor(R.color.light_lemon))
-                },
-                shape = MaterialTheme.shapes.small
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                when (notificationItem.type) {
-                    NotificationType.ADMIN.name -> {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_notification_bell),
-                            contentDescription = "",
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                Surface(
+                    Modifier.size(48.dp),
+                    color = when (notificationItem.type) {
+                        NotificationType.ADMIN.name -> Color(color = context.getColor(R.color.light_ox))
+                        NotificationType.EVENT.name -> Color(color = context.getColor(R.color.purple_500))
+                        NotificationType.ELECTION.name -> Color(color = context.getColor(R.color.app_orange))
+                        else -> Color(color = context.getColor(R.color.light_lemon))
+                    },
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    when (notificationItem.type) {
+                        NotificationType.ADMIN.name -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_notification_bell),
+                                contentDescription = "",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
 
-                    NotificationType.ELECTION.name -> {
-                        Icon(
-                            painter = painterResource(id = R.drawable.reshot_icon_notification),
-                            contentDescription = "",
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                        NotificationType.ELECTION.name -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.reshot_icon_notification),
+                                contentDescription = "",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
 
-                    NotificationType.EVENT.name -> {
-                        Icon(
-                            painter = painterResource(id = R.drawable.events_icoc),
-                            contentDescription = "",
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                        NotificationType.EVENT.name -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.events_icoc),
+                                contentDescription = "",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
 
-                    NotificationType.GENERAL.name -> {
-                        Icon(
-                            painter = painterResource(id = R.drawable.reshot_icon_notification),
-                            contentDescription = "",
-                            modifier = Modifier.size(32.dp)
-                        )
+                        NotificationType.GENERAL.name -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.reshot_icon_notification),
+                                contentDescription = "",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
                     }
                 }
+                Text(
+                    text = notificationItem.content?: "",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 2,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+
             }
             Text(
-                text = notificationItem.content?: "",
-                fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-
+                text = Utils.formatToDDMMYYYY(notificationItem.date),
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp, end = 8.dp)
+                )
         }
     }
 }

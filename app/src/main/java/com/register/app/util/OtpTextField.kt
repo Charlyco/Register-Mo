@@ -72,7 +72,7 @@ fun OtpTextField(
                     isDone = true
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             decorationBox = {
                 Row(
                     horizontalArrangement = Arrangement.Center,

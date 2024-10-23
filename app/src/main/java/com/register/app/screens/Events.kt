@@ -449,7 +449,7 @@ fun BulkPaymentListDialog(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val paymentList = activityViewModel.pendingBulkPayments.observeAsState().value
     var showImage by rememberSaveable { mutableStateOf(false) }
-    var selectedPayment by rememberSaveable { mutableStateOf<BulkPaymentModel?>(null) }
+    var selectedPayment by remember { mutableStateOf<BulkPaymentModel?>(null) }
     ModalBottomSheet(
         onDismissRequest = {
             onShowDialogChanged(false)
@@ -538,74 +538,29 @@ fun ConfirmPaymentDialog(
     var showReasonInputDialog by rememberSaveable { mutableStateOf(false) }
     var reason by rememberSaveable { mutableStateOf("") }
     Dialog(
-        onDismissRequest = { callback(false)}) {
+        onDismissRequest = { callback(false) }
+    ) {
         Surface(
             Modifier
                 .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState(initial = 0)),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.medium
         ) {
-            Dialog(onDismissRequest = { showReasonInputDialog = false}) {
-                Surface(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    ConstraintLayout(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        val (input, btn) = createRefs()
-
-                        TextField(
-                            value = reason,
-                            onValueChange = { reason = it },
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedContainerColor = MaterialTheme.colorScheme.background,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.background
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Proceed",
-                        modifier = Modifier
-                            .constrainAs(btn) {
-                                top.linkTo(input.bottom, margin = 8.dp)
-                                end.linkTo(parent.end, margin = 8.dp)
-
-                            }
-                            .clickable {
-                                coroutineScope.launch {
-                                    val response =
-                                        activityViewModel.rejectBulkPayment(selectedPayment, reason)
-                                    if (response.status) {
-                                        callback(false)
-                                        Toast
-                                            .makeText(context, response.message, Toast.LENGTH_SHORT)
-                                            .show()
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
             Column(
                 Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ImageLoader(
-                    selectedPayment?.imageUrl ?: "",
-                    LocalContext.current,
-                    screenHeight - 180,
-                    screenWidth - 16,
-                    R.drawable.event
-                )
+                if  (!selectedPayment?.imageUrl.isNullOrEmpty()) {
+                    ImageLoader(
+                        selectedPayment?.imageUrl ?: "",
+                        LocalContext.current,
+                        screenHeight - 320,
+                        screenWidth - 16,
+                        R.drawable.event
+                    )
+                }
                 Column(
                     Modifier
                         .fillMaxWidth()
@@ -617,7 +572,7 @@ fun ConfirmPaymentDialog(
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
-                        )
+                    )
 
                     selectedPayment?.eventItemDtos?.forEach { eventItemDto ->
                         Text(
@@ -626,6 +581,13 @@ fun ConfirmPaymentDialog(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     }
+
+                    Text(
+                        text = "Total amount to pay: ${selectedPayment?.amountToPay}",
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
 
                 Row(
@@ -634,13 +596,14 @@ fun ConfirmPaymentDialog(
                         .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                ) {
                     Button(
                         onClick = {
                             showReasonInputDialog = true
                         },
                         Modifier
-                            .width(((screenWidth/ 2) - 16).dp),
+                            .width(((screenWidth / 2) - 40).dp)
+                            .padding(start = 8.dp, end = 4.dp),
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Text(text = stringResource(id = R.string.reject_payment))
@@ -650,21 +613,100 @@ fun ConfirmPaymentDialog(
                         onClick = {
                             coroutineScope.launch {
                                 val response = activityViewModel.confirmBulkPayment(
-                                    selectedPayment, PaymentMethod.BANK_TRANSFER.name)
+                                    selectedPayment, PaymentMethod.BANK_TRANSFER.name
+                                )
                                 if (response.status) {
                                     callback(false)
-                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
-                                }else {
-                                    Toast.makeText(context, response.message,
-                                        Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, response.message, Toast.LENGTH_SHORT)
+                                        .show()
+                                } else {
+                                    Toast.makeText(
+                                        context, response.message,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         },
                         Modifier
-                            .width(((screenWidth/ 2) - 16).dp),
+                            .width(((screenWidth / 2) - 40).dp)
+                            .padding(start = 4.dp, end = 8.dp),
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Text(text = stringResource(id = R.string.confirm))
+                    }
+                }
+                if (showReasonInputDialog) {
+                    Dialog(onDismissRequest = { showReasonInputDialog = false }) {
+                        Surface(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            ConstraintLayout(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                val (header, input, btn) = createRefs()
+                                Text(
+                                    text = stringResource(id = R.string.reason),
+                                    modifier = Modifier.constrainAs(header) {
+                                        top.linkTo(parent.top, margin = 16.dp)
+                                        centerHorizontallyTo(parent)
+                                    }
+                                )
+
+                                Surface(
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .constrainAs(input) {
+                                        top.linkTo(header.bottom, margin = 16.dp)
+                                        centerHorizontallyTo(parent)
+                                    }
+                                ) {
+                                    TextField(
+                                        value = reason,
+                                        onValueChange = { reason = it },
+                                        colors = TextFieldDefaults.colors(
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.background
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Proceed",
+                                    modifier = Modifier
+                                        .constrainAs(btn) {
+                                            top.linkTo(input.bottom, margin = 8.dp)
+                                            end.linkTo(parent.end, margin = 8.dp)
+
+                                        }
+                                        .clickable {
+                                            coroutineScope.launch {
+                                                val response =
+                                                    activityViewModel.rejectBulkPayment(
+                                                        selectedPayment,
+                                                        reason
+                                                    )
+                                                if (response.status) {
+                                                    callback(false)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            response.message,
+                                                            Toast.LENGTH_SHORT
+                                                        )
+                                                        .show()
+                                                }
+                                            }
+                                        }
+                                )
+                            }
+                        }
                     }
                 }
             }

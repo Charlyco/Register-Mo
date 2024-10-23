@@ -7,5 +7,5 @@ data class GroupNotification(
     val title: String,
     val content: String,
     val type: String,
-    val ateTime: String
+    val date: String
 )

@@ -63,7 +63,7 @@ fun QuestionnaireResponsesList(
             state = rememberLazyListState()
         ) {
             items(responseList) {response ->
-                ResponseItem(questionnaireViewModel, response)
+                ResponseItem(response)
             }
         }
     }
@@ -71,7 +71,7 @@ fun QuestionnaireResponsesList(
 }
 
 @Composable
-fun ResponseItem(questionnaireViewModel: QuestionnaireViewModel, response: FormUserResponseDto) {
+fun ResponseItem(response: FormUserResponseDto) {
     var showResponseDetail by rememberSaveable {  mutableStateOf(false) }
     Column(
         Modifier

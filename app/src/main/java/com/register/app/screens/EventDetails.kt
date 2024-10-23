@@ -380,7 +380,6 @@ fun ConfirmPaymentDialog(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    var amountPaid by rememberSaveable { mutableStateOf("") }
     var outstanding by rememberSaveable { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
@@ -520,31 +519,11 @@ fun ConfirmPaymentDialog(
                     modifier = Modifier.padding(start = 8.dp)
                 )
 
-                Surface(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, 4.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    TextField(
-                        value = amountPaid,
-                        onValueChange = { amountPaid = it},
-                        placeholder = { Text(text = stringResource(id = R.string.amount_paid))},
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.background,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-                            ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        )
-                        )
-                }
+                Text(
+                    text = "Amount paid: ${selectedPayment.amountPaid}",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
 
                 Row(
                     Modifier
@@ -567,7 +546,7 @@ fun ConfirmPaymentDialog(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                val response = activityViewModel.confirmPayment(selectedPayment, amountPaid.toDouble(),
+                                val response = activityViewModel.confirmPayment(selectedPayment,
                                     0.0, group?.groupId!!)
                                 if (response.status) {
                                     callback(false)
@@ -889,7 +868,12 @@ fun ViewEventDetails(
 }
 
 @Composable
-fun Compliance(groupViewModel: GroupViewModel, activityViewModel: ActivityViewModel, event: Event?, navController: NavController) {
+fun Compliance(
+    groupViewModel: GroupViewModel,
+    activityViewModel: ActivityViewModel,
+    event: Event?,
+    navController: NavController
+) {
     val hasUserPaid = activityViewModel.hasPaid.observeAsState().value
     var showPaidList by rememberSaveable { mutableStateOf(false) }
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
