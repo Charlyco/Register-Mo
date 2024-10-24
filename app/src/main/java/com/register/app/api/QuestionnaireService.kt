@@ -30,4 +30,6 @@ interface QuestionnaireService {
     fun downloadResponse(@Path("formId") formId: Int, @Path("responseId") responseId: Int): Call<ResponseBody>
     @GET("form-service/api/v1/{formId}/responses")
     fun getUserResponses(@Path("formId") formId: Int): Call<AllResponsesWrapper>
+    @GET("form-service/api/v1/responses/{formId}")
+    fun downloadSummery(@Path("formId") formId: Int?): Call<ResponseBody>
 }

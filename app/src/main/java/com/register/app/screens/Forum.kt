@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
@@ -328,6 +331,7 @@ fun RemoteMessageItem(
         originalMessage = conversations.find { it.id == item.originalMessageId }
     }
     val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .padding(top = 2.dp, bottom = 2.dp, end = 16.dp)
@@ -417,6 +421,35 @@ fun RemoteMessageItem(
 }
 
 @Composable
+fun MessageItemContextMenu(
+    item: MessageData,
+    forumViewModel: ForumViewModel?,
+    onDismiss: (Boolean) -> Unit) {
+
+    val coroutineScope = rememberCoroutineScope()
+    Dialog(onDismissRequest = { onDismiss(false) }) {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Column(
+                Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.delete_message),
+                    modifier = Modifier.clickable {
+                        coroutineScope.launch{
+                            forumViewModel?.deleteMessage(item.groupId, item.id)
+                        }
+                        onDismiss(false)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun MyMessageItem(
     forumViewModel: ForumViewModel?,
     item: MessageData,
@@ -427,6 +460,8 @@ fun MyMessageItem(
     if (item.originalMessageId != null) {
         originalMessage = conversations.find { it.id == item.originalMessageId }
     }
+    var showContextMenu by rememberSaveable { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .padding(top = 2.dp, bottom = 2.dp, start = 42.dp)
@@ -436,18 +471,23 @@ fun MyMessageItem(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 2.dp, bottom = 2.dp, start = 16.dp),
+                .padding(top = 2.dp, bottom = 2.dp, start = 16.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            if (originalMessage != null) {
+                                scrollToItem(conversations.indexOf(originalMessage!!))
+                            }
+                        },
+                        onLongPress = { showContextMenu = true },
+                    )
+                },
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
             shape = MaterialTheme.shapes.small
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
-                modifier = Modifier.clickable {
-                    if (originalMessage != null) {
-                        scrollToItem(conversations.indexOf(originalMessage!!))
-                    }
-                }
             ) {
                 if (originalMessage != null) {
                     Text(
@@ -492,6 +532,9 @@ fun MyMessageItem(
                 )
             }
         }
+    }
+    if (showContextMenu) {
+        MessageItemContextMenu(item, forumViewModel) {showContextMenu = it}
     }
 }
 

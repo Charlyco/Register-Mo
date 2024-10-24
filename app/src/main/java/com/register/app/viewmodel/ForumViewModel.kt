@@ -64,6 +64,7 @@ class ForumViewModel @Inject constructor(
                 loadGroupChats(initialGroupId)
                 connectToChat(payload)
             }
+            _directChatList.value = mutableListOf()
             _directChatList.value = chatRepository.fetchChatContactList()
         }
     }
@@ -326,7 +327,16 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
 
     suspend fun fetchDirectChatList() {
         val chats = chatRepository.fetchChatContactList()
-        Log.d("CHAT_LIST", chats.toString())
+        _directChatList.value = mutableListOf()
         _directChatList.value = chats
+    }
+
+    suspend fun deleteMessage(groupId: Int?, chatId: Long) {
+        _isLoadingLiveData.value = true
+        val response = chatRepository.deleteMessage(groupId, chatId)
+        if(response.status) {
+            loadGroupChats(groupId)
+        }
+        _isLoadingLiveData.value = false
     }
 }

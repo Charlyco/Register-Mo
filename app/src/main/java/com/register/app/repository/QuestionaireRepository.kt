@@ -15,4 +15,5 @@ interface QuestionnaireRepository {
     suspend fun endQuestionnaire(formId: Int, status: String): GenericResponse
     suspend fun downloadResponse(formId: Int, responseId: Int): ResponseBody?
     suspend fun getUserResponses(formId: Int): AllResponsesWrapper?
+    suspend fun downloadSummery(formId: Int?): ResponseBody?
 }

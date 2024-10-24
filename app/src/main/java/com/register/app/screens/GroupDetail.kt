@@ -510,7 +510,6 @@ fun ActivityRate(activityViewModel: ActivityViewModel) {
         labelColor = MaterialTheme.colorScheme.onBackground,
         strokeWidth = 32f,
         activeSliceAlpha = .9f,
-        labelVisible = true,
         isAnimationEnable = true,
         chartPadding = 16,
         backgroundColor = MaterialTheme.colorScheme.background
@@ -520,7 +519,7 @@ fun ActivityRate(activityViewModel: ActivityViewModel) {
             .padding(top = 4.dp, bottom = 8.dp)
             .fillMaxWidth()
     ) {
-        val (chart, title, detail, legend) = createRefs()
+        val (chart, title, detail, legend, percentatge) = createRefs()
 
         Text(
             text = stringResource(id = R.string.chart_header),
@@ -542,6 +541,16 @@ fun ActivityRate(activityViewModel: ActivityViewModel) {
                 },
             pieChartData = chartData,
             pieChartConfig = donutChartConfig
+        )
+        Text(
+            text = "$percentPaid%",
+            modifier = Modifier
+                .constrainAs(percentatge) {
+                    centerHorizontallyTo(chart)
+                    centerVerticallyTo(chart)
+                },
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
         )
         Column(
             Modifier.constrainAs(legend) {
@@ -885,11 +894,12 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val membershipId = groupViewModel.membershipId.observeAsState().value
+    val status = group?.memberList?.find { member -> member.membershipId == membershipId }?.memberStatus
 
     ConstraintLayout(
         Modifier.fillMaxSize()
     ) {
-        val (logo, description, id, groupSize) = createRefs()
+        val (logo, description, id, memberStatus, groupSize) = createRefs()
 
         Surface(
             Modifier
@@ -921,11 +931,21 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
         )
 
         Text(
-            text = "Membership ID: ${groupViewModel.membershipId.value}",
+            text = "Membership ID: $membershipId",
             modifier = Modifier
                 .constrainAs(id) {
                     centerHorizontallyTo(parent)
                     top.linkTo(groupSize.bottom, margin = 8.dp) },
+            fontSize = TextUnit(14.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = "Status: $status",
+            modifier = Modifier
+                .constrainAs(memberStatus) {
+                    centerHorizontallyTo(parent)
+                    top.linkTo(id.bottom, margin = 8.dp) },
             fontSize = TextUnit(14.0f, TextUnitType.Sp),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground
@@ -936,7 +956,7 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 8.dp)
                 .constrainAs(description) {
-                    top.linkTo(id.bottom, margin = 8.dp)
+                    top.linkTo(memberStatus.bottom, margin = 8.dp)
                     start.linkTo(parent.start, margin = 8.dp)
                 },
             color = MaterialTheme.colorScheme.onBackground,

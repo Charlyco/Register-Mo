@@ -1,9 +1,13 @@
 package com.register.app.viewmodel
 
+import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
+import android.widget.Toast
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -17,6 +21,7 @@ import com.register.app.dto.QuestionnaireResponse
 import com.register.app.enums.FormStatus
 import com.register.app.model.Group
 import com.register.app.repository.QuestionnaireRepository
+import com.register.app.util.AN_ERROR_OCCURRED
 import com.register.app.util.DataStoreManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -155,6 +160,56 @@ class QuestionnaireViewModel @Inject constructor(
         _loadingState.value = false
         _questionnaireResponseList.value = response?.data?.toMutableList()
         return response
+    }
+
+    suspend fun getResponsesSummery(formId: Int?, context: Context) {
+        try {
+            _loadingState.value = true
+            val response = questionnaireRepository.downloadSummery(formId)
+            if (response != null) {
+                val pdfBytes = response.byteStream()
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, "quest_summery${LocalDateTime.now()}.pdf")
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
+                }
+                val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+                val outputStream = context.contentResolver.openOutputStream(uri!!)
+                val buffer = ByteArray(4096)
+                var read: Int
+                withContext(Dispatchers.IO) {
+                    while (pdfBytes.read(buffer).also { read = it } != -1) {
+                        outputStream!!.write(buffer, 0, read)
+                    }
+                    outputStream!!.flush()
+                    outputStream.close()
+                }
+                _loadingState.value = false
+
+                val dialog = AlertDialog.Builder(context)
+                dialog.setTitle("Questionnaire summery generated")
+                dialog.setMessage("Summery saved successfully. Do you want to open or share it?")
+                dialog.setPositiveButton("Open") { _, _ ->
+                    // Open file
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.setDataAndType(uri, "application/pdf")
+                    startActivity(context, intent, null)
+                }
+                dialog.setNegativeButton("Share") { _, _ ->
+                    // Share file
+                    val intent = Intent(Intent.ACTION_SEND)
+                    intent.setType("application/pdf")
+                    intent.putExtra(Intent.EXTRA_STREAM, uri)
+                    startActivity(context, Intent.createChooser(intent, "Share file"), null)
+                }
+                dialog.setNeutralButton("Cancel") { _, _ -> }
+                dialog.show()
+            }else {
+                _loadingState.value = false
+            }
+        }catch (e: Exception) {
+            Toast.makeText(context, "Error saving file: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
 }

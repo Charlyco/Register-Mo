@@ -125,6 +125,7 @@ fun MembershipRequestItem(
             .clickable {
                 coroutineScope.launch {
                     groupViewModel.getIndividualMembershipRequest(request.memberEmail)
+                    showDetail = true
                 }
             },
         color = MaterialTheme.colorScheme.background
@@ -163,8 +164,9 @@ fun MembershipRequestItem(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            groupViewModel.getIndividualMembershipRequest(request.memberEmail)
-                            showDetail = true
+                            val response = groupViewModel.rejectMembershipRequest(request)
+                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            groupViewModel.reloadGroup(request.groupId)
                         }
                     },
                     Modifier
@@ -179,7 +181,7 @@ fun MembershipRequestItem(
                     )
                 ) {
                     Text(
-                        text = stringResource(id = R.string.show_detail),
+                        text = stringResource(id = R.string.reject),
                         Modifier.padding(end = 4.dp)
                     )
                 }

@@ -145,9 +145,9 @@ class GroupViewModel @Inject constructor(
 
     suspend fun isUserAdmin(group: Group) {
         val admins = group.memberList?.let { filterAdmins(it) }
-        _isAdminLiveData.value = admins?.any {
-                it.emailAddress == dataStoreManager.readUserData()?.emailAddress
-        }
+        val member = admins?.find { it.emailAddress ==  dataStoreManager.readUserData()?.emailAddress}
+
+        _isAdminLiveData.value = (member != null) && (member.status == MemberStatus.ACTIVE.name)
     }
 
     suspend fun getIndividualMembershipRequest(emailAddress: String) {
@@ -160,10 +160,6 @@ class GroupViewModel @Inject constructor(
         _loadingState.value = false
         return response
     }
-
-    fun getAllEventsForGroup(groupName: String?) {
-    }
-
 
     private suspend fun getMembershipId(group: Group?) {
         val member =

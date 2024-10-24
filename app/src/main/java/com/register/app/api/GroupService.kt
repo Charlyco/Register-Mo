@@ -87,7 +87,7 @@ interface GroupService {
     fun endElection(@Path("electionId") electionId: Int?): Call<GenericResponse>
     @POST("group-service/api/v1/group/admin/new")
     fun makeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
-    @DELETE("group-service/api/v1/group/admin/remove")
+    @PUT("group-service/api/v1/group/admin/remove")
     fun removeAdmin(@Body updateAdminDto: UpdateAdminDto): Call<AdminUpdateResponse>
     @GET("messaging-service/api/notifications/{groupId}")
     fun getGroupNotifications(@Path("groupId") groupId: Int?): Call<GroupNotificationWrapper>

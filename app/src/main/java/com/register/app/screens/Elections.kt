@@ -76,17 +76,28 @@ fun ElectionsScreen(
     navController: NavController
 ) {
     val elections = groupViewModel.electionsLiveData.observeAsState().value
-    if (elections.isNullOrEmpty()) {
-        NullElectionsScreen()
-    } else  {
-        LazyColumn(
-            Modifier
+    val isSuspended = groupViewModel.isUserSuspended.observeAsState().value
+    if (isSuspended == true) {
+        Text(
+            text = stringResource(id = R.string.suspended),
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 64.dp),
-            state = rememberLazyListState(),
-        ) {
-            items(elections) { election ->
-                ElectionItem(election, groupViewModel, navController)
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.error)
+    } else {
+        if (elections.isNullOrEmpty()) {
+            NullElectionsScreen()
+        } else  {
+            LazyColumn(
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = 64.dp),
+                state = rememberLazyListState(),
+            ) {
+                items(elections) { election ->
+                    ElectionItem(election, groupViewModel, navController)
+                }
             }
         }
     }

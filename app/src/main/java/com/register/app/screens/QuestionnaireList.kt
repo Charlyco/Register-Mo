@@ -251,6 +251,7 @@ fun QuestionnaireItemContextMenu(
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showCompleteDialog by rememberSaveable { mutableStateOf(false) }
     var showDownloadDialog by rememberSaveable { mutableStateOf(false) }
+    var showDownloadSummeryDialog by rememberSaveable { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -290,6 +291,18 @@ fun QuestionnaireItemContextMenu(
                     modifier = Modifier
                         .clickable {
                             showDownloadDialog = true
+                        }
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Text(
+                    text = stringResource(id = R.string.download_responses_summery),
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    modifier = Modifier
+                        .clickable {
+                            showDownloadSummeryDialog = true
                         }
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -412,6 +425,35 @@ fun QuestionnaireItemContextMenu(
                         },
                         title = { Text(text = stringResource(id = R.string.download_responses)) },
                         text = { Text(text = stringResource(id = R.string.download_responses_confirmation)) }
+                    )
+                }
+
+                if (showDownloadSummeryDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDownloadSummeryDialog = false },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        questionnaireViewModel.getResponsesSummery(questionnaire.formId, context)
+                                    }
+                                    showDownloadDialog = false
+                                }
+                            ) {
+                                Text(
+                                    stringResource(id = R.string.download),
+                                    color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showDownloadDialog = false }
+                            ) {
+                                Text(stringResource(id = R.string.cancel))
+                            }
+                        },
+                        title = { Text(text = stringResource(id = R.string.download_responses_summery)) },
+                        text = { Text(text = stringResource(id = R.string.download_summery_confirmation)) }
                     )
                 }
             }

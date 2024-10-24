@@ -146,6 +146,7 @@ fun EventDetailContent(
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val scrollState = rememberScrollState(initial = 0)
     val isLoading = activityViewModel.loadingState.observeAsState().value
+    val isSuspended = groupViewModel.isUserSuspended.observeAsState().value
     var likeList = 0
     var loveList = 0
 
@@ -295,18 +296,32 @@ fun EventDetailContent(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary),
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            CommentBox(groupViewModel, activityViewModel, event)
+                            if (isSuspended == true) {
+                                Text(
+                                    text = stringResource(id = R.string.suspended),
+                                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                                    color = MaterialTheme.colorScheme.error)
+                            } else {
+                                CommentBox(groupViewModel, activityViewModel, event)
+                            }
                         }
 
                         if (event?.eventComments?.isNotEmpty() == true) {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .padding(vertical = 1.dp)
-                                    .height(screenHeight.dp),
-                                verticalArrangement = Arrangement.Top
-                            ) {
-                                items(event.eventComments) { comment ->
-                                    CommentItem(comment, activityViewModel)
+                            if (isSuspended == true) {
+                                Text(
+                                    text = stringResource(id = R.string.suspended),
+                                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
+                                    color = MaterialTheme.colorScheme.error)
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .padding(vertical = 1.dp)
+                                        .height(screenHeight.dp),
+                                    verticalArrangement = Arrangement.Top
+                                ) {
+                                    items(event.eventComments) { comment ->
+                                        CommentItem(comment, activityViewModel)
+                                    }
                                 }
                             }
                         }

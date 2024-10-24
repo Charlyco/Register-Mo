@@ -269,4 +269,25 @@ class QuestionnaireRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun downloadSummery(formId: Int?): ResponseBody? {
+        return suspendCoroutine { continuation ->
+            val call = questionnaireService.downloadSummery(formId)
+            call.enqueue(object : Callback<ResponseBody> {
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body())
+                    }else continuation.resume(null)
+                }
+
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }

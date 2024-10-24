@@ -6,6 +6,7 @@ import com.register.app.dto.GenericResponse
 import com.register.app.dto.ForumMessages
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -21,4 +22,6 @@ interface ChatService {
     fun getForumMessages(@Path("groupId") groupId: Int): Call<ForumMessages?>
     @GET("chat-service/api/chat/user/{recipientId}")
     fun getUserChatMessages(@Path("recipientId") recipientId: String, @Query("senderId") senderId: String): Call<DirectChatMessages?>
+    @DELETE("chat-service/api/chat/forum/{groupId}/delete")
+    fun deleteMessage(@Path("groupId") groupId: Int?, @Query("chatId") chatId: Long): Call<GenericResponse>
 }

@@ -261,4 +261,32 @@ class ChatRepositoryImpl @Inject constructor(
         chatContactDao.saveMemberChat(userData)
     }
 
+    override suspend fun deleteMessage(groupId: Int?, chatId: Long): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = chatService.deleteMessage(groupId, chatId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        continuation.resume(
+                            GenericResponse(
+                            response.message(),
+                                false,
+                                null
+                            )
+                        )
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
 }

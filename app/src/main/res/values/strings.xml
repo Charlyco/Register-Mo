@@ -241,4 +241,7 @@
     <string name="reject">Reject</string>
     <string name="total_amount">Total amount paid</string>
     <string name="reason">State reason for rejection</string>
+    <string name="download_responses_summery">Download Questionnaqire Summery</string>
+    <string name="download_summery_confirmation">Continu to download Questionnaire responses summery?</string>
+    <string name="delete_message">Delete this message</string>
 </resources>
