@@ -96,8 +96,8 @@ class MainActivity : ComponentActivity() {
                         val data = Gson().fromJson(content, MessageData::class.java)
                         lifecycleScope.launch {
                             homeViewModel.setHomeDestination("forum")
-                            groupViewModel.reloadGroup(data.groupId)
-                            forumViewModel.loadGroupChats(data.groupId)
+                            val group = groupViewModel.reloadGroup(data.groupId)
+                            forumViewModel.setSelectedGroup(group)
                         }
                     }
                 }

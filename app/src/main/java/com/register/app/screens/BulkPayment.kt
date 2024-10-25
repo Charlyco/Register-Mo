@@ -5,8 +5,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -34,9 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -44,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
+import com.register.app.enums.PaymentMethod
 import com.register.app.util.CircularIndicator
 import com.register.app.util.ImageLoader
 import com.register.app.util.Utils.ImageSourceChooserDialog
@@ -69,6 +76,8 @@ fun BulkPayment(
     val membershipId = groupViewModel.membershipId.observeAsState().value
     var showImageSourceChooserDialog by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
+    var modeOfPayment by rememberSaveable { mutableStateOf("") }
+    var amountPaid by rememberSaveable { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -130,6 +139,101 @@ fun BulkPayment(
             if (loadingState == true) {
                 CircularIndicator()
             }
+            Column(
+                Modifier.padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.CASH.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.CASH.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.cash_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.CARD_PAYMENT.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.CARD_PAYMENT.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.card_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(
+                    Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.BANK_TRANSFER.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.BANK_TRANSFER.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.bank_transfer),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Row(
+                    Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = modeOfPayment == PaymentMethod.POS.name,
+                        onCheckedChange = { modeOfPayment = PaymentMethod.POS.name }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.pos_payment),
+                        Modifier.padding(start = 8.dp),
+                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = MaterialTheme.shapes.medium,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+            ) {
+                TextField(
+                    value = amountPaid,
+                    onValueChange = { amountPaid = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(dimensionResource(id = R.dimen.text_field_height)),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    placeholder = { Text(text = stringResource(id = R.string.amount_paid)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    )
+                )
+            }
+
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -164,12 +268,12 @@ fun BulkPayment(
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val response = activityViewModel.submitBulkPaymentEvidence(group?.groupName!!, group.groupId, membershipId!!, totalAmount)
-                        if (response.status) {
-                            Toast.makeText(context, "Payment submitted", Toast.LENGTH_SHORT).show()
+                        if (modeOfPayment != PaymentMethod.CASH.name && imageUrl == null) {
+                            Toast.makeText(context, "Select payment evidence to continue", Toast.LENGTH_LONG).show()
+                        }else {
+                            val response = activityViewModel.submitBulkPaymentEvidence(group?.groupName!!, group.groupId, membershipId!!, amountPaid.toDouble(), modeOfPayment, imageUrl)
+                            Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                             navController.navigateUp()
-                        } else {
-                            Toast.makeText(context, "Error submitting payment", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },

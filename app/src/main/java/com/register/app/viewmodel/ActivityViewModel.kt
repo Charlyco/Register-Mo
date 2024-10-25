@@ -319,6 +319,7 @@ class ActivityViewModel @Inject constructor(
             EventStatus.CURRENT.name,
             eventType)
         val response = activityRepository.createNewActivity(newActivity)
+        _activityImages.value = mutableListOf()
         _loadingState.value = false
         return response
     }
@@ -400,18 +401,19 @@ class ActivityViewModel @Inject constructor(
         groupName: String,
         groupId: Int,
         membershipId: String,
-        totalAmount: Double
+        totalAmount: Double,
+        modeOfPayment: String,
+        imageUrl: String?
     ): GenericResponse {
         val eventList = mutableSetOf<EventItemDto>()
         bulkPaymentSelection.value?.forEach { item ->
             eventList.add(EventItemDto(item.eventTitle, item.eventId, item.levyAmount?: 0.0))
         }
 
-        val imageUrl = paymentEvidence.value
         val payerEmail = dataStoreManager.readUserData()?.emailAddress;
         val payerFullName = dataStoreManager.readUserData()?.fullName
         val payment = BulkPaymentModel(null, imageUrl!!, eventList, membershipId, payerEmail!!,
-            payerFullName!!, groupName, groupId, totalAmount)
+            payerFullName!!, groupName, groupId, totalAmount, modeOfPayment)
         _loadingState.value = true
         val response = activityRepository.submitBulkPaymentEvidence(payment)
         _loadingState.value = false
@@ -737,5 +739,11 @@ class ActivityViewModel @Inject constructor(
         }catch (e: Exception) {
             Toast.makeText(context, "Error saving file: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    fun deleteImage(image: String) {
+        val images = _activityImages.value?.toMutableList()
+        images?.remove(image)
+        _activityImages.value = images
     }
 }

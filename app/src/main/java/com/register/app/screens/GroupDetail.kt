@@ -1406,6 +1406,7 @@ fun MemberItem(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val designation = group?.memberList?.find { it.emailAddress == member.emailAddress }?.designation
+    val memberOffice = group?.memberList?.find { it.emailAddress == member.emailAddress }?.memberOffice
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -1464,7 +1465,7 @@ fun MemberItem(
 
                 if (designation == Designation.ADMIN.name) {
                     Text(
-                        text = stringResource(id = R.string.admin),
+                        text = memberOffice?: stringResource(id = R.string.admin),
                         fontSize = TextUnit(10.0f, TextUnitType.Sp),
                         color = Color(context.getColor(R.color.teal_200)),
                         modifier = Modifier.constrainAs(admin_text) {

@@ -77,13 +77,13 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun Forum(forumViewModel: ForumViewModel?, groupViewModel: GroupViewModel, navController: NavController){
-    val group = groupViewModel.groupDetailLiveData.observeAsState().value
+    val groupList = groupViewModel.groupListLiveData.observeAsState().value
     Scaffold(
         topBar = { ChatTopBar(groupViewModel, forumViewModel, navController) },
         bottomBar = { BottomNavBar(navController = navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) {
-        if (group == null) {
+        if (groupList?.isEmpty() == true) {
             NullGroupScreen()
         }else {
             ForumScreen(Modifier.padding(it), forumViewModel, groupViewModel, navController)
@@ -138,17 +138,11 @@ fun ChatTopBar(
     groupList?.forEach {
         groupSaverList.add(GroupStateItem(it.groupId, it.groupName))
     }
-    val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupViewModel.groupDetailLiveData.observeAsState().value
-//    LaunchedEffect(selectedGroup) {
-//        groupViewModel.setSelectedGroupDetail(selectedGroup!!) //update selected group in group viewModel
-//    }
+        val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupList?.get(0)
+        var expanded by rememberSaveable { mutableStateOf(false) }
+        val screenWidth = LocalConfiguration.current.screenWidthDp
+        val coroutineScope = rememberCoroutineScope()
 
-    //var selectedGroup by rememberSaveable { mutableStateOf(groupList?.get(0)) }
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    val coroutineScope = rememberCoroutineScope()
-
-    if (selectedGroup != null) {
         Surface(
             Modifier
                 .fillMaxWidth()
@@ -170,7 +164,7 @@ fun ChatTopBar(
                 ) {
                     val (selectionBox, list, icon) = createRefs()
                     Text(
-                        text = selectedGroup.groupName,
+                        text = selectedGroup?.groupName!!,
                         fontSize = TextUnit(14.0f, TextUnitType.Sp),
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier
@@ -217,34 +211,7 @@ fun ChatTopBar(
                 }
             }
         }
-    }else {
-        ChatErrorScreen()
     }
-
-}
-
-@Composable
-fun ChatErrorScreen() {
-    Surface(
-        Modifier.fillMaxSize()
-    ) {
-       ConstraintLayout(
-           Modifier.fillMaxSize()
-       ) {
-           val (errorText, errorImage) = createRefs()
-
-           Text(
-               text = stringResource(id = R.string.error_text),
-               fontSize = TextUnit(14.0f, TextUnitType.Sp),
-               color = MaterialTheme.colorScheme.onBackground,
-               modifier = Modifier.constrainAs(errorText) {
-                   centerHorizontallyTo(parent)
-                   centerVerticallyTo(parent)
-               }
-               )
-       }
-    }
-}
 
 @Composable
 fun ForumScreen(
@@ -297,7 +264,7 @@ fun ForumScreen(
                                 coroutineScope.launch { listState.scrollToItem(it) }
                             }
                         } else {
-                            RemoteMessageItem(forumViewModel, item, conversations){
+                            RemoteMessageItem(forumViewModel, groupViewModel, item, conversations){
                                 coroutineScope.launch { listState.scrollToItem(it) }
                             }
                         }
@@ -322,6 +289,7 @@ fun ForumScreen(
 @Composable
 fun RemoteMessageItem(
     forumViewModel: ForumViewModel?,
+    groupViewModel: GroupViewModel,
     item: MessageData,
     conversations: List<MessageData>,
     scrollToItem: (Int) -> Unit
@@ -331,6 +299,8 @@ fun RemoteMessageItem(
         originalMessage = conversations.find { it.id == item.originalMessageId }
     }
     val context = LocalContext.current
+    var showContextMenu by rememberSaveable { mutableStateOf(false) }
+    val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
 
     Row(
         modifier = Modifier
@@ -354,19 +324,27 @@ fun RemoteMessageItem(
         }
         Surface(
             modifier = Modifier
-                .padding(),
+                .padding()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            if (originalMessage != null) {
+                                scrollToItem(conversations.indexOf(originalMessage!!))
+                            }
+                        },
+                        onLongPress = {
+                            if (isUserAdmin == true) {
+                                showContextMenu = true
+                            }
+                        },
+                    )
+                },
             color = MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 2.dp,
             shape = MaterialTheme.shapes.small
         ) {
             Column(
                 horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .clickable {
-                        if (originalMessage != null) {
-                            scrollToItem(conversations.indexOf(originalMessage!!))
-                        }
-                    }
             ) {
                 if (item.originalMessageId != null) {
                     Text(
@@ -417,6 +395,9 @@ fun RemoteMessageItem(
                 )
             }
         }
+    }
+    if (showContextMenu) {
+        MessageItemContextMenu(item, forumViewModel) {showContextMenu = it}
     }
 }
 

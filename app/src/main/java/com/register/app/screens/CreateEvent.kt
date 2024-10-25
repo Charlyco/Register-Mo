@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -363,13 +364,27 @@ Surface(
                 horizontalAlignment = Alignment.Start
             ) {
                 imageList.forEach { image ->
-                    ImageLoader(
-                        imageUrl = image,
-                        context = context,
-                        height = 72,
-                        width = 72,
-                        placeHolder = R.drawable.placeholder
-                    )
+                    Box(
+                        contentAlignment = Alignment.BottomEnd
+                    ){
+                        ImageLoader(
+                            imageUrl = image,
+                            context = context,
+                            height = 72,
+                            width = 72,
+                            placeHolder = R.drawable.placeholder
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable {
+                                activityViewModel.deleteImage(image)
+                            },
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                 }
                 UploadButton(activityViewModel)
             }
@@ -390,15 +405,11 @@ Surface(
                     } else {
                         val response = activityViewModel.createNewActivity(activityTitle,
                             activityDescription, levyAmount.toDouble(),eventDate,
-                            group?.groupName!!, group.groupId,
-                            eventType)
+                            group?.groupName!!, group.groupId, eventType)
+                        Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                         if (response.status) {
                             groupViewModel.reloadGroup(group.groupId) // Refresh group details
-                            Toast.makeText(context, "Activity Created with ID ${response.data}", Toast.LENGTH_SHORT).show()
                             navController.navigateUp()
-                        }
-                        else {
-                            Toast.makeText(context, "Failed to create activity", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

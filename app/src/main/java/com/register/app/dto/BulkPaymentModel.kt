@@ -9,7 +9,8 @@ data class BulkPaymentModel(
     val payerFullName: String,
     val groupName: String,
     val groupId: Int,
-    val amountToPay: Double
+    val amountToPay: Double,
+    val paymentMethod: String
 )
 
 data class EventItemDto(
