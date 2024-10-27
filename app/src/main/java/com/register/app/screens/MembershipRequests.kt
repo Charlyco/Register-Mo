@@ -69,7 +69,7 @@ fun MembershipRequests(
         containerColor = MaterialTheme.colorScheme.background
     ) {
         val group = groupViewModel.groupDetailLiveData.observeAsState().value
-        MembershipRequestList(Modifier.padding(it) ,group, groupViewModel)
+        MembershipRequestList(Modifier.padding(it) ,group, groupViewModel, navController)
         if (isLoading == true) {
             CircularIndicator()
         }
@@ -78,7 +78,12 @@ fun MembershipRequests(
 }
 
 @Composable
-fun MembershipRequestList(modifier: Modifier, group: Group?, groupViewModel: GroupViewModel) {
+fun MembershipRequestList(
+    modifier: Modifier,
+    group: Group?,
+    groupViewModel: GroupViewModel,
+    navController: NavController
+    ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     Column(
         modifier = modifier
@@ -89,7 +94,7 @@ fun MembershipRequestList(modifier: Modifier, group: Group?, groupViewModel: Gro
     ) {
         if (group?.pendingMemberRequests?.isNotEmpty() == true) {
             group.pendingMemberRequests.forEach {request ->
-                MembershipRequestItem(request, groupViewModel)
+                MembershipRequestItem(request, groupViewModel, navController)
             }
         }else {
             Image(
@@ -114,6 +119,7 @@ fun MembershipRequestList(modifier: Modifier, group: Group?, groupViewModel: Gro
 fun MembershipRequestItem(
     request: MembershipRequest,
     groupViewModel: GroupViewModel,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -167,6 +173,7 @@ fun MembershipRequestItem(
                             val response = groupViewModel.rejectMembershipRequest(request)
                             Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                             groupViewModel.reloadGroup(request.groupId)
+                            navController.navigateUp()
                         }
                     },
                     Modifier
@@ -192,6 +199,7 @@ fun MembershipRequestItem(
                             val response = groupViewModel.approveMembershipRequest(request)
                             Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                             groupViewModel.reloadGroup(request.groupId)
+                            navController.navigateUp()
                         }
                     },
                     Modifier
@@ -209,7 +217,7 @@ fun MembershipRequestItem(
                 }
 
                 if (showDetail) {
-                    MembershipRequestDetail(groupViewModel, request) { shouldShow ->
+                    MembershipRequestDetail(groupViewModel, request, navController) { shouldShow ->
                         showDetail = shouldShow
                     }
                 }
@@ -222,6 +230,7 @@ fun MembershipRequestItem(
 fun MembershipRequestDetail(
     groupViewModel: GroupViewModel,
     selectedRequest: MembershipRequest?,
+    navController: NavController,
     showDialog: (show: Boolean) -> Unit
 ) {
     val requestDetail = groupViewModel.pendingMemberLiveData.observeAsState().value
@@ -288,6 +297,7 @@ fun MembershipRequestDetail(
                             Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                             showDialog(false)
                             groupViewModel.reloadGroup(selectedRequest.groupId)
+                            navController.navigateUp()
                         }
                     },
                     Modifier
@@ -308,6 +318,7 @@ fun MembershipRequestDetail(
                                 Toast.makeText(context, "Request approved", Toast.LENGTH_SHORT).show()
                                 showDialog(false)
                                 groupViewModel.reloadGroup(selectedRequest.groupId)
+                                navController.navigateUp()
                             }
                         }
                     },

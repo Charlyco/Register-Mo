@@ -13,6 +13,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.yml.charts.common.extensions.isNotNull
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.CommentReply
 import com.register.app.dto.ConfirmBulkPaymentDto
@@ -159,6 +160,7 @@ class ActivityViewModel @Inject constructor(
 
     private suspend fun getEventFeeds() {
         val userGroups = dataStoreManager.readUserData()?.groupIds
+        val tempList = mutableListOf<Event>()
         _loadingState.value = true
         userGroups?.forEach { groupId ->
             val groupResponse = groupRepository.getGroupDetails(groupId)
@@ -166,8 +168,9 @@ class ActivityViewModel @Inject constructor(
                     dataStoreManager.readUserData()?.emailAddress }
             val activities = activityRepository.getAllActivitiesForGroup(groupId, member?.membershipId!!,
                 member.joinedDateTime)
-            _eventFeeds.value = activities?.unpaidEvents
+            activities?.unpaidEvents?.let { tempList.addAll(it) }
         }
+        _eventFeeds.value = tempList
         // get special levies if any
         val specialLevyResponse =
             activityRepository.getSpecialLevies(dataStoreManager.readUserData()?.emailAddress).data

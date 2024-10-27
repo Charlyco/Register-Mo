@@ -851,26 +851,11 @@ class GroupRepositoryImpl @Inject constructor(
                     if (response.isSuccessful) {
                         continuation.resume(response.body()!!)
                     }else {
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(
-                                    GenericResponse(
-                                        "Invalid Credentials",
-                                        false,
-                                        null
-                                    )
-                                )
-                            }
-
-                            500 -> continuation.resume(
-                                GenericResponse(
-                                    response.message(),
-                                    false,
-                                    null
-                                )
-                            )
-                        }
+                        GenericResponse(
+                            response.message(),
+                            false,
+                            null
+                        )
                     }
                 }
 
