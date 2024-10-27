@@ -27,9 +27,7 @@ import okhttp3.RequestBody
 
 interface GroupRepository {
     suspend fun getAllGroupsForUser(groupIds: List<Int>?): List<Group>?
-    suspend fun getAllActivitiesForGroup(groupId: Int): List<Event>?
     suspend fun createNewGroup(groupModel: CreateGroupModel): GroupDetailWrapper?
-    suspend fun getMemberActivityRate(membershipId: String?, dateJoined: String?, groupId: Int): ActivityRate
     suspend fun updateGroup(groupId: Int, group: GroupUpdateDto): GenericResponse?
     suspend fun addMemberToGroup(groupId: Int?, emailAddress: String): GenericResponse
     suspend fun submitEvidenceOfPayment(): GenericResponse

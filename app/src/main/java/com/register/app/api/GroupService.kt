@@ -39,8 +39,6 @@ interface GroupService {
     fun getAllGroupsForUser(@Body groupIds: List<Int>?): Call<List<Group>?>
     @POST("group-service/api/v1/group")
     fun createNewGroup(@Body groupModel: CreateGroupModel): Call<GroupDetailWrapper?>
-    @GET("event-service/api/v1/event/event/member/{membershipId}")
-    fun getMemberActivityRate(@Path("membershipId") membershipId: String?, @Query("date") dateJoined: String?, @Query("groupId") groupId: Int): Call<ActivityRate>
     @PUT("group-service/api/v1/group/{groupId}")
     fun updateGroup(@Path("groupId") groupId: Int, @Body group: GroupUpdateDto): Call<GenericResponse?>
     @PUT("group-service/api/v1/group/{groupId}/add")

@@ -178,6 +178,7 @@ fun EventListTopBar(
         )
     }
 }
+
 @Composable
 fun EventScreenDetail(
     modifier: Modifier,
@@ -206,7 +207,7 @@ fun EventScreenDetail(
                             .padding(16.dp)
                             .clickable {
                                 selectedEvents.clear()
-                                selectedEvents.addAll(feedList!!)
+                                selectedEvents.addAll(feedList!!.unpaidEvents)
                                 var totalAmount = 0.0
                                 if (selectedEvents.isNotEmpty()) {
                                     totalAmount = selectedEvents.sumOf { it.levyAmount ?: 0.0 }
@@ -217,16 +218,19 @@ fun EventScreenDetail(
                                 }
                             }
                     )
-            }
-            EventList(navController, groupViewModel, activityViewModel, isUnpaid, feedList) {
-                selectedEvents = it!!.toMutableList()
-                var totalAmount = 0.0
-                if (selectedEvents.isNotEmpty()) {
-                    totalAmount = selectedEvents.sumOf { it.levyAmount?: 0.0 }
+                EventList(navController, groupViewModel, activityViewModel, isUnpaid, feedList?.unpaidEvents) {events ->
+                    selectedEvents = events!!.toMutableList()
+                    var totalAmount = 0.0
+                    if (selectedEvents.isNotEmpty()) {
+                        totalAmount = selectedEvents.sumOf { it.levyAmount?: 0.0 }
+                    }
+                    activityViewModel.setBulkPaymentSelection(selectedEvents)
+                    navController.navigate("bulk_payment/${totalAmount}") {
+                        launchSingleTop = true
+                    }
                 }
-                activityViewModel.setBulkPaymentSelection(selectedEvents)
-                navController.navigate("bulk_payment/${totalAmount}") {
-                    launchSingleTop = true
+            }else {
+                EventList(navController, groupViewModel, activityViewModel, isUnpaid = false, feedList?.paidEvents) {
                 }
             }
         }
@@ -284,7 +288,6 @@ fun EventList(
             }
         }
     }
-
 }
 
 @Composable

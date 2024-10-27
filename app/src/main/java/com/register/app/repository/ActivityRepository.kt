@@ -1,5 +1,6 @@
 package com.register.app.repository
 
+import com.register.app.dto.ActivityRate
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
 import com.register.app.dto.CommentReply
@@ -10,6 +11,7 @@ import com.register.app.dto.EventComment
 import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUserEventsResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
@@ -52,4 +54,6 @@ interface ActivityRepository {
     ): GenericResponse?
 
     suspend fun downloadExcelTemplate(): ResponseBody?
+    suspend fun getAllActivitiesForGroup(groupId: Int, membershipId: String, dateJoined: String): GroupUserEventsResponse?
+    suspend fun getMemberActivityRate(membershipId: String?, dateJoined: String?, groupId: Int): ActivityRate
 }

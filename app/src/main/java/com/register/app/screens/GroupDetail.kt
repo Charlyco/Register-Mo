@@ -1,5 +1,6 @@
 package com.register.app.screens
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -83,15 +84,18 @@ import co.yml.charts.ui.piechart.charts.DonutPieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.register.app.R
+import com.register.app.dto.GroupUserEventsResponse
 import com.register.app.dto.JoinChatPayload
 import com.register.app.dto.SpecialLevy
 import com.register.app.enums.Designation
 import com.register.app.enums.FormStatus
+import com.register.app.model.Event
 import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.util.CircularIndicator
 import com.register.app.util.EventItem
 import com.register.app.util.GROUP_NOTIFICATIONS
+import com.register.app.util.HOME
 import com.register.app.util.ImageLoader
 import com.register.app.util.PAID
 import com.register.app.util.SPECIAL_LEVY_DETAIL
@@ -120,9 +124,10 @@ fun GroupDetail(
     val isUserAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
     val questionnaires = questionnaireViewModel.groupQuestionnaires.observeAsState().value
     var showQuestionnaireDialog by rememberSaveable { mutableStateOf(false) }
+    val member = group?.memberList?.find { it.membershipId == membershipId }
 
     LaunchedEffect(group) {
-        activityViewModel.getActivitiesForGroup(group!!)
+        activityViewModel.getActivitiesForGroup(group!!, membershipId, member?.joinedDateTime!!)
     }
 
     LaunchedEffect(questionnaires) {
@@ -412,8 +417,7 @@ fun GroupDetailTopBar(
                         coroutineScope.launch {
                             val response = groupViewModel.leaveGroup(group)
                             if (response.status) {
-                                authViewModel.reloadUserData()
-                                navController.navigate("home") {
+                                navController.navigate(HOME) {
                                     popUpTo("group_detail") {inclusive = true}
                                 }
                                 authViewModel.reloadUserData()
@@ -440,10 +444,10 @@ fun GroupDetailScreen(
 ) {
     var showProfileDetail by rememberSaveable { mutableStateOf(false) }
     var showActivities by rememberSaveable { mutableStateOf(false) }
-    var showSpecialLevies by rememberSaveable { mutableStateOf(false) }
     val loadingState = groupViewModel.loadingState.observeAsState().value
     val isRefreshing = groupViewModel.loadingState.observeAsState().value!!
     val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
+    val groupEvents = activityViewModel.groupEvents.observeAsState().value
     val coroutineScope = rememberCoroutineScope()
     val refreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
@@ -471,7 +475,8 @@ fun GroupDetailScreen(
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
             item{ ActivitiesHeader(group, showActivities) { showActivities = it} }
             if (showActivities) {
-                item{ Activities(groupViewModel, homeViewModel, activityViewModel, navController, group!!) }
+                Log.d("EVENTS", groupEvents.toString())
+                item{ Activities(groupViewModel, groupEvents, activityViewModel, navController, group!!) }
             }
             item{ HorizontalDivider(Modifier.padding(vertical = 4.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onTertiary) }
             item{ GroupProfileHeader(group, showProfileDetail) {showProfileDetail = it} }
@@ -519,7 +524,7 @@ fun ActivityRate(activityViewModel: ActivityViewModel) {
             .padding(top = 4.dp, bottom = 8.dp)
             .fillMaxWidth()
     ) {
-        val (chart, title, detail, legend, percentatge) = createRefs()
+        val (chart, title, detail, legend, percentage) = createRefs()
 
         Text(
             text = stringResource(id = R.string.chart_header),
@@ -545,7 +550,7 @@ fun ActivityRate(activityViewModel: ActivityViewModel) {
         Text(
             text = "$percentPaid%",
             modifier = Modifier
-                .constrainAs(percentatge) {
+                .constrainAs(percentage) {
                     centerHorizontallyTo(chart)
                     centerVerticallyTo(chart)
                 },
@@ -651,7 +656,7 @@ fun ActivitiesHeader(
 @Composable
 fun Activities(
     groupViewModel: GroupViewModel,
-    homeViewModel: HomeViewModel,
+    eventList: GroupUserEventsResponse?,
     activityViewModel: ActivityViewModel,
     navController: NavController,
     group: Group) {
@@ -667,9 +672,9 @@ fun Activities(
 
         ActivitySwitch(activityViewModel, userEmail) { showPaid = it }
         if (showPaid) {
-            PaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
+            PaidEvents(groupViewModel, activityViewModel, eventList?.paidEvents, navController, group)
         }else {
-            UnpaidEvents(groupViewModel, homeViewModel, activityViewModel, navController, group)
+            UnpaidEvents(groupViewModel, activityViewModel, navController, eventList?.unpaidEvents, group)
         }
     }
 }
@@ -677,12 +682,11 @@ fun Activities(
 @Composable
 fun PaidEvents(
     groupViewModel: GroupViewModel,
-    homeViewModel: HomeViewModel,
     activityViewModel: ActivityViewModel,
+    eventList: List<Event>?,
     navController: NavController,
     group: Group?
 ) {
-    val eventList = activityViewModel.paidActivities.observeAsState().value
     val membershipId = groupViewModel.membershipId.observeAsState().value
     val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
@@ -767,12 +771,11 @@ fun PaidEvents(
 @Composable
 fun UnpaidEvents(
     groupViewModel: GroupViewModel,
-    homeViewModel: HomeViewModel,
     activityViewModel: ActivityViewModel,
     navController: NavController,
+    eventList: List<Event>?,
     group: Group?
 ) {
-    val eventList = activityViewModel.unpaidActivities.observeAsState().value
     val membershipId = groupViewModel.membershipId.observeAsState().value
     val userEmail = group?.memberList?.find { it.membershipId == membershipId }?.emailAddress
     val coroutineScope = rememberCoroutineScope()
@@ -792,7 +795,7 @@ fun UnpaidEvents(
                         start.linkTo(parent.start)
                     }
             ) {
-                if( eventList?.isNotEmpty() == true ) {  // show regular events
+                if(eventList?.isNotEmpty() == true) {  // show regular events
                     eventList.forEach { event ->
                         EventItem(event, group!!, groupViewModel, activityViewModel, navController)
                     }
@@ -1507,10 +1510,6 @@ fun MemberItem(
 fun ActivitySwitch(activityViewModel: ActivityViewModel, userEmail: String?, switchView: (showDetails: Boolean) -> Unit) {
     val screenWidth = LocalConfiguration.current.screenWidthDp / 2
     var showPaid by rememberSaveable { mutableStateOf(true)}
-
-    LaunchedEffect(showPaid) {
-        activityViewModel.populateActivities(PAID, userEmail)
-    }
 
     ConstraintLayout(
         Modifier.fillMaxSize()

@@ -1,5 +1,6 @@
 package com.register.app.api
 
+import com.register.app.dto.ActivityRate
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
 import com.register.app.dto.CommentReply
@@ -10,6 +11,7 @@ import com.register.app.dto.EventComment
 import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUserEventsResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
@@ -32,7 +34,9 @@ import retrofit2.http.Query
 
 interface ActivityService {
     @GET("event-service/api/v1/event/{groupId}")
-    fun getAllActivitiesForGroup(@Path("groupId") groupId: Int): Call<List<Event>?>
+    fun getAllActivitiesForGroup(@Path("groupId") groupId: Int,
+                                 @Query("membershipId") membershipId: String,
+                                 @Query("dateJoined") dateJoined: String): Call<GroupUserEventsResponse>
     @POST("event-service/api/v1/event/")
     fun createNewActivity(@Body newActivity: CreateEventModel): Call<GenericResponse>
 
@@ -83,4 +87,9 @@ interface ActivityService {
                                  @Part file: MultipartBody.Part): Call<GenericResponse>
     @GET("event-service/api/v1/event/template")
     fun downloadExcelTemplate(): Call<ResponseBody?>
+
+    @GET("event-service/api/v1/event/event/member/{membershipId}")
+    fun getMemberActivityRate(@Path("membershipId") membershipId: String?,
+                              @Query("date") dateJoined: String?,
+                              @Query("groupId") groupId: Int): Call<ActivityRate>
 }

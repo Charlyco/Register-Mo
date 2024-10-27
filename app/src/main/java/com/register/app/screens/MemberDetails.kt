@@ -1146,7 +1146,6 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
         labelColor = MaterialTheme.colorScheme.onBackground,
         strokeWidth = 32f,
         activeSliceAlpha = .9f,
-        labelVisible = true,
         isAnimationEnable = true,
         chartPadding = 16,
         backgroundColor = MaterialTheme.colorScheme.background
@@ -1156,7 +1155,7 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
             .padding(top = 4.dp, bottom = 8.dp)
             .fillMaxWidth()
     ) {
-        val (chart, title, detail, legend) = createRefs()
+        val (chart, title, detail, legend, percentage) = createRefs()
 
         Text(
             text = stringResource(id = R.string.chart_header),
@@ -1178,6 +1177,17 @@ fun MemberActivityRate(groupViewModel: GroupViewModel) {
                 },
             pieChartData = chartData,
             pieChartConfig = donutChartConfig
+        )
+
+        Text(
+            text = "$percentPaid%",
+            modifier = Modifier
+                .constrainAs(percentage) {
+                    centerHorizontallyTo(chart)
+                    centerVerticallyTo(chart)
+                },
+            fontSize = TextUnit(18.0f, TextUnitType.Sp),
+            fontWeight = FontWeight.SemiBold
         )
         Column(
             Modifier.constrainAs(legend) {

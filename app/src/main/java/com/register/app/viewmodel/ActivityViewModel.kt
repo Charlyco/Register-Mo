@@ -22,6 +22,7 @@ import com.register.app.dto.EventComment
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.EventItemDto
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUserEventsResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RateData
@@ -98,8 +99,8 @@ class ActivityViewModel @Inject constructor(
     val paymentRateLiveData: LiveData<RateData?> = _paymentRateLiveData
     private val _activityRateLiveData: MutableLiveData<Float?> = MutableLiveData(100.0f)
     val activityRateLiveData: LiveData<Float?> = _activityRateLiveData
-    private val _groupEvents: MutableLiveData<List<Event>?> = MutableLiveData()
-    val groupEvents: LiveData<List<Event>?> = _groupEvents
+    private val _groupEvents: MutableLiveData<GroupUserEventsResponse?> = MutableLiveData()
+    val groupEvents: LiveData<GroupUserEventsResponse?> = _groupEvents
     private val _selectedSpecialLevy: MutableLiveData<SpecialLevy?> = MutableLiveData()
     val selectedSpecialLevy: LiveData<SpecialLevy?> = _selectedSpecialLevy
 
@@ -111,12 +112,11 @@ class ActivityViewModel @Inject constructor(
         }
     }
 
-    suspend fun getActivitiesForGroup(group: Group) {
+    suspend fun getActivitiesForGroup(group: Group, membershipId: String?, joinedDateTime: String) {
         val member = getMember(group.memberList)
-
         // Get all events for for group and filter into paid and unpaid for user
-        _groupEvents.value = groupRepository.getAllActivitiesForGroup(group.groupId)
-
+        _groupEvents.value = activityRepository.getAllActivitiesForGroup(group.groupId, membershipId!!, joinedDateTime)
+        Log.d("EVENTS", groupEvents.value.toString())
         //get user activity rate
         getActivityRate(member?.membershipId, member?.joinedDateTime, group.groupId)
     }
@@ -124,22 +124,13 @@ class ActivityViewModel @Inject constructor(
     fun populateActivities(type: String, userEmail: String?) {
         when (type) {
             PAID -> {
-                //filter paid activities
-                val paid = groupEvents.value?.filter { event ->
-                    event.contributions?.any { it.memberEmail == userEmail } == true
-                }
-                _paidActivities.value = paid
+                Log.d("EVENTS", groupEvents.value.toString())
+                _paidActivities.value = groupEvents.value?.paidEvents
             }
 
             UNPAID -> {
-                //filter unpaid activities
-                val unpaid = groupEvents.value?.filter { event ->
-                    event.contributions.isNullOrEmpty() || event.contributions.none { it.memberEmail == userEmail }
-                }?.toMutableList()
-                //Remove freewill donations that are completed
-                _unpaidActivities.value = unpaid?.filter {event ->
-                    (!(event.eventType == EventType.FREE_WILL.name && event.eventStatus == "COMPLETED"))
-                }
+                Log.d("EVENTS", groupEvents.value.toString())
+                _unpaidActivities.value = groupEvents.value?.unpaidEvents
             }
 
             else -> {}
@@ -147,7 +138,7 @@ class ActivityViewModel @Inject constructor(
     }
 
     suspend fun getActivityRate(membershipId: String?, joinedDateTime: String?, groupId: Int) {
-        val activityRate = groupRepository.getMemberActivityRate(
+        val activityRate = activityRepository.getMemberActivityRate(
             membershipId, joinedDateTime, groupId
         ).data
         _paymentRateLiveData.value = activityRate
@@ -168,14 +159,14 @@ class ActivityViewModel @Inject constructor(
 
     private suspend fun getEventFeeds() {
         val userGroups = dataStoreManager.readUserData()?.groupIds
-        val events = mutableListOf<Event>()
         _loadingState.value = true
         userGroups?.forEach { groupId ->
-            groupRepository.getAllActivitiesForGroup(groupId)?.forEach { event ->
-                if (event.eventStatus == EventStatus.CURRENT.name) {
-                    events.add(event)
-                }
-            }
+            val groupResponse = groupRepository.getGroupDetails(groupId)
+            val member = groupResponse?.data?.memberList?.find { it.emailAddress ==
+                    dataStoreManager.readUserData()?.emailAddress }
+            val activities = activityRepository.getAllActivitiesForGroup(groupId, member?.membershipId!!,
+                member.joinedDateTime)
+            _eventFeeds.value = activities?.unpaidEvents
         }
         // get special levies if any
         val specialLevyResponse =
@@ -185,9 +176,6 @@ class ActivityViewModel @Inject constructor(
         }
         _mySpecialLevyList.value = unpaid
         _loadingState.value = false
-        if (events.isNotEmpty()) {
-            _eventFeeds.value = events
-        }
     }
 
     suspend fun getEventDetails(eventId: Long) {

@@ -70,34 +70,6 @@ class GroupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllActivitiesForGroup(groupId: Int): List<Event>? {
-        return suspendCoroutine { continuation ->
-            val call = activityService.getAllActivitiesForGroup(groupId)
-            call.enqueue(object : Callback<List<Event>?> {
-                override fun onResponse(
-                    call: Call<List<Event>?>,
-                    response: Response<List<Event>?>
-                ) {
-                    if (response.isSuccessful){
-                        continuation.resume(response.body())
-                    }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(null)
-                            }
-                            500 -> continuation.resume(  null)
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<List<Event>?>, t: Throwable) {
-                    continuation.resumeWithException(t)
-                }
-            })
-        }
-    }
-
     override suspend fun createNewGroup(groupModel: CreateGroupModel) : GroupDetailWrapper? {
         return suspendCoroutine { continuation ->
             val call = groupService.createNewGroup(groupModel)
@@ -123,34 +95,7 @@ class GroupRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getMemberActivityRate(
-        membershipId: String?,
-        dateJoined: String?,
-        groupId: Int
-    ): ActivityRate {
-        return suspendCoroutine { continuation ->
-            val call = groupService.getMemberActivityRate(membershipId, dateJoined, groupId)
-            call.enqueue(object : Callback<ActivityRate> {
-                override fun onResponse(call: Call<ActivityRate>, response: Response<ActivityRate>) {
-                    if (response.isSuccessful) {
-                        continuation.resume(response.body()!!)
-                    }else{
-                        val responseCode = response.code()
-                        when (responseCode) {
-                            401 -> {
-                                continuation.resume(ActivityRate("Invalid Credentials", false, null))
-                            }
-                            500 -> continuation.resume(ActivityRate(response.message(), false, null))
-                        }
-                    }
-                }
 
-                override fun onFailure(call: Call<ActivityRate>, t: Throwable) {
-                    continuation.resumeWithException(t)
-                }
-            })
-        }
-    }
 
     override suspend fun updateGroup(groupId: Int, group: GroupUpdateDto) : GenericResponse?{
         return suspendCoroutine { continuation ->

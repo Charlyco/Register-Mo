@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.register.app.api.ActivityService
 import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.BankDetail
 import com.register.app.dto.ChangeMemberStatusDto
@@ -35,6 +36,7 @@ import com.register.app.model.Group
 import com.register.app.model.Member
 import com.register.app.model.MembershipDto
 import com.register.app.model.MembershipRequest
+import com.register.app.repository.ActivityRepository
 import com.register.app.repository.AuthRepository
 import com.register.app.repository.GroupRepository
 import com.register.app.util.DataStoreManager
@@ -50,7 +52,8 @@ import javax.inject.Inject
 class GroupViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val groupRepository: GroupRepository,
-    private val authRepository: AuthRepository): ViewModel() {
+    private val authRepository: AuthRepository,
+    private val activityRepository: ActivityRepository): ViewModel() {
         private val _groupNotificationList: MutableLiveData<List<GroupNotification>?> = MutableLiveData()
     val groupNotificationList: LiveData<List<GroupNotification>?> = _groupNotificationList
     private val _electionsLideData: MutableLiveData<List<Election>?> = MutableLiveData()
@@ -146,7 +149,7 @@ class GroupViewModel @Inject constructor(
     suspend fun isUserAdmin(group: Group) {
         val member = group.memberList?.find { it.emailAddress ==  dataStoreManager.readUserData()?.emailAddress}
 
-        _isAdminLiveData.value = ((member != null) && (member.memberStatus == MemberStatus.ACTIVE.name))
+        _isAdminLiveData.value = (member?.designation == Designation.ADMIN.name && (member.memberStatus == MemberStatus.ACTIVE.name))
     }
 
     suspend fun getIndividualMembershipRequest(emailAddress: String) {
@@ -214,37 +217,18 @@ class GroupViewModel @Inject constructor(
         return ""
     }
 
-    suspend fun setSelectedMembership(member: MembershipDto) {
-        _selectedMember.value = member
-        getMemberActivityRate(
-            member.membershipId,
-            member.joinedDateTime,
-            groupDetailLiveData.value?.groupId!!
-        )
-    }
-
     suspend fun setSelectedMember(member: Member) {
         _groupMemberLiveData.value = member
-        /*
-         * Since I have used the membershipDto list from group model to fetch member details in groupViewmodel
-         * I need to match each detail with the corresponding membershipDto
-         */
         val group = groupDetailLiveData.value
         val membershipDto =
             group?.memberList?.find { membershipDto -> membershipDto.emailAddress == member.emailAddress }
-        setSelectedMembership(membershipDto!!)
-        val groupEvents = groupRepository.getAllActivitiesForGroup(group?.groupId!!)
-        val paidActivities = groupEvents?.filter { event ->
-            event.contributions?.any { it.memberEmail == member.emailAddress } == true
-        }
-        _memberPaidActivities.value = paidActivities
-        //filter unpaid activities
-        val unpaidActivities = groupEvents?.filter { event ->
-            event.contributions?.none { it.memberEmail == member.emailAddress } == true && (
-                    (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "COMPLETED") ||
-                            (event.eventType == EventType.FREE_WILL.name && event.eventStatus != "ARCHIVED"))
-        }
-        _memberUnpaidActivities.value = unpaidActivities
+        getMemberActivityRate(membershipDto?.membershipId, membershipDto?.joinedDateTime, groupDetailLiveData.value?.groupId!!
+        )
+        val groupEvents = activityRepository.getAllActivitiesForGroup(
+            group?.groupId!!, membershipDto?.membershipId!!, membershipDto.joinedDateTime)
+        _memberPaidActivities.value = groupEvents?.paidEvents
+        _memberUnpaidActivities.value = groupEvents?.unpaidEvents
+        _selectedMember.value = membershipDto
     }
 
     suspend fun createNewGroup(
@@ -312,7 +296,7 @@ class GroupViewModel @Inject constructor(
         joinedDateTime: String?,
         groupId: Int
     ) {
-        val activityRate = groupRepository.getMemberActivityRate(
+        val activityRate = activityRepository.getMemberActivityRate(
             membershipId, joinedDateTime, groupId
         ).data
         _memberPaymentRateLiveData.value = activityRate

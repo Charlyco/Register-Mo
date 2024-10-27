@@ -2,6 +2,7 @@ package com.register.app.repositoryimpls
 
 import com.register.app.api.ActivityService
 import com.register.app.api.UserService
+import com.register.app.dto.ActivityRate
 import com.register.app.dto.BulkPaymentModel
 import com.register.app.dto.BulkPaymentWrapper
 import com.register.app.dto.CommentReply
@@ -12,6 +13,7 @@ import com.register.app.dto.EventComment
 import com.register.app.dto.EventCommentResponse
 import com.register.app.dto.EventDetailWrapper
 import com.register.app.dto.GenericResponse
+import com.register.app.dto.GroupUserEventsResponse
 import com.register.app.dto.ImageUploadResponse
 import com.register.app.dto.Payment
 import com.register.app.dto.RejectBulkPaymentDto
@@ -751,6 +753,63 @@ class ActivityRepositoryImpl @Inject constructor(
                     continuation.resumeWithException(t)
                 }
 
+            })
+        }
+    }
+
+    override suspend fun getAllActivitiesForGroup(groupId: Int, membershipId: String, dateJoined: String): GroupUserEventsResponse? {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getAllActivitiesForGroup(groupId, membershipId, dateJoined)
+            call.enqueue(object : Callback<GroupUserEventsResponse> {
+                override fun onResponse(
+                    call: Call<GroupUserEventsResponse>,
+                    response: Response<GroupUserEventsResponse>
+                ) {
+                    if (response.isSuccessful){
+                        continuation.resume(response.body())
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(null)
+                            }
+                            500 -> continuation.resume(  null)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<GroupUserEventsResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
+    override suspend fun getMemberActivityRate(
+        membershipId: String?,
+        dateJoined: String?,
+        groupId: Int
+    ): ActivityRate {
+        return suspendCoroutine { continuation ->
+            val call = activityService.getMemberActivityRate(membershipId, dateJoined, groupId)
+            call.enqueue(object : Callback<ActivityRate> {
+                override fun onResponse(call: Call<ActivityRate>, response: Response<ActivityRate>) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else{
+                        val responseCode = response.code()
+                        when (responseCode) {
+                            401 -> {
+                                continuation.resume(ActivityRate("Invalid Credentials", false, null))
+                            }
+                            500 -> continuation.resume(ActivityRate(response.message(), false, null))
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<ActivityRate>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
             })
         }
     }

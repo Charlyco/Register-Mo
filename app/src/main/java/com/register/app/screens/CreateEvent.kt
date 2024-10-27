@@ -365,7 +365,7 @@ Surface(
             ) {
                 imageList.forEach { image ->
                     Box(
-                        contentAlignment = Alignment.BottomEnd
+                        contentAlignment = Alignment.TopEnd
                     ){
                         ImageLoader(
                             imageUrl = image,
@@ -375,14 +375,14 @@ Surface(
                             placeHolder = R.drawable.placeholder
                         )
                         Icon(
-                            imageVector = Icons.Default.Clear,
+                            imageVector = Icons.Filled.Clear,
                             contentDescription = "",
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(20.dp)
                                 .clickable {
                                 activityViewModel.deleteImage(image)
                             },
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
