@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.register.app.api.ActivityService
 import com.register.app.dto.AdminUpdateResponse
 import com.register.app.dto.BankDetail
 import com.register.app.dto.ChangeMemberStatusDto
@@ -28,7 +27,6 @@ import com.register.app.dto.VoteDto
 import com.register.app.enums.ContestantStatus
 import com.register.app.enums.Designation
 import com.register.app.enums.ElectionStatus
-import com.register.app.enums.EventType
 import com.register.app.enums.MemberStatus
 import com.register.app.enums.VoteStatus
 import com.register.app.model.Event
@@ -176,7 +174,8 @@ class GroupViewModel @Inject constructor(
         address: String?,
         phone: String?,
         email: String?,
-        logoUrl: String?
+        logoUrl: String?,
+        groupType: String?
     ): GenericResponse? {
         val group = GroupUpdateDto(
             groupName = groupName,
@@ -185,7 +184,7 @@ class GroupViewModel @Inject constructor(
             phoneNumber = phone ?: "",
             address = address ?: "",
             logoUrl = logoUrl ?: "",
-            groupType = groupDetailLiveData.value?.groupType!!
+            groupType = groupType?: groupDetailLiveData.value?.groupType!!
         )
         _loadingState.value = true
         val response = groupRepository.updateGroup(groupId, group)
@@ -581,6 +580,13 @@ class GroupViewModel @Inject constructor(
     suspend fun rejectMembershipRequest(selectedRequest: MembershipRequest): GenericResponse {
         _loadingState.value = true
         val response = groupRepository.rejectMembershipRequest(selectedRequest)
+        _loadingState.value = false
+        return response
+    }
+
+    suspend fun deleteGroup(groupId: Int): GenericResponse {
+        _loadingState.value = true
+        val response  = groupRepository.deleteGroup(groupId)
         _loadingState.value = false
         return response
     }

@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
@@ -75,7 +75,7 @@ fun SpecialLevyDetail(
     Scaffold(
         topBar = { GenericTopBar(title = specialLevy?.levyTitle!!, navController = navController) }
     ) {
-        SpecialLevyDetailScreen(it, specialLevy, groupViewModel, activityViewModel, authViewModel)
+        SpecialLevyDetailScreen(it, specialLevy, groupViewModel, activityViewModel, authViewModel, navController)
     }
 }
 
@@ -85,7 +85,8 @@ fun SpecialLevyDetailScreen(
     specialLevy: SpecialLevy?,
     groupViewModel: GroupViewModel,
     activityViewModel: ActivityViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    navController: NavController
 ) {
     val group = groupViewModel.groupDetailLiveData.observeAsState().value
     var payerDetails by remember{ mutableStateOf<Member?>( null ) }
@@ -131,7 +132,7 @@ fun SpecialLevyDetailScreen(
         }
 
         if (showRespondDialog) {
-            ConfirmSpecialLevyPaymentDialog(paymentToConfirm, activityViewModel, groupViewModel) {showRespondDialog = it}
+            ConfirmSpecialLevyPaymentDialog(paymentToConfirm, activityViewModel, groupViewModel, navController) {showRespondDialog = it}
         }
     }
 }
@@ -141,6 +142,7 @@ fun ConfirmSpecialLevyPaymentDialog(
     paymentToConfirm: Payment?,
     activityViewModel: ActivityViewModel,
     groupViewModel: GroupViewModel,
+    navController: NavController,
     onDismiss: (Boolean) -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
@@ -156,10 +158,11 @@ fun ConfirmSpecialLevyPaymentDialog(
         onDismissRequest = { onDismiss(false)}) {
         Surface(
             Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState(initial = 0)),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.small
         ) {
             if (showReasonInputDialog) {
                 Dialog(onDismissRequest = { showReasonInputDialog = false}) {
@@ -175,13 +178,19 @@ fun ConfirmSpecialLevyPaymentDialog(
                                 .fillMaxWidth()
                                 .height(200.dp)
                         ) {
-                            val (input, btn) = createRefs()
+                            val (desc, input, btn) = createRefs()
+                            Text(
+                                text = stringResource(id = R.string.decline_reason),
+                                modifier = Modifier.constrainAs(desc) {
+                                    top.linkTo(parent.top, margin = 8.dp)
+                                    centerHorizontallyTo(parent)
+                                })
                             Surface(
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 4.dp)
                                     .constrainAs(input) {
-                                        top.linkTo(parent.top, margin = 4.dp)
+                                        top.linkTo(desc.bottom, margin = 8.dp)
                                         centerHorizontallyTo(parent)
                                     },
                                 shape = MaterialTheme.shapes.small,
@@ -225,6 +234,7 @@ fun ConfirmSpecialLevyPaymentDialog(
                                                         reason
                                                     )
                                                 if (response.status) {
+                                                    navController.navigateUp()
                                                     showReasonInputDialog = false
                                                     onDismiss(false)
                                                     Toast
@@ -254,7 +264,7 @@ fun ConfirmSpecialLevyPaymentDialog(
                         LocalContext.current,
                         screenHeight - 180,
                         screenWidth - 16,
-                        R.drawable.event
+                        R.drawable.placeholder_doc
                     )
                 }
                 Text(
@@ -281,6 +291,12 @@ fun ConfirmSpecialLevyPaymentDialog(
 
                 Text(
                     text = "Payment Method: ${paymentToConfirm.modeOfPayment}",
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+
+                Text(
+                    text = "Levy amount: ${paymentToConfirm.amountPaid}",
                     fontSize = TextUnit(14.0f, TextUnitType.Sp),
                     modifier = Modifier.padding(start = 8.dp)
                 )
@@ -335,8 +351,9 @@ fun ConfirmSpecialLevyPaymentDialog(
                                 val response = activityViewModel.confirmSpecialLevyPayment(paymentToConfirm, amountPaid.toDouble(),
                                     0.0, group?.groupId!!)
                                 if (response.status) {
-                                    onDismiss(false)
                                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                                    navController.navigateUp()
+                                    onDismiss(false)
                                 }else {
                                     Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
                                 }

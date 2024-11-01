@@ -7,6 +7,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -245,13 +247,27 @@ fun BulkPayment(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (imageUrl != null) {
-                    ImageLoader(
-                        imageUrl = imageUrl?: "",
-                        context = context,
-                        height = 120,
-                        width = 120,
-                        placeHolder = R.drawable.placeholder
-                    )
+                    Box(
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        ImageLoader(
+                            imageUrl = imageUrl?: "",
+                            context = context,
+                            height = 120,
+                            width = 120,
+                            placeHolder = R.drawable.placeholder
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.Clear,
+                            contentDescription = "",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    activityViewModel.deleteEvidence()
+                                },
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
 
                 Button(
@@ -274,6 +290,8 @@ fun BulkPayment(
                     coroutineScope.launch {
                         if (modeOfPayment != PaymentMethod.CASH.name && imageUrl == null) {
                             Toast.makeText(context, "Select payment evidence to continue", Toast.LENGTH_LONG).show()
+                        }else if (amountPaid.isEmpty()) {
+                            Toast.makeText(context, "Enter amount paid!", Toast.LENGTH_LONG).show()
                         }else {
                             val response = activityViewModel.submitBulkPaymentEvidence(group?.groupName!!, group.groupId, membershipId!!, amountPaid.toDouble(), modeOfPayment, imageUrl)
                             Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()

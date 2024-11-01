@@ -21,6 +21,7 @@ import com.register.app.screens.BulkPayment
 import com.register.app.screens.CreateElectionScreen
 import com.register.app.screens.CreateEvent
 import com.register.app.screens.CreateQuestionnaireScreen
+import com.register.app.screens.DeleteGroup
 import com.register.app.screens.SavedChatList
 import com.register.app.screens.DiscoverScreen
 import com.register.app.screens.EditProfile
@@ -276,6 +277,11 @@ fun RegisterAppNavHost(
                 navController = navController,
                 formTitle = backStackEntry.arguments?.getString("form_title")
             )
+        }
+        composable("delete_group") {
+                DeleteGroup(
+                    groupViewModel = groupViewModel,
+                    navController = navController)
         }
         composable(ALL_USER_ACTIVITIES) {
             AllUserActivities(

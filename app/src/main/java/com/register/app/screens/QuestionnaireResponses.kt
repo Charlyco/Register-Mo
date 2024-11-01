@@ -124,13 +124,13 @@ fun ResponseItemDetail(response: FormUserResponseDto) {
     ) {
         response.content?.forEach{ entry ->
             Text(
-                text = "Question: ${entry.question}",
+                text = "Question: ${entry?.question}",
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 4.dp)
             )
             Text(
-                text = "Response: ${entry.response}",
+                text = "Response: ${entry?.response}",
                 fontSize = TextUnit(14.0f, TextUnitType.Sp),
                 modifier = Modifier.padding(bottom = 8.dp)
                 )

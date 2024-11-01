@@ -95,4 +95,6 @@ interface GroupService {
     fun updateBankDetail(@Body bankDetail: BankDetail, @Path("groupId") groupId: Int): Call<GenericResponse>
     @PUT("group-service/api/v1/group/membershipRequest/reject")
     fun rejectMembershipRequest(@Body selectedRequest: MembershipRequest): Call<GenericResponse>
+    @DELETE("group-service/api/v1/group/{groupId}")
+    fun deleteGroup(@Path("groupId") groupId: Int): Call<GenericResponse>
 }

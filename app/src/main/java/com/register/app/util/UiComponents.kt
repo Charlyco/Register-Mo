@@ -432,7 +432,7 @@ fun GroupItem(
 //                        centerVerticallyTo(parent) },
                 color = Color.Transparent
             ) {
-                ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.download)
+                ImageLoader(group.logoUrl?: "", context, 56, 56, R.drawable.placeholder_doc)
             }
 
             Column(

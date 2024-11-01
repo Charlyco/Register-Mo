@@ -244,4 +244,8 @@
     <string name="download_responses_summery">Download Questionnaqire Summery</string>
     <string name="download_summery_confirmation">Continu to download Questionnaire responses summery?</string>
     <string name="delete_message">Delete this message</string>
+    <string name="delete_group">Delete group</string>
+    <string name="delete_group_info">Deleting tis group will remove all members including yourself from the group and also delete all activities and contributions related to the group.\nDo you wish to continue?</string>
+    <string name="event_type">Event type: </string>
+    <string name="decline_reason">What is the reason for declining the payment?</string>
 </resources>

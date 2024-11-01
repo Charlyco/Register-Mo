@@ -146,7 +146,7 @@ fun HomeScreenContent(
 ) {
     val homeLoadingState = homeViewModel.loadingState.observeAsState().value?: authViewModel.progressLiveData.observeAsState().value
     val groupLoadingState = authViewModel.progressLiveData.observeAsState().value
-    val specialLevies = activityViewModel.mySpecialLevyList.observeAsState().value
+    val specialLevies = activityViewModel.unpaidSpecialLevyList.observeAsState().value
     val screenHeight = LocalConfiguration.current.screenHeightDp - 64
     val isRefreshing by rememberSaveable { mutableStateOf(false)}
     val coroutineScope = rememberCoroutineScope()
@@ -636,7 +636,7 @@ fun EventItemHome(
                         context,
                         80,
                         80,
-                        R.drawable.event
+                        R.drawable.placeholder_doc
                     ) }
                 }
             }

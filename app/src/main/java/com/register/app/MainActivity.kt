@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
     val forumViewModel: ForumViewModel by viewModels()
     val authViewModel: AuthViewModel by viewModels()
     val activityViewModel: ActivityViewModel by viewModels()
-    val takePicture =
+    private val takePicture =
         registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { result ->
             val jpegImage = result?.let { Utils.convertBitmapToJPEG(applicationContext, it) }
             lifecycleScope.launch { activityViewModel.uploadEvidenceOfPaymentFromCamera(jpegImage) }
@@ -77,15 +77,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
         lifecycleScope.launch {
             if (authViewModel.userLideData.value != null) {
                 authViewModel.getUserDetails()
             }
         }
-        handleDeepLink(intent)
-    }
-
-    private fun handleDeepLink(intent: Intent?) {
         if (intent != null && intent.action == Intent.ACTION_VIEW) {
             val notificationType = intent.getStringExtra(NOTIFICATION_TYPE)
 

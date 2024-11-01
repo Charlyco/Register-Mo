@@ -866,4 +866,33 @@ class GroupRepositoryImpl @Inject constructor(
             })
         }
     }
+
+    override suspend fun deleteGroup(groupId: Int): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = groupService.deleteGroup(groupId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        continuation.resume(
+                            GenericResponse(
+                                response.message(),
+                                false,
+                                null
+                            )
+                        )
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+
+            })
+        }
+    }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -53,6 +54,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
 import com.register.app.dto.BankDetail
+import com.register.app.enums.GroupType
 import com.register.app.model.Group
 import com.register.app.util.CircularIndicator
 import com.register.app.util.GenericTopBar
@@ -94,6 +96,7 @@ fun GroupUpdateUi(
     var phone by rememberSaveable { mutableStateOf(group.phoneNumber) }
     var email by rememberSaveable { mutableStateOf(group.groupEmail) }
     var logoUrl by rememberSaveable { mutableStateOf(group.logoUrl) }
+    var groupType by rememberSaveable { mutableStateOf(group.groupType) }
     var showBankUpdateDialog by rememberSaveable { mutableStateOf(false) }
     val imageMimeTypes = listOf("image/jpeg", "image/png")
     val filePicker = rememberLauncherForActivityResult(
@@ -152,21 +155,23 @@ fun GroupUpdateUi(
         Box(
             Modifier
                 .size(200.dp)
-                .clip(CircleShape)
                 .constrainAs(logo) {
                     top.linkTo(parent.top, margin = 32.dp)
                     centerHorizontallyTo(parent)
                 },
-            contentAlignment = Alignment.CenterEnd
+            contentAlignment = Alignment.BottomEnd
         ) {
-            ImageLoader(
-                imageUrl = group.logoUrl?: "",
-                context = context,
-                height = 200,
-                width = 200,
-                placeHolder = R.drawable.download
-            )
-
+            Surface(
+                Modifier.clip(CircleShape)
+            ) {
+                ImageLoader(
+                    imageUrl = group.logoUrl?: "",
+                    context = context,
+                    height = 200,
+                    width = 200,
+                    placeHolder = R.drawable.download
+                )
+            }
             Icon(
                 imageVector = Icons.Default.CameraEnhance,
                 contentDescription = "",
@@ -322,6 +327,23 @@ fun GroupUpdateUi(
                 )
             }
 
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = groupType == GroupType.OPEN.name,
+                    onCheckedChange = { groupType = GroupType.OPEN.name}
+                )
+                Text(text = stringResource(id = R.string.open))
+
+                Checkbox(
+                    checked = groupType == GroupType.CLOSED.name,
+                    onCheckedChange = { groupType = GroupType.CLOSED.name}
+                )
+                Text(text = stringResource(id = R.string.closed))
+            }
+
             Button(
                 onClick = {
                     coroutineScope.launch {
@@ -332,7 +354,8 @@ fun GroupUpdateUi(
                             address,
                             phone,
                             email,
-                            logoUrl
+                            logoUrl,
+                            groupType
                         )
                         if (response?.status == true) {
                             Toast.makeText(

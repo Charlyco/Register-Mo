@@ -67,7 +67,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
@@ -646,7 +648,7 @@ fun EventDetailTopBar(
         ) {
             val (navBtn, eventTitle, payments) = createRefs()
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "",
                 modifier = Modifier
                     .clickable {
@@ -797,7 +799,7 @@ fun ViewEventDetails(
     ConstraintLayout(
         Modifier.fillMaxSize()
     ) {
-        val (levyAmount, description, paymentData, compliance, adminActions) = createRefs()
+        val (levyAmount, eventType, description, paymentData, compliance, adminActions) = createRefs()
 
         Surface(
             modifier = Modifier
@@ -834,12 +836,32 @@ fun ViewEventDetails(
                 fontSize = TextUnit(14.0f, TextUnitType.Sp))
         }
 
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .constrainAs(eventType) {
+                    top.linkTo(levyAmount.bottom, margin = 16.dp)
+                    start.linkTo(parent.start, margin = 8.dp)
+                },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.event_type),
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(text = if(event?.eventType == EventType.FREE_WILL.name) {
+                stringResource(id = R.string.event_type_freewill)
+            }else{
+                stringResource(id = R.string.event_type_mandatory)
+            })
+        }
+
         Column(
             Modifier
                 .padding(horizontal = 8.dp)
                 .fillMaxWidth()
                 .constrainAs(description) {
-                    top.linkTo(levyAmount.bottom, margin = 16.dp)
+                    top.linkTo(eventType.bottom, margin = 8.dp)
                 },
             horizontalAlignment = Alignment.Start
         ) {

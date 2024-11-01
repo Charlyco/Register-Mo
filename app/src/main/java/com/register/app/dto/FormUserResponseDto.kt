@@ -13,6 +13,6 @@ data class FormUserResponseDto(
 
 data class QuestionnaireResponse(
     val question: String,
-    val response: String
+    val response: String?
 )
 

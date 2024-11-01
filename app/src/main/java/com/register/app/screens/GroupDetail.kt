@@ -351,6 +351,17 @@ fun GroupDetailTopBar(
                                 launchSingleTop = true
                             }
                         })
+
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.delete_group)) },
+                        onClick = {
+                            isExpanded = false
+                            navController.navigate("delete_group") {
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+
                     DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.add_member)) },
                     onClick = {
@@ -919,7 +930,7 @@ fun TopSection(group: Group?, groupViewModel: GroupViewModel) {
                 context = context,
                 height = 80,
                 width = 80,
-                placeHolder = R.drawable.download
+                placeHolder = R.drawable.placeholder_doc
             )
         }
 

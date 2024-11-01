@@ -53,4 +53,5 @@ interface GroupRepository {
     suspend fun getBankDetails(groupId: Int): BankDetailWrapper
     suspend fun updateBankDetails(bankDetail: BankDetail, groupId: Int): GenericResponse
     suspend fun rejectMembershipRequest(selectedRequest: MembershipRequest): GenericResponse
+    suspend fun deleteGroup(groupId: Int): GenericResponse
 }

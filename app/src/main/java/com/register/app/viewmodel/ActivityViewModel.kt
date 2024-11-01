@@ -84,8 +84,10 @@ class ActivityViewModel @Inject constructor(
     val paidMembersList: LiveData<List<Member>?> = _paidMembersList
     private val _eventFeeds: MutableLiveData<List<Event>?> = MutableLiveData()
     val eventFeeds: LiveData<List<Event>?> = _eventFeeds
-    private val _mySpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
-    val mySpecialLevyList: LiveData<List<SpecialLevy>?> = _mySpecialLevyList
+    private val _memberUnpaidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val memberUnpaidSpecialLevyList: LiveData<List<SpecialLevy>?> = _memberUnpaidSpecialLevyList
+    private val _memberPaidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
+    val memberPaidSpecialLevyList: LiveData<List<SpecialLevy>?> = _memberPaidSpecialLevyList
     private val _unpaidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
     val unpaidSpecialLevyList: LiveData<List<SpecialLevy>?> = _unpaidSpecialLevyList
     private val _paidSpecialLevyList: MutableLiveData<List<SpecialLevy>?> = MutableLiveData()
@@ -166,9 +168,11 @@ class ActivityViewModel @Inject constructor(
             val groupResponse = groupRepository.getGroupDetails(groupId)
             val member = groupResponse?.data?.memberList?.find { it.emailAddress ==
                     dataStoreManager.readUserData()?.emailAddress }
-            val activities = activityRepository.getAllActivitiesForGroup(groupId, member?.membershipId!!,
-                member.joinedDateTime)
-            activities?.unpaidEvents?.let { tempList.addAll(it) }
+            if (member != null) {
+                val activities = activityRepository.getAllActivitiesForGroup(groupId, member.membershipId,
+                    member.joinedDateTime)
+                activities?.unpaidEvents?.let { tempList.addAll(it) }
+            }
         }
         _eventFeeds.value = tempList
         // get special levies if any
@@ -177,7 +181,7 @@ class ActivityViewModel @Inject constructor(
         val unpaid = specialLevyResponse?.filter { levy ->
             levy.confirmedPayments?.none { it.memberEmail == dataStoreManager.readUserData()?.emailAddress } == true
         }
-        _mySpecialLevyList.value = unpaid
+        _unpaidSpecialLevyList.value = unpaid
         _loadingState.value = false
     }
 
@@ -604,8 +608,8 @@ class ActivityViewModel @Inject constructor(
         val unpaid = specialLevyResponse?.filter { levy ->
             levy.confirmedPayments?.none { it.memberEmail == emailAddress } == true
         }
-        _unpaidSpecialLevyList.value = unpaid
-        _paidSpecialLevyList.value = paid
+        _memberUnpaidSpecialLevyList.value = unpaid
+        _memberPaidSpecialLevyList.value = paid
         _loadingState.value = false
     }
 
@@ -736,5 +740,9 @@ class ActivityViewModel @Inject constructor(
         val images = _activityImages.value?.toMutableList()
         images?.remove(image)
         _activityImages.value = images
+    }
+
+    fun deleteEvidence() {
+        _paymentEvidence.value = null
     }
 }

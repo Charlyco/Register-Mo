@@ -479,12 +479,12 @@ fun QuestionnaireDetail(
     ) {
         questionnaireData.questionnaire?.forEach { questionEntry ->
             SingleQuestion(questionEntry) {
-                val found = userResponses.find { response -> response.question == it.question }
+                val found = userResponses.find { response -> response.question == it?.question }
                     if (found != null) {
                         userResponses.remove(found)
-                        userResponses.add(it)
+                        userResponses.add(it?: QuestionnaireResponse(questionEntry.question, "null"))
                     }else {
-                        userResponses.add(it)
+                        userResponses.add(it?: QuestionnaireResponse(questionEntry.question, "null"))
                     }
             }
         }
@@ -512,7 +512,7 @@ fun QuestionnaireDetail(
 @Composable
 fun SingleQuestion(
     questionEntry: QuestionnaireEntry,
-    onResponse: (QuestionnaireResponse) -> Unit
+    onResponse: (QuestionnaireResponse?) -> Unit
 ) {
     var selection by rememberSaveable { mutableStateOf("") }
     var response by rememberSaveable { mutableStateOf("") }
