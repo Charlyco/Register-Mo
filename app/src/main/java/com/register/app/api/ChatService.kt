@@ -24,4 +24,6 @@ interface ChatService {
     fun getUserChatMessages(@Path("recipientId") recipientId: String, @Query("senderId") senderId: String): Call<DirectChatMessages?>
     @DELETE("chat-service/api/chat/forum/{groupId}/delete")
     fun deleteMessage(@Path("groupId") groupId: Int?, @Query("chatId") chatId: Long): Call<GenericResponse>
+    @DELETE("chat-service/api/chat/user/delete/{messageId}")
+    fun deleteDirectMessage(@Path("messageId") messageId: Long?): Call<GenericResponse>
 }

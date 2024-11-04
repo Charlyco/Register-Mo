@@ -1,6 +1,8 @@
 package com.register.app.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.register.app.R
@@ -123,7 +127,7 @@ fun ChatList(
                 ) {
                     items(conversations) { item ->
                         if (item.senderName == userFullName) {
-                            LocalDirectMessageItem(item)
+                            LocalDirectMessageItem(item, forumViewModel)
                         } else {
                             RemoteDirectMessageItem(item)
                         }
@@ -263,7 +267,8 @@ fun RemoteDirectMessageItem(messageData: DirectChatMessageData) {
 }
 
 @Composable
-fun LocalDirectMessageItem(messageData: DirectChatMessageData) {
+fun LocalDirectMessageItem(messageData: DirectChatMessageData, forumViewModel: ForumViewModel) {
+    var showContextMenu by rememberSaveable { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .padding(top = 2.dp, bottom = 2.dp, start = 42.dp)
@@ -272,6 +277,11 @@ fun LocalDirectMessageItem(messageData: DirectChatMessageData) {
     ) {
         Surface(
             modifier = Modifier
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = { showContextMenu = true },
+                    )
+                }
                 .fillMaxWidth()
                 .padding(top = 2.dp, bottom = 2.dp, start = 16.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -296,6 +306,38 @@ fun LocalDirectMessageItem(messageData: DirectChatMessageData) {
                     fontSize = TextUnit(10.0f, TextUnitType.Sp),
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+        }
+    }
+    if (showContextMenu) {
+        MyMessageItemContextMenu(messageData, forumViewModel) {showContextMenu = it}
+    }
+}
+
+@Composable
+fun MyMessageItemContextMenu(
+    messageData: DirectChatMessageData,
+    forumViewModel: ForumViewModel,
+    onDismiss:(Boolean) -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Dialog(onDismissRequest = { onDismiss(false) }) {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Column(
+                Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.delete_message),
+                    modifier = Modifier.clickable {
+                        coroutineScope.launch{
+                            forumViewModel.deleteDirectMessageItem(messageData)
+                        }
+                        onDismiss(false)
+                    }
                 )
             }
         }

@@ -28,5 +28,6 @@ interface ChatRepository {
     suspend fun fetchChatContactList(): List<DirectChatContact>?
     suspend fun saveChatContact(userData: DirectChatContact)
     suspend fun deleteMessage(groupId: Int?, chatId: Long): GenericResponse
+    suspend fun deleteDirectChatItem(messageId: Long?): GenericResponse
 
 }

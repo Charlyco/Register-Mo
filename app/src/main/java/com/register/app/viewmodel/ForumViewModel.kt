@@ -175,26 +175,6 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         }
     }
 
-    private fun transformToChatMessage(it: MessageData) {
-        val messageList = _chatMessages.value
-        val newMessageList = mutableListOf<MessageData>()
-        newMessageList.addAll(messageList?.toMutableList() ?: mutableListOf())
-        newMessageList.add(
-            MessageData(
-                it.id,
-                it.groupId,
-                it.groupName,
-                it.message,
-                it.membershipId,
-                it.senderName,
-                it.imageUrl,
-                it.sendTime,
-                it.originalMessageId
-            )
-        )
-        _chatMessages.postValue(newMessageList)
-    }
-
     fun disconnectChat() {
         viewModelScope.launch {
             chatRepository.disconnectChat()
@@ -336,6 +316,15 @@ suspend fun subScribeToDirectChat(recipientEmail: String, group: Group) {
         val response = chatRepository.deleteMessage(groupId, chatId)
         if(response.status) {
             loadGroupChats(groupId)
+        }
+        _isLoadingLiveData.value = false
+    }
+
+    suspend fun deleteDirectMessageItem(message: DirectChatMessageData) {
+        _isLoadingLiveData.value = true
+        val response = chatRepository.deleteDirectChatItem(message.id)
+        if (response.status) {
+            fetUserChats(message.recipientId!!, message.senderId!!)
         }
         _isLoadingLiveData.value = false
     }

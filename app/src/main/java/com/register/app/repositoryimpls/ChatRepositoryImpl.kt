@@ -289,4 +289,32 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteDirectChatItem(messageId: Long?): GenericResponse {
+        return suspendCoroutine { continuation ->
+            val call = chatService.deleteDirectMessage(messageId)
+            call.enqueue(object : Callback<GenericResponse> {
+                override fun onResponse(
+                    call: Call<GenericResponse>,
+                    response: Response<GenericResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        continuation.resume(response.body()!!)
+                    }else {
+                        continuation.resume(
+                            GenericResponse(
+                                response.message(),
+                                false,
+                                null
+                            )
+                        )
+                    }
+                }
+
+                override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
+    }
+
 }

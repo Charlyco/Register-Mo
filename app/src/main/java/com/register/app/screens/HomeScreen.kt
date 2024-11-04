@@ -101,6 +101,12 @@ fun HomeScreen(
     BackHandler {
         showExitDialog = true
     }
+    val userData = authViewModel.userLideData.observeAsState().value
+    LaunchedEffect(Unit) {
+        if (userData == null) {
+            authViewModel.getUserDetails()
+        }
+    }
 
     Scaffold(
         topBar = { HomeTopBar(authViewModel, homeViewModel, navController) },
