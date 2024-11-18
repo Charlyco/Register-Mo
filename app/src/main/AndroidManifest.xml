@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:name=".RegisterApplication"
@@ -17,7 +18,7 @@
         android:theme="@style/Theme.Register"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
-        tools:targetApi="34">
+        tools:targetApi="35">
         <service
             android:name=".NotificationService"
             android:enabled="true"
