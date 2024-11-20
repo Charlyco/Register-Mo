@@ -331,7 +331,7 @@ fun AddContestants(
         }
 
         if (showSelectContestantDialog) {
-            SelectContestantDialog(groupViewModel) {status ->
+            SelectContestantDialog(groupViewModel) {status, member ->
                 showSelectContestantDialog = status
             }
         }
@@ -358,68 +358,74 @@ fun AddContestants(
 @Composable
 fun SelectContestantDialog(
     groupViewModel: GroupViewModel,
-    onDismiss: (Boolean) -> Unit
+    onDismiss: (Boolean, Member?) -> Unit
 ) {
     val dialogHeight = LocalConfiguration.current.screenHeightDp - 120
     var searchTag by rememberSaveable { mutableStateOf("") }
     val memberList = groupViewModel.memberDetailsList.observeAsState().value
     Dialog(
         onDismissRequest = {
-            onDismiss(false)
+            onDismiss(false, null)
         }
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .height(dialogHeight.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Surface(
+            color = MaterialTheme.colorScheme.background
         ) {
-            Surface(
+            Column(
                 Modifier
-                    .padding(horizontal = 8.dp)
-                    .fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onPrimary,
-                shadowElevation = dimensionResource(id = R.dimen.low_elevation),
-                shape = MaterialTheme.shapes.large
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .height(dialogHeight.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TextField(
-                    value = searchTag,
-                    onValueChange = { searchTag = it },
-                    modifier = Modifier
-                        .height(55.dp),
-                    placeholder = {
-                        Text(
-                            text = stringResource(id = R.string.search_members),
-                            color = Color.Gray
-                        )
-                    },
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
-                        focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent
-                    ),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "",
-                            tint = Color.Gray
-                        )
-                    }
-                )
-            }
-            LazyColumn(
-                contentPadding = PaddingValues(vertical = 4.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(memberList!!.filter { member ->
-                    member.fullName.contains(
-                        searchTag,
-                        ignoreCase = true
+                Surface(
+                    Modifier
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    shadowElevation = dimensionResource(id = R.dimen.low_elevation),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    TextField(
+                        value = searchTag,
+                        onValueChange = { searchTag = it },
+                        modifier = Modifier
+                            .height(55.dp),
+                        placeholder = {
+                            Text(
+                                text = stringResource(id = R.string.search_members),
+                                color = Color.Gray
+                            )
+                        },
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                            focusedContainerColor = MaterialTheme.colorScheme.onPrimary,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent
+                        ),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "",
+                                tint = Color.Gray
+                            )
+                        }
                     )
-                }) { member ->
-                    MemberListItem(member, groupViewModel) {status ->
-                        onDismiss(status)
+                }
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(memberList!!.filter { member ->
+                        member.fullName.contains(
+                            searchTag,
+                            ignoreCase = true
+                        )
+                    }) { member ->
+                        MemberListItem(member, groupViewModel) {status, member ->
+
+                            onDismiss(status, member)
+                        }
                     }
                 }
             }
@@ -428,13 +434,13 @@ fun SelectContestantDialog(
 }
 
 @Composable
-fun MemberListItem(member: Member, groupViewModel: GroupViewModel, onSelected: (Boolean) -> Unit) {
+fun MemberListItem(member: Member, groupViewModel: GroupViewModel, onSelected: (Boolean, Member) -> Unit) {
     val context = LocalContext.current
     Surface(
         Modifier
             .clickable {
                 groupViewModel.addToContestants(member)
-                onSelected(false)
+                onSelected(false, member)
             }
             .fillMaxWidth(),
     ) {
@@ -446,7 +452,7 @@ fun MemberListItem(member: Member, groupViewModel: GroupViewModel, onSelected: (
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    Modifier.padding(end = 16.dp),
+                    Modifier.padding(start = 4.dp, top = 4.dp, end = 16.dp),
                     color = MaterialTheme.colorScheme.background,
                     border = BorderStroke(1.dp, Color.Gray),
                     shape = MaterialTheme.shapes.small

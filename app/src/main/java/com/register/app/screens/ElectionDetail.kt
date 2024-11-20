@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cancel
@@ -36,7 +37,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -47,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import com.airbnb.lottie.model.content.CircleShape
 import com.register.app.R
 import com.register.app.dto.Contestant
 import com.register.app.dto.Election
@@ -71,13 +75,15 @@ fun ElectionDetail(groupViewModel: GroupViewModel, navController: NavController)
     ) {
         ElectionDetailScreen(Modifier.padding(it), groupViewModel, navController)
         if (showAddContestantDialog) {
-            SelectContestantDialog(groupViewModel ) { dismiss ->
-                showAddContestantDialog = dismiss
+            SelectContestantDialog(groupViewModel ) { dismiss, member ->
                 if (contestant?.isNotEmpty() == true) {
                     coroutineScope.launch {
-                        groupViewModel.addContestant(contestant[0], election!!)
+                        if (member != null) {
+                            groupViewModel.addContestant(member, election!!)
+                        }
                     }
                 }
+                showAddContestantDialog = dismiss
             }
         }
     }
@@ -94,10 +100,15 @@ fun AddContestantFab(groupViewModel: GroupViewModel, showAddContestantDialog: (B
                 showAddContestantDialog(true)
             }
         },
-        shape = CircleShape,
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.height(40.dp),
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.background) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = "")
+        Text(
+            text = stringResource(R.string.add_contestant),
+            fontSize = TextUnit(12.0f, TextUnitType.Sp),
+            modifier = Modifier
+                .padding(horizontal = 8.dp))
     }
 }
 

@@ -248,4 +248,5 @@
     <string name="delete_group_info">Deleting tis group will remove all members including yourself from the group and also delete all activities and contributions related to the group.\nDo you wish to continue?</string>
     <string name="event_type">Event type: </string>
     <string name="decline_reason">What is the reason for declining the payment?</string>
+    <string name="add_contestant">Add Contestant</string>
 </resources>
