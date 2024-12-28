@@ -78,16 +78,10 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun Forum(forumViewModel: ForumViewModel?, groupViewModel: GroupViewModel, navController: NavController){
     val groupList = groupViewModel.groupListLiveData.observeAsState().value
-    Scaffold(
-        topBar = { ChatTopBar(groupViewModel, forumViewModel, navController) },
-        bottomBar = { BottomNavBar(navController = navController) },
-        containerColor = MaterialTheme.colorScheme.background
-    ) {
-        if (groupList?.isEmpty() == true) {
-            NullGroupScreen()
-        }else {
-            ForumScreen(Modifier.padding(it), forumViewModel, groupViewModel, navController)
-        }
+    if (groupList.isNullOrEmpty()) {
+        NullGroupScreen()
+    }else {
+        ForumScreen(forumViewModel, groupViewModel, navController)
     }
 }
 
@@ -128,94 +122,24 @@ fun NullGroupScreen() {
 }
 
 @Composable
-fun ChatTopBar(
-    groupViewModel: GroupViewModel,
+fun ForumScreen(
     forumViewModel: ForumViewModel?,
+    groupViewModel: GroupViewModel,
     navController: NavController
 ) {
-    val groupList = groupViewModel.groupListLiveData.observeAsState().value
-    val groupSaverList = mutableListOf<GroupStateItem>()
-    groupList?.forEach {
-        groupSaverList.add(GroupStateItem(it.groupId, it.groupName))
+
+    Scaffold(
+        topBar = { ChatTopBar(groupViewModel, forumViewModel, navController) },
+        bottomBar = { BottomNavBar(navController = navController) },
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        ForumScreenContent(Modifier.padding(it), forumViewModel, groupViewModel, navController)
     }
-        val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupList?.get(0)
-        var expanded by rememberSaveable { mutableStateOf(false) }
-        val screenWidth = LocalConfiguration.current.screenWidthDp
-        val coroutineScope = rememberCoroutineScope()
-
-        Surface(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp)
-                .height(56.dp)
-                .clickable {
-                    expanded = !expanded
-                },
-            color = MaterialTheme.colorScheme.background,
-            shadowElevation = dimensionResource(id = R.dimen.default_elevation),
-            shape = MaterialTheme.shapes.small
-        ) {
-            Box(
-                Modifier.fillMaxWidth()
-            ) {
-                ConstraintLayout(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    val (selectionBox, list, icon) = createRefs()
-                    Text(
-                        text = selectedGroup?.groupName!!,
-                        fontSize = TextUnit(14.0f, TextUnitType.Sp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .constrainAs(selectionBox) {
-                                start.linkTo(parent.start, margin = 4.dp)
-                                centerVerticallyTo(parent)
-                            }
-                    )
-
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "",
-                        modifier = Modifier.constrainAs(icon) {
-                            end.linkTo(parent.end, margin = 2.dp)
-                            centerVerticallyTo(parent)
-                        }
-                    )
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier
-                            .constrainAs(list) {
-                                centerHorizontallyTo(parent)
-                            }
-                            .width((screenWidth - 8).dp)
-                    ) {
-                        groupList?.forEach { group ->
-                            DropdownMenuItem(
-                                text = { Text(text = group.groupName)},
-                                onClick = {
-                                    coroutineScope.launch {
-                                        val groupDetail = groupList.find { it.groupId == group.groupId } // Find the group that matches the selected item
-                                        expanded = false
-                                        forumViewModel?.connectToChat(JoinChatPayload(groupDetail?.groupName!!, groupDetail.groupId))
-                                        groupViewModel.setSelectedGroupDetail(groupDetail!!)
-                                        forumViewModel?.setSelectedGroup(groupDetail)
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+}
 
 @Composable
-fun ForumScreen(
-    modifier: Modifier = Modifier,
+fun ForumScreenContent(
+    padding: Modifier,
     forumViewModel: ForumViewModel?,
     groupViewModel: GroupViewModel,
     navController: NavController
@@ -285,6 +209,91 @@ fun ForumScreen(
     }
 }
 
+@Composable
+fun ChatTopBar(
+    groupViewModel: GroupViewModel,
+    forumViewModel: ForumViewModel?,
+    navController: NavController
+) {
+    val groupList = groupViewModel.groupListLiveData.observeAsState().value
+    val groupSaverList = mutableListOf<GroupStateItem>()
+    groupList?.forEach {
+        groupSaverList.add(GroupStateItem(it.groupId, it.groupName))
+    }
+    val selectedGroup = forumViewModel?.selectedGroup?.observeAsState()?.value?: groupList?.get(0)
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val coroutineScope = rememberCoroutineScope()
+
+    Surface(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .height(56.dp)
+            .clickable {
+                expanded = !expanded
+            },
+        color = MaterialTheme.colorScheme.background,
+        shadowElevation = dimensionResource(id = R.dimen.default_elevation),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Box(
+            Modifier.fillMaxWidth()
+        ) {
+            ConstraintLayout(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val (selectionBox, list, icon) = createRefs()
+                Text(
+                    text = selectedGroup?.groupName!!,
+                    fontSize = TextUnit(14.0f, TextUnitType.Sp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .constrainAs(selectionBox) {
+                            start.linkTo(parent.start, margin = 4.dp)
+                            centerVerticallyTo(parent)
+                        }
+                )
+
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "",
+                    modifier = Modifier.constrainAs(icon) {
+                        end.linkTo(parent.end, margin = 2.dp)
+                        centerVerticallyTo(parent)
+                    }
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .constrainAs(list) {
+                            centerHorizontallyTo(parent)
+                        }
+                        .width((screenWidth - 8).dp)
+                ) {
+                    groupList?.forEach { group ->
+                        DropdownMenuItem(
+                            text = { Text(text = group.groupName)},
+                            onClick = {
+                                coroutineScope.launch {
+                                    val groupDetail = groupList.find { it.groupId == group.groupId } // Find the group that matches the selected item
+                                    expanded = false
+                                    forumViewModel?.connectToChat(JoinChatPayload(groupDetail?.groupName!!, groupDetail.groupId))
+                                    groupViewModel.setSelectedGroupDetail(groupDetail!!)
+                                    forumViewModel?.setSelectedGroup(groupDetail)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun RemoteMessageItem(

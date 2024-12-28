@@ -41,7 +41,7 @@ object NetworkModule {
             .retryOnConnectionFailure(true)
             .build()
         return Retrofit.Builder()
-            .baseUrl("http://68.221.194.92:8084/")
+            .baseUrl("http://register.megamentality.net:8084/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(client)
             .build()
