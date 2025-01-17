@@ -27,7 +27,7 @@ object AppModule {
     @Singleton
     @Provides
     fun providesStompClient(): StompWebSocketClient {
-        return StompWebSocketClientImpl.getInstance("ws://34.105.170.3:8084/ws")
+        return StompWebSocketClientImpl.getInstance("ws://register.megamentality.net:8084/ws")
     }
 
     @Singleton
