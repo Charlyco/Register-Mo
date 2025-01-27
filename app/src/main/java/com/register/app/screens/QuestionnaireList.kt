@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -175,11 +176,12 @@ fun QuestionnaireItem(
 ) {
     var showQuestionnaireDetail by rememberSaveable { mutableStateOf(false) }
     var showContextMenu by rememberSaveable { mutableStateOf(false) }
+    val isAdmin = groupViewModel.isUserAdminLiveData.observeAsState().value
 
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(top = 16.dp),
         horizontalAlignment = Alignment.Start
     ) {
         if (showContextMenu) {
@@ -187,7 +189,6 @@ fun QuestionnaireItem(
                 showContextMenu = it
             }
         }
-
         Row(
             Modifier
                 .fillMaxWidth()
@@ -195,7 +196,11 @@ fun QuestionnaireItem(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onPress = { showQuestionnaireDetail = !showQuestionnaireDetail },
-                        onLongPress = { showContextMenu = true },
+                        onLongPress = {
+                            if (isAdmin == true) {
+                                showContextMenu = true
+                            }
+                        },
                     )
                 },
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -203,26 +208,16 @@ fun QuestionnaireItem(
         ) {
             Text(
                 text = questionnaire.title!!,
-                fontSize = TextUnit(18.0f, TextUnitType.Sp),
+                fontSize = TextUnit(16.0f, TextUnitType.Sp),
                 fontWeight = FontWeight.SemiBold
             )
-            if (showQuestionnaireDetail) {
-                Icon(
-                    painter = painterResource(id = R.drawable.up_arrow_solid),
-                    contentDescription = "",
-                    Modifier
-                        .size(16.dp)
-                        .clickable { showQuestionnaireDetail = false }
+            Icon(
+                painter = if (showQuestionnaireDetail) painterResource(id = R.drawable.up_arrow_solid) else painterResource(id = R.drawable.forward_arrow_solid),
+                contentDescription = "",
+                Modifier
+                    .size(16.dp)
+                    .clickable { showQuestionnaireDetail = !showQuestionnaireDetail }
                 )
-            }else {
-                Icon(
-                    painter = painterResource(id = R.drawable.forward_arrow_solid),
-                    contentDescription = "",
-                    Modifier
-                        .size(16.dp)
-                        .clickable { showQuestionnaireDetail = true }
-                )
-            }
         }
 
         if (showQuestionnaireDetail && questionnaire.responders.contains(membershipId)) {
@@ -237,6 +232,10 @@ fun QuestionnaireItem(
         } else if(showQuestionnaireDetail && !questionnaire.responders.contains(membershipId)) {
             QuestionnaireDetail(questionnaire, membershipId, questionnaireViewModel, navController)
         }
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 8.dp),
+            color = Color.Gray,
+            )
     }
 
 }
@@ -530,33 +529,34 @@ fun SingleQuestion(
                 .padding(horizontal = 16.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            questionEntry.options.forEach { option ->
-                if (option == "user_input") {
-                    Surface(
-                        Modifier
-                            .height(dimensionResource(id = R.dimen.text_field_height))
-                            .fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.background,
-                        shape = MaterialTheme.shapes.small,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
-                    ) {
-                        TextField(
-                            value = response,
-                            onValueChange = {
-                                response = it
-                                onResponse(QuestionnaireResponse(questionEntry.question, response))
-                                            },
-                            label = { Text(text = stringResource(id = R.string.type_answer)) },
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                                focusedContainerColor = MaterialTheme.colorScheme.background
-                            ),
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                } else {
+            if (questionEntry.options.isEmpty()) {
+                Surface(
+                    Modifier
+                        .height(dimensionResource(id = R.dimen.text_field_height))
+                        .fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.background,
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onTertiary)
+                ) {
+                    TextField(
+                        value = response,
+                        onValueChange = {
+                            response = it
+                            onResponse(QuestionnaireResponse(questionEntry.question, response))
+                        },
+                        label = { Text(text = stringResource(id = R.string.type_answer)) },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedContainerColor = MaterialTheme.colorScheme.background
+                        ),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+             else {
+                questionEntry.options.forEach { option ->
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
